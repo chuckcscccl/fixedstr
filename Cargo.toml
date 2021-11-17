@@ -1,0 +1,12 @@
+[package]
+name = "fixedstr"
+version = "0.1.0"
+edition = "2018"
+license = "MIT"
+description = "strings of constant maximum size that can be copied and stack allocated, using Rust's new const generics"
+repository = "https://github.com/chuckcscccl/fixedstr/"
+keywords = ["strings", "const generics"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
