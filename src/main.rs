@@ -35,5 +35,10 @@ let mut s4:fstr<64> = s1.resize();
 fn othertests()
 {
   let s1:fstr<8> = fstr::from("abcdefg");
-  let s2:fstr<16> = s1.resize(); 
+  let s2:fstr<16> = s1.resize();
+  let s3:fstr<8> = fstr::from("abcxr");
+  println!("cmp test: {}", s3>s1);
+
+//  let s = [65u8, 66,67];
+//  let st = &s[..] as &str;
 }

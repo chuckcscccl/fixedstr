@@ -30,6 +30,8 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 
+use std::cmp::Ordering;
+
 /// main type: fixed string of size up to N:
 #[derive(Copy,Clone,Debug,Eq,PartialEq,Hash)]
 pub struct fstr<const N:usize>
@@ -120,12 +122,37 @@ impl<const N:usize> std::convert::From<&str> for fstr<N>
   }
 }
 
+impl<const N:usize> std::convert::From<&String> for fstr<N>
+{
+  fn from(s:&String) -> fstr<N>
+  {
+     fstr::<N>::make(&s[..])
+  }
+}
+
 impl<const N:usize> std::convert::From<String> for fstr<N>
 {
   fn from(s:String) -> fstr<N>
   {
      fstr::<N>::make(&s[..])
   }
+}
+
+impl<const N:usize> std::cmp::PartialOrd for fstr<N>
+{
+   fn partial_cmp(&self, other:&Self) -> Option<Ordering>
+   {
+      //Some(self.chrs[0..self.len].cmp(other.chrs[0..other.len]))
+      Some(self.cmp(other))
+   }
+}
+
+impl<const N:usize> std::cmp::Ord for fstr<N>
+{
+   fn cmp(&self, other:&Self) -> Ordering
+   {
+      self.chrs[0..self.len].cmp(&other.chrs[0..other.len])
+   }
 }
 
 impl<const M:usize> fstr<M>
