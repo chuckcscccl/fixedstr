@@ -28,12 +28,8 @@ fn main()
    println!("{}", s2.substr(2,6));
    println!("{}", s2.substr(2,6).len());   
 let mut s4:fstr<64> = s1.resize();
-   let owned_string:String = s4.to_string();
-   let str_slice:&str = s4.to_str();
-   println!("as &str: {}",&str_slice[0..2]);
+   let owned_string = s4.to_string();
    s4 = s1.resize();
-   let s5 = str8::new();
-   let ss5 = s5.as_str();
    othertests();
 }//main
 
@@ -41,11 +37,12 @@ fn othertests()
 {
   let s1:fstr<8> = fstr::from("abcdefg");
   let s2:fstr<16> = s1.resize();
-  let s3:fstr<8> = fstr::from("abcdxr");
+  let s3:fstr<8> = fstr::from("abcxr");
   println!("cmp test: {}", s3>s1);
 
 //  let s = [65u8, 66,67];
 //  let st = &s[..] as &str;
+
 
   let chrs = ['a','b','c','\0'];
   // try to coerce into str
