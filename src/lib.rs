@@ -1,7 +1,12 @@
 //! Library for strings of fixed maximum lengths that can be copied and
-//! stack-allocated using Rust's new const generics feature..  Rust will
-//! probably provide something equivalent in the future, with even more features,
-//! but *just can't wait.*  Been wanting something like this for a long time...
+//! stack-allocated using Rust's new const generics feature.
+//!
+//! The main structure here is [fstr].  **Note that [fstr] does not currently
+//! support non-ascii strings.**
+//!
+//! Version 0.2.x adds zero_terminated strings in the structure **[zstr]**.
+//! These strings are more memory efficient but with increase in runtime.
+//! [zstr] also support unicode characters.
 
 //! Example:
 //!
@@ -30,6 +35,9 @@
 #![allow(unused_assignments)]
 #![allow(unused_mut)]
 #![allow(dead_code)]
+
+pub mod zero_terminated;
+pub use zero_terminated::*;
 
 use std::cmp::Ordering;
 
@@ -346,7 +354,7 @@ impl<const N:usize> fstr<N>
   }//substr
 }
 
-/// a type for small strings  (no-longer public)
+/// types for small strings 
 pub type str8 = fstr<8>; 
 pub type str16 = fstr<16>; 
 pub type str32 = fstr<32>; 

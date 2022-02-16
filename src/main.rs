@@ -5,8 +5,9 @@
 #![allow(unused_mut)]
 #![allow(unused_assignments)]
 //use std::mem;
-mod lib;
-use lib::*;
+//mod lib;
+//use lib::*;
+use fixedstr::*;
 
 fn main()
 {
@@ -29,12 +30,14 @@ fn main()
    println!("{}", s2.substr(2,6).len());   
 let mut s4:fstr<64> = s1.resize();
    let owned_string:String = s4.to_string();
+   println!("owned s4: {}",&owned_string);
    let str_slice:&str = s4.to_str();
    println!("as &str: {}",&str_slice[0..2]);
    s4 = s1.resize();
    let s5 = str8::new();
    let ss5 = s5.as_str();
    othertests();
+   ztests();
 }//main
 
 fn othertests()
@@ -56,3 +59,24 @@ fn othertests()
   //let string1:&str = mem::transmute::<&[char], &str>(&chrs[0..3]);
   //println!("got str: {:?}",string1);
 }//othertests
+
+fn ztests()
+{
+  let a:zstr<8> = zstr::from("abcdefg");
+  let ab = a.substr(1,5);
+  println!("zstr: {}", &a);  
+  println!("substring of zstr: {}", &ab);
+  let x = "abcd";
+  println!("{}", a.substr(0,4));
+  println!("{}", x==a.substr(0,4));
+//  assert_eq!("abcd", ab.substr(0,4));
+  let os:String = ab.to_string();
+
+  let mut uni:ztr8 = zstr::from("aλb");
+  println!("unicode string {}, len {}, blen {}", &uni, uni.len(), uni.blen());   
+  println!("unicode as str len: {}", uni.to_str().len());
+  let u2 = "aλb";
+  println!("&str u2 len: {}", u2.len());
+  uni.set(1,'μ');
+  //uni.set(1,'x');  // no effect
+  println!("unicode string {}, len {}, blen {}", &uni, uni.len(), uni.blen());   }//ztr tests
