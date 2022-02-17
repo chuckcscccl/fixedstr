@@ -17,7 +17,7 @@ use std::cmp::Ordering;
 /// zstr<N>: zero-terminated utf8 strings of size up to N bytes.  Note that
 /// zstr supports unicode, so that the length of string in characters may
 /// be less than N.
-#[derive(Copy,Clone,Debug,Eq,PartialEq,Hash)]
+#[derive(Copy,Clone,Eq,PartialEq,Hash)]
 pub struct zstr<const N:usize>
 {
   chrs : [u8;N],
@@ -30,6 +30,7 @@ impl<const N:usize> zstr<N>
   /// utf8 strings properly.
   pub fn make(s:&str) -> zstr<N>
    {
+      if (N>256 || N<1) {panic!("only zstr<1> to zstr<256> are valid");}
       let mut chars = [0u8; N];
       let bytes = s.as_bytes(); // &[u8]
       let mut i = 0;
@@ -113,6 +114,7 @@ impl<const N:usize> zstr<N>
    /// if "" is returned then all characters were pushed successfully.
    pub fn push<'t>(&mut self,s:&'t str) -> &'t str
    {
+      if s.len()<1 {return s;}
       let mut buf = [0u8;4];
       let mut i = self.blen();
       let mut sci = 0; // indexes characters in s
@@ -125,12 +127,20 @@ impl<const N:usize> zstr<N>
            {
              self.chrs[i+k] = buf[k];
            }
-           self.chrs[i+clen] = 0;
-         } else { return &s[sci..];}
+           i += clen;
+         } else { self.chrs[i]=0; return &s[sci+1..];}
          sci += 1;
       }
-      &s[sci..]
+      if i<N {self.chrs[i]=0;} // zero-terminate      
+      &s[sci+1..]
    }//push
+
+   /// returns the number of characters in the string regardless of
+   /// character class
+   pub fn charlen(&self) -> usize
+   {
+      let v:Vec<_> = self.to_str().chars().collect();  v.len()
+   }
 
    /// returns the nth char of the zstr
    pub fn nth(&self,n:usize) -> Option<char>
@@ -148,9 +158,10 @@ impl<const N:usize> zstr<N>
      }
    }
 
+   /// mimics same function on str
    pub fn chars(&self) -> std::str::Chars<'_>
    { self.to_str().chars() }
-
+   /// mimics same function on str
    pub fn char_indices(&self) ->std::str::CharIndices<'_>
    { self.to_str().char_indices() }
 }//impl zstr<N>
@@ -204,6 +215,14 @@ impl<const N:usize,const M:usize> std::convert::From<fstr<M>> for zstr<N>
   fn from(s:fstr<M>) -> zstr<N>
   {
      zstr::<N>::make(s.to_str())
+  }
+}
+
+impl<const N:usize,const M:usize> std::convert::From<&fstr<M>> for zstr<N>
+{
+  fn from(s:&fstr<M>) -> zstr<N>
+  {
+     zstr::<N>::make(&s.to_str())
   }
 }
 
@@ -293,7 +312,7 @@ impl<const N:usize> PartialEq<&str> for zstr<N>
 {
   fn eq(&self, other:&&str) -> bool
   {
-     &self.to_str()==other   // see below
+     self.to_str()==*other   // see below
   }//eq
 }
 impl<const N:usize> PartialEq<&str> for &zstr<N>
@@ -352,6 +371,16 @@ impl<const N:usize, const M:usize> PartialEq<&fstr<N>> for zstr<M>
   { other.to_str()==self.to_str() }
 }
 
+impl<const N:usize> std::fmt::Debug for zstr<N>
+{
+fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      let ds = format!("zstr<{}>:\"{}\"",N,&self.to_str());
+          f.pad(&ds)
+//        f.debug_struct("zstr")
+//         .field("chrs:",&self.to_str())
+//         .finish()
+  }
+}  // Debug impl
 
 ///Convert zstr to &[u8] slice
 impl<IndexType,const N:usize> std::ops::Index<IndexType> for zstr<N>
@@ -391,6 +420,9 @@ impl<const N:usize> zstr<N>
     zstr { chrs: chars,}
   }//substr
 }
+
+
+
 
 /// types for small strings 
 pub type ztr8 = zstr<8>; 

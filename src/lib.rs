@@ -1,12 +1,12 @@
 //! Library for strings of fixed maximum lengths that can be copied and
 //! stack-allocated using Rust's new const generics feature.
 //!
-//! The main structure here is [fstr].  **Note that [fstr] does not currently
-//! support non-ascii strings.**
+//! **The main structure provided by this crate are [fstr] and [zstr].**
 //!
-//! Version 0.2.x adds zero_terminated strings in the structure **[zstr]**.
-//! These strings are more memory efficient but with increase in runtime.
-//! [zstr] also support unicode characters.
+//! **Version 0.2.x** adds **unicode support** and a new module for
+//! **zero_terminated strings** in the structure [zstr].
+//! These strings are more memory efficient than [fstr] but less efficient
+//! in terms of run time.
 
 //! Example:
 //!
@@ -23,6 +23,7 @@
 //!   let s4:fstr<64> = s1.resize();  // resize copies to new-capacity fstr
 //!   let owned_string = s4.to_string();
 //!   let str_slice:&str = s4.to_str();
+//!   let z:zstr<8> = zstr::from("λxλy.x");
 //!```
 
 // Fixed, :Copy strings of limited size.  size of each fstr is N or less,
@@ -42,7 +43,7 @@ pub use zero_terminated::*;
 use std::cmp::Ordering;
 
 /// main type: fixed string of size up to N:
-#[derive(Copy,Clone,Debug,Eq,PartialEq,Hash)]
+#[derive(Copy,Clone,Eq,PartialEq,Hash)]
 pub struct fstr<const N:usize>
 {
   chrs : [u8;N],
@@ -55,6 +56,19 @@ impl<const N:usize> fstr<N>
   /// several others including [fstr::from].
   pub fn make(s:&str) -> fstr<N>
    {
+      if (N>65536 || N<1) {panic!("Valid fstr strings are limited to fstr<1> to zstr<65536>");}
+      let bytes = s.as_bytes(); // &[u8]
+      let blen = bytes.len();
+      let mut chars = [0u8; N];
+      let mut i = 0;
+      for i in 0..blen
+      {
+        if i<N {chars[i] = bytes[i];} else {break;}
+      }
+      fstr {
+         chrs: chars, len: blen, /* as u16 */
+      }
+/*
       let mut chars = [0u8; N];
       let mut i = 0;
       for c in s.chars()
@@ -65,6 +79,7 @@ impl<const N:usize> fstr<N>
          chrs: chars,
          len: i,
       }
+ */
    }//make
 
    /// creates an empty string, equivalent to fstr::default()
@@ -73,14 +88,16 @@ impl<const N:usize> fstr<N>
      fstr::make("")
    }
 
-   /// length of the string, which will be up to the maximum size N. This
-   /// is a constant-time operation.
+   /// length of the string in bytes, which will be up to the maximum size N.
+   /// This is a constant-time operation. Note that this value is consistent
+   /// with [str::len]
    pub fn len(&self)->usize { self.len }
 
    /// converts fstr to an owned string
    pub fn to_string(&self) -> String
    {
-     self.chrs[0..self.len].iter().map(|x|{*x as char}).collect()
+     self.to_str().to_owned()
+     //self.chrs[0..self.len].iter().map(|x|{*x as char}).collect()
    }
 
    /// allows returns copy of u8 array underneath the fstr
@@ -97,11 +114,23 @@ impl<const N:usize> fstr<N>
    /// alias for [fstr::to_str]
    pub fn as_str(&self) -> &str {self.to_str()}
 
-   /// changes a char to c if i is less than the length of the string.
-   /// returns true if change was successful.
+   /// changes a character at character position i to c.  This function
+   /// requires that c is in the same character class (ascii or unicode)
+   /// as the char being replaced.  It never shuffles the bytes underneath.
+   /// The function returns true if the change was successful.
    pub fn set(&mut self,i:usize, c:char) -> bool
    {
-      if i<self.len {self.chrs[i]=c as u8; true} else {false}
+      let ref mut cbuf = [0u8;4];  // characters require at most 4 bytes
+      c.encode_utf8(cbuf);
+      let clen = c.len_utf8();
+      if let Some((bi,rc)) = self.to_str().char_indices().nth(i) {
+        if clen==rc.len_utf8() {
+           for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
+           return true;
+        }
+      }
+      return false;
+      //if i<self.len {self.chrs[i]=c as u8; true} else {false}
    }
    /// adds chars to end of current string up to maximum size N of fstr<N>,
    /// returns the portion of the push string that was NOT pushed due to
@@ -109,6 +138,26 @@ impl<const N:usize> fstr<N>
    /// if "" is returned then all characters were pushed successfully.
    pub fn push<'t>(&mut self,s:&'t str) -> &'t str
    {
+      if s.len()<1 {return s;}
+      let mut buf = [0u8;4];
+      let mut i = self.len();
+      let mut sci = 0; // indexes characters in s
+      for c in s.chars()
+      {
+         let clen = c.len_utf8();
+         c.encode_utf8(&mut buf);
+         if i<=N-clen {
+           for k in 0..clen
+           {
+             self.chrs[i+k] = buf[k];
+           }
+           i += clen;
+         } else  { self.len = i; return &s[sci..];}
+         sci += 1;
+      }
+      self.len=i;
+      &s[sci..]
+   /*
       let mut i = self.len;
       for c in s.chars()
       {
@@ -116,19 +165,30 @@ impl<const N:usize> fstr<N>
       }
       self.len = i;
       if (i<s.len()) {&s[i..]} else {""}
+   */      
+   }
+
+   /// returns the number of characters in the string regardless of
+   /// character class
+   pub fn charlen(&self) -> usize
+   {
+      let v:Vec<_> = self.to_str().chars().collect();  v.len()
    }
 
    /// returns the nth char of the fstr
    pub fn nth(&self,n:usize) -> Option<char>
    {
-      if n<self.len {Some(self.chrs[n] as char)} else {None}
+      self.to_str().chars().nth(n)   
    }
 
    /// shortens the fstr in-place (mutates).  If n is greater than the
    /// current length of the string, this operation will have no effect.
    pub fn truncate(&mut self, n:usize)
    {
-     if n<self.len {self.len = n;}
+     if let Some((bi,c)) = self.to_str().char_indices().nth(n) {
+        self.chrs[bi] = 0;
+     }
+     //if n<self.len {self.len = n;}
    }
 }//impl fstr<N>
 
@@ -181,6 +241,21 @@ impl<const N:usize> std::convert::From<String> for fstr<N>
   fn from(s:String) -> fstr<N>
   {
      fstr::<N>::make(&s[..])
+  }
+}
+
+impl<const N:usize,const M:usize> std::convert::From<zstr<M>> for fstr<N>
+{
+  fn from(s:zstr<M>) -> fstr<N>
+  {
+     fstr::<N>::make(&s.to_str())
+  }
+}
+impl<const N:usize,const M:usize> std::convert::From<&zstr<M>> for fstr<N>
+{
+  fn from(s:&zstr<M>) -> fstr<N>
+  {
+     fstr::<N>::make(&s.to_str())
   }
 }
 
@@ -296,20 +371,13 @@ impl<const N:usize> PartialEq<&str> for &fstr<N>
 {
   fn eq(&self, other:&&str) -> bool
   {
-     if other.len()!=self.len {return false;}
-     let mut i = 0;
-     for c in other.chars()
-     {
-        if (c as u8) != self.chrs[i] {return false;}
-        i +=1;
-     }
-     return true;
+      &self.to_str() == other
   }//eq
 }
 impl<'t, const N:usize> PartialEq<fstr<N>> for &'t str
 {
   fn eq(&self, other:&fstr<N>) -> bool
-  { other==self }
+  { &other.to_str()==self }
 }
 impl<'t, const N:usize> PartialEq<&fstr<N>> for &'t str
 {
@@ -322,6 +390,15 @@ impl<const N:usize> Default for fstr<N>
 {
    fn default() -> Self { fstr::<N>::make("") }
 }
+
+impl<const N:usize> std::fmt::Debug for fstr<N>
+{
+fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      let ds = format!("fstr<{}>:\"{}\"",N,&self.to_str());
+          f.pad(&ds)
+  }
+}  // Debug impl
+
 
 ///Convert fstr to &[u8] slice
 impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
@@ -338,10 +415,36 @@ impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
 
 impl<const N:usize> fstr<N>
 {
+
+   /// mimics same function on str
+   pub fn chars(&self) -> std::str::Chars<'_>
+   { self.to_str().chars() }
+   /// mimics same function on str
+   pub fn char_indices(&self) ->std::str::CharIndices<'_>
+   { self.to_str().char_indices() }
+
   /// returns a copy of the portion of the string, string could be truncated
   /// if indices are out of range. Similar to slice [start..end]
   pub fn substr(&self,start:usize, end:usize) -> fstr<N>
   {
+    let mut chars = [0u8;N];
+    let mut inds = self.char_indices();
+    let len = self.len();
+    if start>=len || end<=start {return fstr{chrs:chars, len:0};}
+    let (si,_) = inds.nth(start).unwrap();
+    let last = if (end>=len) {len} else {
+      match inds.nth(end-start-1) {
+        Some((ei,_)) => ei,
+        None => len,
+      }//match
+    };//let last =...
+    for i in si..last
+    {
+      chars[i-si] = self.chrs[i];
+    }
+    fstr { chrs: chars, len:end-start}
+
+/*
     let mut chars = [0u8;N];
     if start>=self.len || end<=start { return fstr{chrs:chars, len:0}; }
     let mut i = start;
@@ -351,8 +454,11 @@ impl<const N:usize> fstr<N>
        i += 1;
     }
     fstr { chrs: chars, len:i-start }
+*/    
   }//substr
 }
+
+
 
 /// types for small strings 
 pub type str8 = fstr<8>; 

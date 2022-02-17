@@ -1,7 +1,12 @@
 //! Library for strings of fixed maximum lengths that can be copied and
-//! stack-allocated using Rust's new const generics feature..  Rust will
-//! probably provide something equivalent in the future, with even more features,
-//! but *just can't wait.*  Been wanting something like this for a long time...
+//! stack-allocated using Rust's new const generics feature.
+//!
+//! The main structure here is [fstr].  **Note that [fstr] does not currently
+//! support non-ascii strings.**
+//!
+//! Version 0.2.x adds zero_terminated strings in the structure **[zstr]**.
+//! These strings are more memory efficient but with increase in runtime.
+//! **[zstr] also support unicode characters**.
 
 //! Example:
 //!
@@ -17,6 +22,7 @@
 //!   println!("{}", s2.substr(2,6));
 //!   let s4:fstr<64> = s1.resize();  // resize copies to new-capacity fstr
 //!   let owned_string = s4.to_string();
+//!   let str_slice:&str = s4.to_str();
 //!```
 
 // Fixed, :Copy strings of limited size.  size of each fstr is N or less,
@@ -30,13 +36,16 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 
+pub mod zero_terminated;
+pub use zero_terminated::*;
+
 use std::cmp::Ordering;
 
 /// main type: fixed string of size up to N:
-#[derive(Copy,Clone,Debug,Eq,PartialEq,Hash)]
+#[derive(Copy,Clone,Eq,PartialEq,Hash)]
 pub struct fstr<const N:usize>
 {
-  chrs : [char;N],
+  chrs : [u8;N],
   len : usize,  // length will be <=N
 }//fstr
 impl<const N:usize> fstr<N>
@@ -46,11 +55,11 @@ impl<const N:usize> fstr<N>
   /// several others including [fstr::from].
   pub fn make(s:&str) -> fstr<N>
    {
-      let mut chars = ['\0'; N];
+      let mut chars = [0u8; N];
       let mut i = 0;
       for c in s.chars()
       {
-         if i<N { chars[i] = c; i+=1; } else {break;}
+         if i<N { chars[i] = c as u8; i+=1; } else {break;}
       }
       fstr {
          chrs: chars,
@@ -71,32 +80,28 @@ impl<const N:usize> fstr<N>
    /// converts fstr to an owned string
    pub fn to_string(&self) -> String
    {
-     self.chrs[0..self.len].iter().collect()
+     self.chrs[0..self.len].iter().map(|x|{*x as char}).collect()
    }
 
-   /// this will allow non-mutable access to the chars underneath
-   pub fn get_chars<'t>(&'t self) -> &'t [char;N] {&self.chrs}
-
-   /// converts the char-array underneath to an owned u8 array
+   /// allows returns copy of u8 array underneath the fstr
    pub fn as_u8(&self) -> [u8;N]
    {
-     let mut ucs = [0u8;N];
-     for i in 0..self.len { ucs[i] = self.chrs[i] as u8; }
-     ucs
+      self.chrs
    }
 
-/*  -- must change everything to [u8] instead of [char]
+   /// converts fstr to &str using [std::str::from_utf8]
    pub fn to_str(&self) -> &str
    {
-      std::str::from_utf8(&self.as_u8()[0..self.len]).unwrap()
+      std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
    }
-*/
+   /// alias for [fstr::to_str]
+   pub fn as_str(&self) -> &str {self.to_str()}
 
    /// changes a char to c if i is less than the length of the string.
    /// returns true if change was successful.
    pub fn set(&mut self,i:usize, c:char) -> bool
    {
-      if i<self.len {self.chrs[i]=c; true} else {false}
+      if i<self.len {self.chrs[i]=c as u8; true} else {false}
    }
    /// adds chars to end of current string up to maximum size N of fstr<N>,
    /// returns the portion of the push string that was NOT pushed due to
@@ -107,7 +112,7 @@ impl<const N:usize> fstr<N>
       let mut i = self.len;
       for c in s.chars()
       {
-         if i<N {self.chrs[i] = c; i+=1;} else {self.len=N; return &s[N..];}
+         if i<N {self.chrs[i] = c as u8; i+=1;} else {self.len=N; return &s[N..];}
       }
       self.len = i;
       if (i<s.len()) {&s[i..]} else {""}
@@ -116,7 +121,7 @@ impl<const N:usize> fstr<N>
    /// returns the nth char of the fstr
    pub fn nth(&self,n:usize) -> Option<char>
    {
-      if n<self.len {Some(self.chrs[n])} else {None}
+      if n<self.len {Some(self.chrs[n] as char)} else {None}
    }
 
    /// shortens the fstr in-place (mutates).  If n is greater than the
@@ -126,6 +131,16 @@ impl<const N:usize> fstr<N>
      if n<self.len {self.len = n;}
    }
 }//impl fstr<N>
+
+/*
+impl<'t, const N:usize> std::convert::Into<&'t str> for fstr<N>
+{
+  fn into(self) -> &'t str
+  {
+     std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
+  }
+}
+*/
 
 impl<const N:usize> std::convert::From<&str> for fstr<N>
 {
@@ -199,7 +214,7 @@ impl<const M:usize> fstr<M>
   pub fn resize<const N:usize>(&self) -> fstr<N>
   {
      let length = if (self.len<N) {self.len} else {N};
-     let mut chars = ['\0';N];
+     let mut chars = [0u8;N];
      for i in 0..length {chars[i] = self.chrs[i];}
      fstr {
        chrs: chars,
@@ -243,7 +258,10 @@ impl<const N:usize> Iterator for fstriter<N>
    type Item = char;
    fn next(&mut self) -> Option<char>
    {
-      if self.i<self.fs.len {self.i+=1; Some(self.fs.chrs[self.i-1])} else {None}
+      if self.i<self.fs.len {
+        self.i+=1;
+        Some(self.fs.chrs[self.i-1] as char)
+      } else {None}
    }
 }
 impl<const N:usize> IntoIterator for fstr<N>
@@ -263,7 +281,7 @@ impl<const N:usize> std::fmt::Display for fstr<N>
 {
   fn fmt(&self,f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result
   {
-     write!(f,"{}",self.to_string())
+     write!(f,"{}",self.to_str()) // need change!
   }
 }
 
@@ -282,7 +300,7 @@ impl<const N:usize> PartialEq<&str> for &fstr<N>
      let mut i = 0;
      for c in other.chars()
      {
-        if c!=self.chrs[i] {return false;}
+        if (c as u8) != self.chrs[i] {return false;}
         i +=1;
      }
      return true;
@@ -305,9 +323,18 @@ impl<const N:usize> Default for fstr<N>
    fn default() -> Self { fstr::<N>::make("") }
 }
 
-///Convert fstr to slice of chars (type [char], not &str)
+impl<const N:usize> std::fmt::Debug for fstr<N>
+{
+fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      let ds = format!("fstr<{}>:\"{}\"",N,&self.to_str());
+          f.pad(&ds)
+  }
+}  // Debug impl
+
+
+///Convert fstr to &[u8] slice
 impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
-  where IndexType:std::slice::SliceIndex<[char]>,
+  where IndexType:std::slice::SliceIndex<[u8]>,
 {
   type Output = IndexType::Output;
   fn index(&self, index:IndexType)-> &Self::Output
@@ -324,7 +351,7 @@ impl<const N:usize> fstr<N>
   /// if indices are out of range. Similar to slice [start..end]
   pub fn substr(&self,start:usize, end:usize) -> fstr<N>
   {
-    let mut chars = ['\0';N];
+    let mut chars = [0u8;N];
     if start>=self.len || end<=start { return fstr{chrs:chars, len:0}; }
     let mut i = start;
     while i<end && i<self.len
@@ -336,7 +363,9 @@ impl<const N:usize> fstr<N>
   }//substr
 }
 
-/// a type for small strings
+
+
+/// types for small strings 
 pub type str8 = fstr<8>; 
 pub type str16 = fstr<16>; 
 pub type str32 = fstr<32>; 
