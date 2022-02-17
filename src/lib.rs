@@ -1,7 +1,7 @@
 //! Library for strings of fixed maximum lengths that can be copied and
 //! stack-allocated using Rust's new const generics feature.
 //!
-//! **The main structure provided by this crate are [fstr] and [zstr].**
+//! **The main structures provided by this crate are [fstr] and [zstr].**
 //!
 //! **Version 0.2.x** adds **unicode support** and a new module for
 //! **zero_terminated strings** in the structure [zstr].
@@ -23,7 +23,7 @@
 //!   let s4:fstr<64> = s1.resize();  // resize copies to new-capacity fstr
 //!   let owned_string = s4.to_string();
 //!   let str_slice:&str = s4.to_str();
-//!   let z:zstr<8> = zstr::from("λxλy.x");
+//!   let z:zstr<16> = zstr::from("λxλy.x");
 //!```
 
 // Fixed, :Copy strings of limited size.  size of each fstr is N or less,
