@@ -1,6 +1,8 @@
 Library for strings of fixed maximum lengths that can be copied and
 stack-allocated using Rust's const generics feature.
 
+Version 0.2.1: bug fixes and minor adjustments
+
 Version 0.2 adds unicode support and a zero-terminated variant, which is
 more memory efficient at the cost of slightly longer runtimes.
 

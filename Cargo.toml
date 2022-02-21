@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2018"
 license = "MIT"
 description = "strings of constant maximum size that can be copied and stack allocated, using Rust's new const generics"

@@ -1,7 +1,8 @@
 //! This module implements [zstr], which are zero-terminated strings of
-//! fixed lengths up to 255 characters.  Compared to [crate::fstr], zstr
+//! fixed lengths.  Compared to [crate::fstr], zstr
 //! are more memory efficient but with some of the operations taking slightly
-//! longer.
+//! longer. Type zstr<N> can store strings consisting of up to N-1 bytes
+//! whereas fstr<N> can store strings consisting of up to N bytes.
 
 
 #![allow(unused_variables)]
@@ -30,7 +31,7 @@ impl<const N:usize> zstr<N>
   /// utf8 strings properly.
   pub fn make(s:&str) -> zstr<N>
    {
-      if (N>256 || N<1) {panic!("only zstr<1> to zstr<256> are valid");}
+//      if (N>256 || N<1) {panic!("only zstr<1> to zstr<256> are valid");}
       let mut chars = [0u8; N];
       let bytes = s.as_bytes(); // &[u8]
       let mut i = 0;
@@ -55,16 +56,17 @@ impl<const N:usize> zstr<N>
      zstr::make("")
    }
 
-   /// length of the string in chars. This
+   /// length of the string in bytes (consistant with [str::len]). This
    /// is a constant-time operation.
    pub fn len(&self)->usize {
      let mut i =0;
      while self.chrs[i]!=0 {i+=1;}
-     return std::str::from_utf8(&self.chrs[0..i]).unwrap().len();
+     return i;
+     //return std::str::from_utf8(&self.chrs[0..i]).unwrap().len();
    }
 
-   /// returns the byte length of the string, which will be less than N
-   pub fn blen(&self)->usize {
+   // returns the byte length of the string, which will be less than N
+   fn blen(&self)->usize {
      let mut i =0;
      while self.chrs[i]!=0 {i+=1;}
      return i;
@@ -128,11 +130,11 @@ impl<const N:usize> zstr<N>
              self.chrs[i+k] = buf[k];
            }
            i += clen;
-         } else { self.chrs[i]=0; return &s[sci+1..];}
+         } else { self.chrs[i]=0; return &s[sci..];}
          sci += 1;
       }
       if i<N {self.chrs[i]=0;} // zero-terminate      
-      &s[sci+1..]
+      &s[sci..]
    }//push
 
    /// returns the number of characters in the string regardless of
@@ -148,6 +150,17 @@ impl<const N:usize> zstr<N>
       self.to_str().chars().nth(n)
       //if n<self.len() {Some(self.chrs[n] as char)} else {None}
    }
+
+   /// returns the nth byte of the string as a char.  This
+   /// function should only be called on ascii strings.  It
+   /// is designed to be quicker than [zstr::nth], and does not check array bounds or
+   /// check n against the length of the string. Nor does it check
+   /// if the value returned is within the ascii range.
+   pub fn nth_ascii(&self,n:usize) -> char
+   {
+      self.chrs[n] as char
+   }
+
 
    /// shortens the zstr in-place (mutates).  If n is greater than the
    /// current length of the string, this operation will have no effect.

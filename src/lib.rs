@@ -8,26 +8,36 @@
 //! These strings are more memory efficient than [fstr] but less efficient
 //! in terms of run time.
 
-//! Example:
+//!  ## Examples
 //!
-//!```ignore
-//!   let s1 = str16::from("abc"); // str16 is alias for fstr<16>
-//!   let mut s2 = str32::from("and xyz");
-//!   s2.push(" and 1234");  // adds to end of s2
-//!   println!("{} {}, {}", s1, &s2, s2.len());  
-//!   println!("{}", &s1=="abc");   // can compare with &str
-//!   let s3 = s1;     // copied, not moved
-//!   println!("{}", "abc"==&s1);
-//!   println!("{}, {} ", s1==s3, s1==s2.resize()); 
-//!   println!("{}", s2.substr(2,6));
-//!   let s4:fstr<64> = s1.resize();  // resize copies to new-capacity fstr
-//!   let owned_string = s4.to_string();
-//!   let str_slice:&str = s4.to_str();
-//!   let z:zstr<16> = zstr::from("λxλy.x");
 //!```
+//! let a:fstr<8> = fstr::from("abcdefg"); //creates fstr from &str
+//! let a1:fstr<8> = a; // copied, not moved
+//! let a2:&str = a.to_str();
+//! let a3:String = a.to_string();
+//! assert_eq!(a.nth_ascii(2), 'c');
+//! let ab = a.substr(1,5);  // copies substring to new fstr
+//! assert_eq!(ab,"bcde");  // can compare with &str
+//! assert!(a<ab);  // implements Ord trait (and Hash, Debug, Display)
+//! let mut u:fstr<8> = fstr::from("aλb"); //unicode support
+//! for x in u.nth(1) {assert_eq!(x,'λ');} // nth returns Option<char>
+//! assert!(u.set(1,'μ'));  // changes a character of the same character class
+//! assert!(!u.set(1,'c')); // .set returns false on failure
+//! assert!(u.set(2,'c'));
+//! assert_eq!(u, "aμc");
+//! assert_eq!(u.len(),4);  // length in bytes
+//! assert_eq!(u.charlen(),3);  // length in chars
+//! let mut ac:fstr<16> = a.resize(); // copies to larger capacity string
+//! let remainder:&str = ac.push("hijklmnopqrst");  //appends string, returns left over
+//! assert_eq!(ac.len(),16);
+//! assert_eq!(remainder, "qrst");
+//! ac.truncate(10); // shortens string in place
+//! assert_eq!(&ac,"abcdefghij");
+//!```
+//!
+//![zstr] implements the same capabilities as [fstr].
 
-// Fixed, :Copy strings of limited size.  size of each fstr is N or less,
-// array chrs is 0-terminated if size of string is less than N:
+
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -42,7 +52,7 @@ pub use zero_terminated::*;
 
 use std::cmp::Ordering;
 
-/// main type: fixed string of size up to N:
+/// main type: string of size up to const N:
 #[derive(Copy,Clone,Eq,PartialEq,Hash)]
 pub struct fstr<const N:usize>
 {
@@ -56,7 +66,7 @@ impl<const N:usize> fstr<N>
   /// several others including [fstr::from].
   pub fn make(s:&str) -> fstr<N>
    {
-      if (N>65536 || N<1) {panic!("Valid fstr strings are limited to fstr<1> to zstr<65536>");}
+//      if (N>65536 || N<1) {panic!("Valid fstr strings are limited to fstr<1> to zstr<65536>");}
       let bytes = s.as_bytes(); // &[u8]
       let blen = bytes.len();
       let mut chars = [0u8; N];
@@ -181,12 +191,23 @@ impl<const N:usize> fstr<N>
       self.to_str().chars().nth(n)   
    }
 
+   /// returns the nth byte of the string as a char.  This
+   /// function should only be called on ascii strings.  It
+   /// is designed to be quicker than [fstr::nth], and does not check array bounds or
+   /// check n against the length of the string. Nor does it check
+   /// if the value returned is within the ascii range.
+   pub fn nth_ascii(&self,n:usize) -> char
+   {
+      self.chrs[n] as char
+   }
+
    /// shortens the fstr in-place (mutates).  If n is greater than the
-   /// current length of the string, this operation will have no effect.
+   /// current length of the string in chars, this operation will have no effect.
    pub fn truncate(&mut self, n:usize)
    {
      if let Some((bi,c)) = self.to_str().char_indices().nth(n) {
-        self.chrs[bi] = 0;
+        //self.chrs[bi] = 0;
+        self.len = bi;
      }
      //if n<self.len {self.len = n;}
    }
@@ -364,7 +385,7 @@ impl<const N:usize> PartialEq<&str> for fstr<N>
 {
   fn eq(&self, other:&&str) -> bool
   {
-     self==other   // see below
+     &self.to_str()==other   // see below
   }//eq
 }
 impl<const N:usize> PartialEq<&str> for &fstr<N>
@@ -382,7 +403,7 @@ impl<'t, const N:usize> PartialEq<fstr<N>> for &'t str
 impl<'t, const N:usize> PartialEq<&fstr<N>> for &'t str
 {
   fn eq(&self, other:&&fstr<N>) -> bool
-  { other==self }
+  { &other.to_str()==self }
 }
 
 /// defaults to empty string
