@@ -525,11 +525,11 @@ impl<const N:usize> fstr<N>
 pub type str8 = tstr<8>;
 /// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr]
 pub type str16 = tstr<16>;
-/// A str16 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
+/// A str32 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
 pub type str32 = tstr<32>;
-/// A str16 can hold a string of up to 63 bytes. See docs for [fstr] or [zstr]
+/// A str64 can hold a string of up to 63 bytes. See docs for [fstr] or [zstr]
 pub type str64 = tstr<64>;
-/// A str16 can hold a string of up to 127 bytes. See docs for [fstr] or [zstr]
+/// A str28 can hold a string of up to 127 bytes. See docs for [fstr] or [zstr]
 pub type str128 = tstr<128>;
 /// Each type strN is represented underneath by a `[u8;N]` with N<=256.
 /// The first byte of the array always holds the length of the string.
