@@ -11,8 +11,8 @@ use fixedstr::*;
 
 fn main()
 {
-   let s1 = str16::from("abc");
-   let mut s2 = str8::from("and xyz");
+   let s1:fstr<16> = fstr::from("abc");
+   let mut s2:fstr<8> = fstr::from("and xyz");
    let s2r = s2.push(" and 1234");
    println!("s1,s2,s2r,s2.len: {}, {}, {}, {}", s1, &s2, &s2r,s2.len());
    println!("{}", &s1=="abc");
@@ -34,11 +34,12 @@ let mut s4:fstr<64> = s1.resize();
    let str_slice:&str = s4.to_str();
    println!("as &str: {}",&str_slice[0..2]);
    s4 = s1.resize();
-   let s5 = str8::new();
+   let s5 = fstr::<8>::new();
    let ss5 = s5.as_str();
    othertests();
    ztests();
    ftests();
+   tinytests();
 }//main
 
 fn othertests()
@@ -109,3 +110,29 @@ fn ftests()
   assert_eq!(&ac,"abcdefghij");
   println!("ac {}, remainder: {}",&ac, &remainder);
 }//ftr tests
+
+fn tinytests()
+{
+  println!("starting tstr tests...");
+  let a:str8 = str8::from("abcdefg"); //creates zstr from &str
+  let ab = a.substr(1,5);  // copies, not move substring to new string
+  assert_eq!(ab, "bcde");  // can compare equality with &str
+  assert_eq!(ab.len(),4);
+  println!("zstr: {}", &a); 
+  let mut u:str8 = str8::from("aλb"); //unicode support
+  assert!(u.set(1,'μ'));  // changes a character of the same character class
+  assert!(!u.set(1,'c')); // .set returns false on failure
+  assert!(u.set(2,'c'));
+  assert_eq!(u, "aμc");
+  assert_eq!(u.len(),4);  // length in bytes
+  assert_eq!(u.charlen(),3);  // length in chars
+  let mut ac:str16 = a.resize(); // copies to larger capacity string
+
+  let remainder = ac.push("hijklmno");
+  assert_eq!(ac.len(),15);
+  assert_eq!(remainder, "");
+  println!("ac {}, remainder: {}",&ac, &remainder);
+  ac.truncate(9);
+  assert_eq!(&ac,"abcdefghi");  
+  println!("ac {}, remainder: {}",&ac, &remainder);
+}//tiny tests

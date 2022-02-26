@@ -1,6 +1,9 @@
 Library for strings of fixed maximum lengths that can be copied and
 stack-allocated using Rust's const generics feature.
 
+Version 0.2.2: The type aliases str8 through str256 are now bound ot
+an internal type.  See docs.
+
 Version 0.2.1: bug fixes and minor adjustments
 
 Version 0.2 adds unicode support and a zero-terminated variant, which is

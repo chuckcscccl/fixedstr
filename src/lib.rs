@@ -1,12 +1,31 @@
 //! Library for strings of fixed maximum lengths that can be copied and
-//! stack-allocated using Rust's new const generics feature.
+//! stack-allocated using const generics.
 //!
-//! **The main structures provided by this crate are [fstr] and [zstr].**
+//! **The structures provided by this crate are [fstr], [zstr]** and tstr.
+//! However, tstr is not exported and can only be used through the type
+//! aliases [str8], [str16], [str32], through [str256].
 //!
-//! **Version 0.2.x** adds **unicode support** and a new module for
+//! **Version 0.2.x** adds **unicode support** and a module for
 //! **zero_terminated strings** in the structure [zstr].
 //! These strings are more memory efficient than [fstr] but less efficient
 //! in terms of run time.
+//! 
+//! For version 0.2.2, the [str8] through [str256] type aliases where
+//! changed to refer to another, internal type distinct from [fstr] and
+//! [zstr].  This type represents strings of up to 255 bytes with a
+//! `[u8;N]` underneath where it's assumed that N<=256.  The first
+//! byte of the array holds the length of the string in bytes.  This structure
+//! represents the best combination of fstr and zstr in terms of speed
+//! and memory efficiency.  However, because Rust does not currently provide
+//! a why to specify conditions on const generics at compile time, such as
+//! `where N<=256`, the internal "tiny string" type *tstr* is not exported and can
+//! only be used through the aliases.  These strings implement that same
+//! functions and traits as [fstr] and [zstr] so the documentation for
+//! these structures also apply to the hidden type.
+//!
+//! For version 0.2.2  the fsiter construct and direct iterator
+//! implmentation for fstr has been removed. Use the [fstr::chars]
+//! function instead.
 
 //!  ## Examples
 //!
@@ -35,7 +54,7 @@
 //! assert_eq!(&ac,"abcdefghij");
 //!```
 //!
-//![zstr] implements the same capabilities as [fstr].
+//![zstr] and the type aliases [str8]...[str256] implement the same capabilities as [fstr].
 
 
 
@@ -49,6 +68,8 @@
 
 pub mod zero_terminated;
 pub use zero_terminated::*;
+mod tiny_internal;
+use tiny_internal::*;
 
 use std::cmp::Ordering;
 
@@ -280,6 +301,21 @@ impl<const N:usize,const M:usize> std::convert::From<&zstr<M>> for fstr<N>
   }
 }
 
+impl<const N:usize,const M:usize> std::convert::From<tstr<M>> for fstr<N>
+{
+  fn from(s:tstr<M>) -> fstr<N>
+  {
+     fstr::<N>::make(&s.to_str())
+  }
+}
+impl<const N:usize,const M:usize> std::convert::From<&tstr<M>> for fstr<N>
+{
+  fn from(s:&tstr<M>) -> fstr<N>
+  {
+     fstr::<N>::make(&s.to_str())
+  }
+}
+
 impl<const N:usize> std::cmp::PartialOrd for fstr<N>
 {
    fn partial_cmp(&self, other:&Self) -> Option<Ordering>
@@ -342,7 +378,7 @@ impl<const N:usize> std::convert::From<&str> for fstr<N>
   }
 }
 */
-
+/*
 /// [IntoIterator] struct for fstr
 pub struct fstriter<const N:usize>
 {
@@ -372,6 +408,7 @@ impl<const N:usize> IntoIterator for fstr<N>
      }
   }
 }//IntoIterator
+*/
 
 impl<const N:usize> std::fmt::Display for fstr<N>
 {
@@ -380,6 +417,7 @@ impl<const N:usize> std::fmt::Display for fstr<N>
      write!(f,"{}",self.to_str()) // need change!
   }
 }
+
 
 impl<const N:usize> PartialEq<&str> for fstr<N>
 {
@@ -481,9 +519,21 @@ impl<const N:usize> fstr<N>
 
 
 
-/// types for small strings 
-pub type str8 = fstr<8>; 
-pub type str16 = fstr<16>; 
-pub type str32 = fstr<32>; 
-pub type str64 = fstr<64>; 
-pub type str128 = fstr<128>;
+/// types for small strings that use a more efficient representation
+/// underneath.  A str8 can hold a string of up to 7 bytes (7 ascii chars).
+/// The same functions for [fstr] and [zstr] are provided for these types.
+pub type str8 = tstr<8>;
+/// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr]
+pub type str16 = tstr<16>;
+/// A str16 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
+pub type str32 = tstr<32>;
+/// A str16 can hold a string of up to 63 bytes. See docs for [fstr] or [zstr]
+pub type str64 = tstr<64>;
+/// A str16 can hold a string of up to 127 bytes. See docs for [fstr] or [zstr]
+pub type str128 = tstr<128>;
+/// Each type strN is represented underneath by a `[u8;N]` with N<=256.
+/// The first byte of the array always holds the length of the string.
+/// Each such type can hold a string of up to N-1 bytes, with max size=255.
+/// These types represent the best compromise between [fstr] and [zstr] in
+/// terms of speed and memory efficiency.
+pub type str256 = tstr<256>;

@@ -1,8 +1,8 @@
-//! This module implements [zstr], which are zero-terminated strings of
-//! fixed lengths.  Compared to [crate::fstr], zstr
-//! are more memory efficient but with some of the operations taking slightly
-//! longer. Type zstr<N> can store strings consisting of up to N-1 bytes
-//! whereas fstr<N> can store strings consisting of up to N bytes.
+// This module implements [zstr], which are zero-terminated strings of
+// fixed lengths.  Compared to [crate::fstr], zstr
+// are more memory efficient but with some of the operations taking slightly
+// longer. Type zstr\<N\> can store strings consisting of up to N-1 bytes
+// whereas fstr\<N\> can store strings consisting of up to N bytes.
 
 
 #![allow(unused_variables)]
@@ -12,7 +12,7 @@
 #![allow(unused_assignments)]
 #![allow(unused_mut)]
 #![allow(dead_code)]
-use crate::fstr;
+use crate::{fstr,tstr};
 use std::cmp::Ordering;
 
 /// zstr<N>: zero-terminated utf8 strings of size up to N bytes.  Note that
@@ -56,7 +56,7 @@ impl<const N:usize> zstr<N>
      zstr::make("")
    }
 
-   /// length of the string in bytes (consistant with [str::len]). This
+   /// length of the string in bytes (consistent with [str::len]). This
    /// is a constant-time operation.
    pub fn len(&self)->usize {
      let mut i =0;
@@ -236,6 +236,22 @@ impl<const N:usize,const M:usize> std::convert::From<&fstr<M>> for zstr<N>
   fn from(s:&fstr<M>) -> zstr<N>
   {
      zstr::<N>::make(&s.to_str())
+  }
+}
+
+impl<const N:usize,const M:usize> std::convert::From<&tstr<M>> for zstr<N>
+{
+  fn from(s:&tstr<M>) -> zstr<N>
+  {
+     zstr::<N>::make(&s.to_str())
+  }
+}
+
+impl<const N:usize,const M:usize> std::convert::From<tstr<M>> for zstr<N>
+{
+  fn from(s:tstr<M>) -> zstr<N>
+  {
+     zstr::<N>::make(s.to_str())
   }
 }
 
