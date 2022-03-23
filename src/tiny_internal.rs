@@ -62,6 +62,16 @@ impl<const N:usize> tstr<N>
       self.chrs[0] as usize
    }
 
+   /// returns the number of characters in the string regardless of
+   /// character class
+   pub fn charlen(&self) -> usize
+   {
+      let v:Vec<_> = self.to_str().chars().collect();  v.len()
+   }
+
+   /// returns maximum capacity in bytes
+   pub fn capacity(&self) -> usize { N-1 }
+
    /// converts tstr to an owned string
    pub fn to_string(&self) -> String
    {
@@ -127,13 +137,6 @@ impl<const N:usize> tstr<N>
       &s[sci..]
    }//push
 
-   /// returns the number of characters in the string regardless of
-   /// character class
-   pub fn charlen(&self) -> usize
-   {
-      let v:Vec<_> = self.to_str().chars().collect();  v.len()
-   }
-
    /// returns the nth char of the tstr
    pub fn nth(&self,n:usize) -> Option<char>
    {
@@ -150,7 +153,10 @@ impl<const N:usize> tstr<N>
       self.chrs[n+1] as char
    }
 
-
+   /// determines if string is an ascii string
+   pub fn is_ascii(&self) -> bool
+   { self.to_str().is_ascii() }
+   
    /// shortens the tstr in-place (mutates).  If n is greater than the
    /// current length of the string, this operation will have no effect.
    pub fn truncate(&mut self, n:usize) // n is char position, not binary position

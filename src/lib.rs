@@ -124,6 +124,9 @@ impl<const N:usize> fstr<N>
    /// with [str::len]
    pub fn len(&self)->usize { self.len }
 
+   /// returns maximum capacity in bytes
+   pub fn capacity(&self) -> usize { N }
+
    /// converts fstr to an owned string
    pub fn to_string(&self) -> String
    {
@@ -222,6 +225,10 @@ impl<const N:usize> fstr<N>
       self.chrs[n] as char
    }
 
+   /// determines if string is an ascii string
+   pub fn is_ascii(&self) -> bool
+   { self.to_str().is_ascii() }
+   
    /// shortens the fstr in-place (mutates).  If n is greater than the
    /// current length of the string in chars, this operation will have no effect.
    pub fn truncate(&mut self, n:usize)
@@ -522,6 +529,16 @@ impl<const N:usize> fstr<N>
 /// types for small strings that use a more efficient representation
 /// underneath.  A str8 can hold a string of up to 7 bytes (7 ascii chars).
 /// The same functions for [fstr] and [zstr] are provided for these types.
+///
+/// Example:
+/// ```
+///  let mut s = str8::from("aλc");
+///  assert_eq!(s.capacity(),7);
+///  assert_eq!(s.push("1234567"), "4567");
+///  assert_eq!(s,"aλc123");
+///  assert_eq!(s.charlen(), 6);
+///  assert_eq!(s.len(), 7);  
+/// ```
 pub type str8 = tstr<8>;
 /// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr]
 pub type str16 = tstr<16>;

@@ -65,6 +65,9 @@ impl<const N:usize> zstr<N>
      //return std::str::from_utf8(&self.chrs[0..i]).unwrap().len();
    }
 
+   /// returns maximum capacity in bytes
+   pub fn capacity(&self) -> usize { N }
+
    // returns the byte length of the string, which will be less than N
    fn blen(&self)->usize {
      let mut i =0;
@@ -161,6 +164,9 @@ impl<const N:usize> zstr<N>
       self.chrs[n] as char
    }
 
+   /// determines if string is an ascii string
+   pub fn is_ascii(&self) -> bool
+   { self.to_str().is_ascii() }
 
    /// shortens the zstr in-place (mutates).  If n is greater than the
    /// current length of the string, this operation will have no effect.

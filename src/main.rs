@@ -135,4 +135,11 @@ fn tinytests()
   ac.truncate(9);
   assert_eq!(&ac,"abcdefghi");  
   println!("ac {}, remainder: {}",&ac, &remainder);
+
+  let mut s = str8::from("aλc");
+  assert_eq!(s.capacity(),7);
+  assert_eq!(s.push("1234567"), "4567");
+  assert_eq!(s,"aλc123");
+  assert_eq!(s.charlen(), 6);
+  assert_eq!(s.len(), 7);  
 }//tiny tests
