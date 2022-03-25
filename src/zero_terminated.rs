@@ -66,7 +66,7 @@ impl<const N:usize> zstr<N>
    }
 
    /// returns maximum capacity in bytes
-   pub fn capacity(&self) -> usize { N }
+   pub fn capacity(&self) -> usize { N-1 }
 
    // returns the byte length of the string, which will be less than N
    fn blen(&self)->usize {

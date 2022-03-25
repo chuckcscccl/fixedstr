@@ -5,6 +5,10 @@
 //! However, tstr is not exported and can only be used through the type
 //! aliases [str8], [str16], [str32], through [str256].
 //!
+//! In particular, the size of (std::mem::size_of) types str8 and zstr<8>
+//! is 8 bytes, compared to 16 bytes for &str, providing more efficient
+//! ways of representing very small strings.
+//!
 //! **Version 0.2.x** adds **unicode support** and a module for
 //! **zero_terminated strings** in the structure [zstr].
 //! These strings are more memory efficient than [fstr] but less efficient
@@ -529,7 +533,8 @@ impl<const N:usize> fstr<N>
 /// types for small strings that use a more efficient representation
 /// underneath.  A str8 can hold a string of up to 7 bytes (7 ascii chars).
 /// The same functions for [fstr] and [zstr] are provided for these types.
-///
+/// The size of str8 is 8 bytes.
+/// 
 /// Example:
 /// ```
 ///  let mut s = str8::from("aλc");
@@ -540,7 +545,8 @@ impl<const N:usize> fstr<N>
 ///  assert_eq!(s.len(), 7);  
 /// ```
 pub type str8 = tstr<8>;
-/// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr]
+/// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr].
+/// The size of str16 is 16 bytes, which is the same as for &str.
 pub type str16 = tstr<16>;
 /// A str32 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
 pub type str32 = tstr<32>;

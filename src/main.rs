@@ -141,5 +141,10 @@ fn tinytests()
   assert_eq!(s.push("1234567"), "4567");
   assert_eq!(s,"aλc123");
   assert_eq!(s.charlen(), 6);
-  assert_eq!(s.len(), 7);  
+  assert_eq!(s.len(), 7);
+
+  println!("size of str8: {}",std::mem::size_of::<str8>());
+  println!("size of zstr<8>: {}",std::mem::size_of::<zstr<8>>());  
+  println!("size of &str: {}",std::mem::size_of::<&str>());
+  println!("size of &str8: {}",std::mem::size_of::<&str8>());    
 }//tiny tests
