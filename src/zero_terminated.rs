@@ -34,6 +34,7 @@ impl<const N:usize> zstr<N>
 //      if (N>256 || N<1) {panic!("only zstr<1> to zstr<256> are valid");}
       let mut chars = [0u8; N];
       let bytes = s.as_bytes(); // &[u8]
+      if (bytes.len()>=N) {eprintln!("!Fixedstr Warning in zstr::make: length of string literal \"{}\" exceeds the capacity of type zstr<{}>; string truncated",s,N);}      
       let mut i = 0;
       for i in 0..bytes.len()
       {
@@ -291,6 +292,7 @@ impl<const M:usize> zstr<M>
   pub fn resize<const N:usize>(&self) -> zstr<N>
   {
      let slen = self.blen();
+     if (slen>=N) {eprintln!("!Fixedstr Warning in zstr::resize: string \"{}\" truncated while resizing to zstr<{}>",self,N);}     
      let length = if (slen<N-1) {slen} else {N-1};
      let mut chars = [0u8;N];
      for i in 0..length {chars[i] = self.chrs[i];}

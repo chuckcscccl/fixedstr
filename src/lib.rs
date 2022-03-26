@@ -5,8 +5,8 @@
 //! However, tstr is not exported and can only be used through the type
 //! aliases [str8], [str16], [str32], through [str256].
 //!
-//! In particular, the size of (std::mem::size_of) types str8 and zstr<8>
-//! is 8 bytes, compared to 16 bytes for &str, providing more efficient
+//! The size of (std::mem::size_of) types str8 and zstr<8>
+//! are 8 bytes, compared to 16 bytes for &str, providing more efficient
 //! ways of representing very small strings.
 //!
 //! **Version 0.2.x** adds **unicode support** and a module for
@@ -91,9 +91,12 @@ impl<const N:usize> fstr<N>
   /// several others including [fstr::from].
   pub fn make(s:&str) -> fstr<N>
    {
-//      if (N>65536 || N<1) {panic!("Valid fstr strings are limited to fstr<1> to zstr<65536>");}
       let bytes = s.as_bytes(); // &[u8]
-      let blen = bytes.len();
+      let mut blen = bytes.len();
+      if (blen>N) {
+        eprintln!("!Fixedstr Warning in fstr::make: length of string literal \"{}\" exceeds the capacity of type fstr<{}>; string truncated",s,N);
+        blen = N;
+      }
       let mut chars = [0u8; N];
       let mut i = 0;
       for i in 0..blen
@@ -356,6 +359,7 @@ impl<const M:usize> fstr<M>
   ///```
   pub fn resize<const N:usize>(&self) -> fstr<N>
   {
+     if (self.len()>N) {eprintln!("!Fixedstr Warning in fstr::resize: string \"{}\" truncated while resizing to fstr<{}>",self,N);}
      let length = if (self.len<N) {self.len} else {N};
      let mut chars = [0u8;N];
      for i in 0..length {chars[i] = self.chrs[i];}

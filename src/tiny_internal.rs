@@ -39,6 +39,7 @@ impl<const N:usize> tstr<N>
       let mut chars = [0u8; N];
       let bytes = s.as_bytes(); // &[u8]
       let blen = bytes.len();
+      if (blen>=N) {eprintln!("!Fixedstr Warning in str::make: length of string literal \"{}\" exceeds the capacity of type str{}; string truncated",s,N);}            
       for i in 0..blen
       {
         if i<N-1 {chars[i+1] = bytes[i];}
@@ -280,10 +281,11 @@ impl<const M:usize> tstr<M>
   pub fn resize<const N:usize>(&self) -> tstr<N>
   {
      let slen = self.len();
+     if (slen>=N) {eprintln!("!Fixedstr Warning in str::resize: string \"{}\" truncated while resizing to str{}",self,N);}     
      let length = if (slen<N-1) {slen} else {N-1};
      let mut chars = [0u8;N];
      for i in 0..length {chars[i+1] = self.chrs[i+1];}
-     chars[0] = (slen) as u8;
+     chars[0] = (length) as u8;
      tstr {
        chrs: chars,
      }

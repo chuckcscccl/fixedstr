@@ -127,7 +127,6 @@ fn tinytests()
   assert_eq!(u.len(),4);  // length in bytes
   assert_eq!(u.charlen(),3);  // length in chars
   let mut ac:str16 = a.resize(); // copies to larger capacity string
-
   let remainder = ac.push("hijklmno");
   assert_eq!(ac.len(),15);
   assert_eq!(remainder, "");
@@ -146,5 +145,16 @@ fn tinytests()
   println!("size of str8: {}",std::mem::size_of::<str8>());
   println!("size of zstr<8>: {}",std::mem::size_of::<zstr<8>>());  
   println!("size of &str: {}",std::mem::size_of::<&str>());
-  println!("size of &str8: {}",std::mem::size_of::<&str8>());    
+  println!("size of &str8: {}",std::mem::size_of::<&str8>());
+
+  let mut toosmall:fstr<8> = fstr::make("abcdefghijkl");
+  let mut toosmallz:zstr<8> = zstr::make("abcdefghijkl");
+  let mut toosmallt:str8 = str8::make("abcdefghijkl");
+  println!("toosmall: {}",toosmall);
+  let waytoosmall:fstr<4> = toosmall.resize();
+  let way2:zstr<4> = toosmallz.resize();
+  let mut way3:str16 = str16::make("abcdefedefsfsdfsd");
+  let way4:str8 = way3.resize();
+  way3 = way4.resize();
+  println!("way3: {}",way3);  
 }//tiny tests
