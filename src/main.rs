@@ -156,5 +156,5 @@ fn tinytests()
   let mut way3:str16 = str16::make("abcdefedefsfsdfsd");
   let way4:str8 = way3.resize();
   way3 = way4.resize();
-  println!("way3: {}",way3);  
+  println!("way3: {}, length {}",way3,way3.len());
 }//tiny tests
