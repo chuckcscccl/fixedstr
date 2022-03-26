@@ -26,7 +26,8 @@ pub struct zstr<const N:usize>
 impl<const N:usize> zstr<N>
 {
   /// creates a new zstr<N> with given &str.  If the length of s exceeds
-  /// N, the extra characters are ignored.  This function is also called by
+  /// N, the extra characters are ignored and a warning sent to stderr.
+  /// This function is also called by
   /// several others including [zstr::from].  This function can now handle
   /// utf8 strings properly.
   pub fn make(s:&str) -> zstr<N>
@@ -282,7 +283,8 @@ impl<const N:usize> std::cmp::Ord for zstr<N>
 impl<const M:usize> zstr<M>
 {
   /// converts an zstr\<M\> to an zstr\<N\>. If the length of the string being
-  /// converted is greater than N, the extra characters will be ignored.
+  /// converted is greater than N, the extra characters are ignored and
+  /// a warning sent to stderr.
   /// This operation produces a copy (non-destructive).
   /// Example:
   ///```ignore
