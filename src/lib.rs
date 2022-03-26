@@ -87,7 +87,8 @@ pub struct fstr<const N:usize>
 impl<const N:usize> fstr<N>
 {
   /// creates a new fstr<N> with given &str.  If the length of s exceeds
-  /// N, the extra characters are ignored.  This function is also called by
+  /// N, the extra characters are ignored and a warning is sent to stderr.
+  /// This function is also called by
   /// several others including [fstr::from].
   pub fn make(s:&str) -> fstr<N>
    {
@@ -350,7 +351,8 @@ impl<const N:usize> std::cmp::Ord for fstr<N>
 impl<const M:usize> fstr<M>
 {
   /// converts an fstr\<M\> to an fstr\<N\>. If the length of the string being
-  /// converted is greater than N, the extra characters will be ignored.
+  /// converted is greater than N, the extra characters are ignored and
+  /// a warning sent to stderr.
   /// This operation produces a copy (non-destructive).
   /// Example:
   ///```ignore
