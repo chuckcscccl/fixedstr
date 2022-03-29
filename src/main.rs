@@ -57,9 +57,11 @@ fn othertests()
   let rawp = (&chrs[..]) as *const [char];
   let raw2 = rawp as *const &str;
   println!("what is raw2? {:?}",raw2); // mem addr
-  
-  //let string1:&str = mem::transmute::<&[char], &str>(&chrs[0..3]);
+
+  //unsafe {
+  //let string1:&str = std::mem::transmute::<&[char], &str>(&chrs[0..3]);
   //println!("got str: {:?}",string1);
+  //}
 }//othertests
 
 fn ztests()

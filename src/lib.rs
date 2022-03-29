@@ -107,19 +107,9 @@ impl<const N:usize> fstr<N>
       fstr {
          chrs: chars, len: blen, /* as u16 */
       }
-/*
-      let mut chars = [0u8; N];
-      let mut i = 0;
-      for c in s.chars()
-      {
-         if i<N { chars[i] = c as u8; i+=1; } else {break;}
-      }
-      fstr {
-         chrs: chars,
-         len: i,
-      }
- */
    }//make
+
+   pub fn try_make(s:&str)
 
    /// creates an empty string, equivalent to fstr::default()
    pub fn new() -> fstr<N>
@@ -151,10 +141,14 @@ impl<const N:usize> fstr<N>
    /// converts fstr to &str using [std::str::from_utf8]
    pub fn to_str(&self) -> &str
    {
-      std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
+      unsafe {std::str::from_utf8_unchecked(&self.chrs[0..self.len])}
+      //std::str::from_utf8(&self.chrs[0..self.len]).unwrap()      
    }
    /// alias for [fstr::to_str]
-   pub fn as_str(&self) -> &str {self.to_str()}
+   pub fn as_str(&self) -> &str //{self.to_str()}
+   {
+      std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
+   }   
 
    /// changes a character at character position i to c.  This function
    /// requires that c is in the same character class (ascii or unicode)
