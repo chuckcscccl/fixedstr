@@ -109,7 +109,11 @@ impl<const N:usize> fstr<N>
       }
    }//make
 
-   pub fn try_make(s:&str)
+   pub fn try_make(s:&str) -> Result<fstr<N>,&str>
+   {
+       if s.len()>N {Err(s)}
+       else {Ok(fstr::make(s))}
+   }
 
    /// creates an empty string, equivalent to fstr::default()
    pub fn new() -> fstr<N>
