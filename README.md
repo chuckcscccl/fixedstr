@@ -2,6 +2,10 @@ Library for strings of fixed maximum lengths that can be copied and
 stack-allocated using Rust's const generics feature.  Certain provided
 types such as `zstr<8>` are smaller in size than a &str.
 
+Version 0.2.6: AsRef<str> and AsMut<str> traits implemented, a new
+function try_make will not truncate strings, new aliases str4, str24 and
+str48
+
 Version 0.2.3, 0.2.4, 0.2.5: minor internal changes and bug fixes
 
 Version 0.2.2: The type aliases str8 through str256 are now bound ot

@@ -3,30 +3,42 @@
 //!
 //! **The structures provided by this crate are [fstr], [zstr]** and tstr.
 //! However, tstr is not exported and can only be used through the type
-//! aliases [str8], [str16], [str32], through [str256].
+//! aliases [str4], [str8], [str16], through [str256].
 //!
 //! The size of (std::mem::size_of) types str8 and zstr<8>
-//! are 8 bytes, compared to 16 bytes for &str, providing more efficient
-//! ways of representing very small strings.
+//! are 8 bytes, compared to 16 bytes for &str (on most systems), providing more efficient
+//! ways of representing very small strings.  Unicode is supported.
 //!
-//! **Version 0.2.x** adds **unicode support** and a module for
-//! **zero_terminated strings** in the structure [zstr].
-//! These strings are more memory efficient than [fstr] but less efficient
-//! in terms of run time.
+//! The three versions of strings implemented are as follows.
+//! - A **[fstr]\<N\>**
+//! stores a string of up to N bytes.  It is represented underneath using
+//! a \[u8;N\] array and a separate usize variable holding the length.
+//! - A **[zstr]\<N\>** stores a zero-terminated string, without a separate
+//! length variable, and can hold strings of up to N-1 bytes.
+//! - The types **[str4]**, **[str8]** through **[str256]** are aliases for internal type
+//! tstr<8> through tstr<256> respectively.  These strings are stored
+//! in an array of u8 bytes with the first byte holding the length of the
+//! string.  Each tstr\<N\> can store strings of up to N-1 bytes, with
+//! maximum N=256. tstr
+//! combines the best of fstr and zstr in terms of speed
+//! and memory efficiency.  However, because Rust does not currently provide
+//! a why to specify conditions on const generics at compile time, such as
+//! `where N<=256`, the tstr type is not exported and can
+//! only be used through the aliases.  These strings implement that same
+//! functions and traits as [fstr] and [zstr] so the documentation for
+//! these structures also apply to the hidden type.
+//!
+//! **Version 0.2.6** impls AsRef<str> and AsMut<str> traits.  A try_make
+//! function has been added that does not truncate strings.  str4, str24 and
+//! str48 were added.  [str4] can only hold three bytes but is good enough
+//! for many types of abbreviations such as those for airports.
 //! 
 //! For version 0.2.2, the [str8] through [str256] type aliases where
 //! changed to refer to another, internal type distinct from [fstr] and
 //! [zstr].  This type represents strings of up to 255 bytes with a
 //! `[u8;N]` underneath where it's assumed that N<=256.  The first
-//! byte of the array holds the length of the string in bytes.  This structure
-//! represents the best combination of fstr and zstr in terms of speed
-//! and memory efficiency.  However, because Rust does not currently provide
-//! a why to specify conditions on const generics at compile time, such as
-//! `where N<=256`, the internal "tiny string" type *tstr* is not exported and can
-//! only be used through the aliases.  These strings implement that same
-//! functions and traits as [fstr] and [zstr] so the documentation for
-//! these structures also apply to the hidden type.
-//!
+//! byte of the array holds the length of the string in bytes.
+
 //! For version 0.2.2  the fsiter construct and direct iterator
 //! implmentation for fstr has been removed. Use the [fstr::chars]
 //! function instead.
@@ -109,6 +121,7 @@ impl<const N:usize> fstr<N>
       }
    }//make
 
+   /// version of make that does not truncate
    pub fn try_make(s:&str) -> Result<fstr<N>,&str>
    {
        if s.len()>N {Err(s)}
@@ -142,13 +155,14 @@ impl<const N:usize> fstr<N>
       self.chrs
    }
 
-   /// converts fstr to &str using [std::str::from_utf8]
+   /// converts fstr to &str using [std::str::from_utf8_unchecked].  Since
+   /// fstr can only be build from valid utf8 sources, using this function
+   /// is safe.
    pub fn to_str(&self) -> &str
    {
       unsafe {std::str::from_utf8_unchecked(&self.chrs[0..self.len])}
-      //std::str::from_utf8(&self.chrs[0..self.len]).unwrap()      
    }
-   /// alias for [fstr::to_str]
+   /// same functionality as [fstr::to_str]
    pub fn as_str(&self) -> &str //{self.to_str()}
    {
       std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
@@ -257,6 +271,16 @@ impl<'t, const N:usize> std::convert::Into<&'t str> for fstr<N>
 }
 */
 
+impl<T:AsRef<str>+?Sized, const N:usize> std::convert::From<&T> for fstr<N>
+{
+   fn from(s:&T) -> fstr<N> { fstr::make(s.as_ref()) }
+}
+impl<T:AsMut<str>+?Sized, const N:usize> std::convert::From<&mut T> for fstr<N>
+{
+   fn from(s:&mut T) -> fstr<N> { fstr::make(s.as_mut()) }
+}
+
+/*
 impl<const N:usize> std::convert::From<&str> for fstr<N>
 {
   /// creates a new fstr<N> with given &str.  If the length of s exceeds
@@ -266,6 +290,7 @@ impl<const N:usize> std::convert::From<&str> for fstr<N>
      fstr::make(s)
   }
 }
+
 impl<const N:usize> std::convert::From<&mut str> for fstr<N>
 {
   /// creates a new fstr<N> with given &str.  If the length of s exceeds
@@ -283,6 +308,7 @@ impl<const N:usize> std::convert::From<&String> for fstr<N>
      fstr::<N>::make(&s[..])
   }
 }
+
 impl<const N:usize> std::convert::From<&mut String> for fstr<N>
 {
   fn from(s:&mut String) -> fstr<N>
@@ -290,6 +316,23 @@ impl<const N:usize> std::convert::From<&mut String> for fstr<N>
      fstr::<N>::make(&s[..])
   }
 }
+
+impl<const N:usize,const M:usize> std::convert::From<&zstr<M>> for fstr<N>
+{
+  fn from(s:&zstr<M>) -> fstr<N>
+  {
+     fstr::<N>::make(&s.to_str())
+  }
+}
+
+impl<const N:usize,const M:usize> std::convert::From<&tstr<M>> for fstr<N>
+{
+  fn from(s:&tstr<M>) -> fstr<N>
+  {
+     fstr::<N>::make(&s.to_str())
+  }
+}
+*/
 
 impl<const N:usize> std::convert::From<String> for fstr<N>
 {
@@ -306,13 +349,7 @@ impl<const N:usize,const M:usize> std::convert::From<zstr<M>> for fstr<N>
      fstr::<N>::make(&s.to_str())
   }
 }
-impl<const N:usize,const M:usize> std::convert::From<&zstr<M>> for fstr<N>
-{
-  fn from(s:&zstr<M>) -> fstr<N>
-  {
-     fstr::<N>::make(&s.to_str())
-  }
-}
+
 
 impl<const N:usize,const M:usize> std::convert::From<tstr<M>> for fstr<N>
 {
@@ -321,13 +358,8 @@ impl<const N:usize,const M:usize> std::convert::From<tstr<M>> for fstr<N>
      fstr::<N>::make(&s.to_str())
   }
 }
-impl<const N:usize,const M:usize> std::convert::From<&tstr<M>> for fstr<N>
-{
-  fn from(s:&tstr<M>) -> fstr<N>
-  {
-     fstr::<N>::make(&s.to_str())
-  }
-}
+
+
 
 impl<const N:usize> std::cmp::PartialOrd for fstr<N>
 {
@@ -384,15 +416,21 @@ impl<const M:usize> fstr<M>
    */
 }//impl fstr<M>
 
-/*   not compatible
-impl<const N:usize> std::convert::From<&str> for fstr<N>
+impl<const N:usize> std::convert::AsRef<str> for fstr<N>
 {
-  fn from(s:&str) -> fstr<N>
+  fn as_ref(&self) -> &str { self.to_str() }
+}
+impl<const N:usize> std::convert::AsMut<str> for fstr<N>
+{
+  fn as_mut(&mut self) -> &mut str
   {
-     fstr::<N>::make(s)
+      unsafe {
+        std::str::from_utf8_unchecked_mut(&mut self.chrs[0..self.len])
+      }
   }
 }
-*/
+
+
 /*
 /// [IntoIterator] struct for fstr
 pub struct fstriter<const N:usize>
@@ -433,6 +471,12 @@ impl<const N:usize> std::fmt::Display for fstr<N>
   }
 }
 
+/*
+impl<T:AsRef<str>+?Sized, const N:usize> PartialEq<&T> for fstr<N>
+{
+   fn eq(&self, other:&&T)->bool { self.as_ref() == other.as_ref() }
+}
+*/
 
 impl<const N:usize> PartialEq<&str> for fstr<N>
 {
@@ -441,6 +485,7 @@ impl<const N:usize> PartialEq<&str> for fstr<N>
      &self.to_str()==other   // see below
   }//eq
 }
+
 impl<const N:usize> PartialEq<&str> for &fstr<N>
 {
   fn eq(&self, other:&&str) -> bool
@@ -564,3 +609,11 @@ pub type str128 = tstr<128>;
 /// These types represent the best compromise between [fstr] and [zstr] in
 /// terms of speed and memory efficiency.
 pub type str256 = tstr<256>;
+
+/// strings of up to three 8-bit chars, good enough to represent abbreviations
+/// such as those for states and airports. Each str<4> is exactly 32 bits.
+pub type str4 = tstr<4>;
+
+pub type str24 = tstr<24>;
+pub type str48 = tstr<48>;
+

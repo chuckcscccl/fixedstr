@@ -344,6 +344,39 @@ impl<const M:usize> zstr<M>
   }//resize
 }//impl zstr<M>
 
+/*  OUT
+/// [IntoIterator] struct for zstr
+pub struct zstriter<const N:usize>
+{
+   fs : zstr<N>,
+   len: usize, // char length
+   i : usize,
+}
+impl<const N:usize> Iterator for zstriter<N>
+{
+   type Item = char;
+   fn next(&mut self) -> Option<char>
+   {
+      if self.i<self.len {
+        self.i+=1;
+        self.to_str().chars().nth(self.i-1)
+      } else {None}
+   }
+}
+impl<const N:usize> IntoIterator for zstr<N>
+{
+  type Item = char;
+  type IntoIter = zstriter<N>;
+  fn into_iter(self) -> zstriter<N>
+  {
+     zstriter {
+       fs : self,
+       len: self.len(),
+       i : 0,
+     }
+  }
+}//IntoIterator
+*/
 
 
 impl<const N:usize> std::fmt::Display for zstr<N>
@@ -401,13 +434,11 @@ impl<const N:usize,const M:usize> PartialEq<zstr<N>> for fstr<M>
   fn eq(&self, other:&zstr<N>) -> bool
   { other.to_str()==self.to_str() }
 }
-/*
 impl<const N:usize, const M:usize> PartialEq<&zstr<N>> for fstr<M>
 {
   fn eq(&self, other:&&zstr<N>) -> bool
   { other.to_str()==self.to_str() }
 }
-*/
 impl<const N:usize,const M:usize> PartialEq<fstr<N>> for zstr<M>
 {
   fn eq(&self, other:&fstr<N>) -> bool
