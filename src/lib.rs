@@ -16,13 +16,13 @@
 //! - A **[zstr]\<N\>** stores a zero-terminated string, without a separate
 //! length variable, and can hold strings of up to N-1 bytes.
 //! - The types **[str4]**, **[str8]** through **[str256]** are aliases for internal type
-//! tstr<8> through tstr<256> respectively.  These strings are stored
+//! tstr<4> through tstr<256> respectively.  These strings are stored
 //! in an array of u8 bytes with the first byte holding the length of the
 //! string.  Each tstr\<N\> can store strings of up to N-1 bytes, with
 //! maximum N=256. tstr
 //! combines the best of fstr and zstr in terms of speed
 //! and memory efficiency.  However, because Rust does not currently provide
-//! a why to specify conditions on const generics at compile time, such as
+//! a way to specify conditions on const generics at compile time, such as
 //! `where N<=256`, the tstr type is not exported and can
 //! only be used through the aliases.  These strings implement the same
 //! functions and traits as [fstr] and [zstr] so the documentation for
