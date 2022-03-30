@@ -24,9 +24,9 @@
 //! and memory efficiency.  However, because Rust does not currently provide
 //! a why to specify conditions on const generics at compile time, such as
 //! `where N<=256`, the tstr type is not exported and can
-//! only be used through the aliases.  These strings implement that same
+//! only be used through the aliases.  These strings implement the same
 //! functions and traits as [fstr] and [zstr] so the documentation for
-//! these structures also apply to the hidden type.
+//! these structures also apply to the alias types.
 //!
 //! **Version 0.2.6** impls AsRef<str> and AsMut<str> traits.  A try_make
 //! function has been added that does not truncate strings.  str4, str24 and
@@ -595,7 +595,8 @@ impl<const N:usize> fstr<N>
 /// ```
 pub type str8 = tstr<8>;
 /// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr].
-/// The size of str16 is 16 bytes, which is the same as for &str.
+/// The size of str16 is 16 bytes, which is the same as for &str on most
+/// systems.
 pub type str16 = tstr<16>;
 /// A str32 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
 pub type str32 = tstr<32>;
