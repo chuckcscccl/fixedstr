@@ -33,12 +33,6 @@
 //! str48 were added.  [str4] can only hold three bytes but is good enough
 //! for many types of abbreviations such as those for airports.
 //! 
-//! For version 0.2.2, the [str8] through [str256] type aliases where
-//! changed to refer to another, internal type distinct from [fstr] and
-//! [zstr].  This type represents strings of up to 255 bytes with a
-//! `[u8;N]` underneath where it's assumed that N<=256.  The first
-//! byte of the array holds the length of the string in bytes.
-
 //! For version 0.2.2  the fsiter construct and direct iterator
 //! implmentation for fstr has been removed. Use the [fstr::chars]
 //! function instead.
