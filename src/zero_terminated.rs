@@ -13,7 +13,7 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 use crate::{fstr,tstr};
-use std::cmp::Ordering;
+use std::cmp::{Ordering,min};
 
 /// zstr<N>: zero-terminated utf8 strings of size up to N bytes.  Note that
 /// zstr supports unicode, so that the length of string in characters may
@@ -37,14 +37,12 @@ impl<const N:usize> zstr<N>
       let bytes = s.as_bytes(); // &[u8]
       if (bytes.len()>=N) {eprintln!("!Fixedstr Warning in zstr::make: length of string literal \"{}\" exceeds the capacity of type zstr<{}>; string truncated",s,N);}      
       let mut i = 0;
+      let limit = min(N-1,bytes.len());
+      chars[..limit].clone_from_slice(&bytes[..limit]);
+      /*
       for i in 0..bytes.len()
       {
-        if i+1<N {chars[i] = bytes[i];} else {break;}
-      }
-      /*
-      for c in s.chars()
-      {
-         if i<N { chars[i] = c as u8; i+=1; } else {break;}
+        if i<N-1 {chars[i] = bytes[i];} else {break;}
       }
       */
       zstr {
@@ -124,7 +122,8 @@ impl<const N:usize> zstr<N>
       let clen = c.len_utf8();
       if let Some((bi,rc)) = self.to_str().char_indices().nth(i) {
         if clen==rc.len_utf8() {
-           for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
+           self.chrs[bi..bi+clen].clone_from_slice(&cbuf[..clen]);
+           //for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
            return true;
         }
       }
@@ -145,10 +144,13 @@ impl<const N:usize> zstr<N>
          let clen = c.len_utf8();
          c.encode_utf8(&mut buf);
          if i<=N-clen-1 {
+           self.chrs[i..i+clen].clone_from_slice(&buf[..clen]);
+           /*
            for k in 0..clen
            {
              self.chrs[i+k] = buf[k];
            }
+           */
            i += clen;
          } else { self.chrs[i]=0; return &s[sci..];}
          sci += 1;
@@ -334,14 +336,22 @@ impl<const M:usize> zstr<M>
   pub fn resize<const N:usize>(&self) -> zstr<N>
   {
      let slen = self.blen();
-     if (slen>=N) {eprintln!("!Fixedstr Warning in zstr::resize: string \"{}\" truncated while resizing to zstr<{}>",self,N);}     
+     //if (slen>=N) {eprintln!("!Fixedstr Warning in zstr::resize: string \"{}\" truncated while resizing to zstr<{}>",self,N);}     
      let length = if (slen<N-1) {slen} else {N-1};
      let mut chars = [0u8;N];
-     for i in 0..length {chars[i] = self.chrs[i];}
+     chars[..length].clone_from_slice(&self.chrs[..length]);
+     //for i in 0..length {chars[i] = self.chrs[i];}
      zstr {
        chrs: chars,
      }
   }//resize
+
+  /// version of resize that does not allow string truncation due to length
+  pub fn reallocate<const N:usize>(&self) -> Option<zstr<N>>
+  {
+      if self.len() < N {Some(self.resize())} else {None}
+  }
+
 }//impl zstr<M>
 
 
@@ -461,10 +471,13 @@ impl<const N:usize> zstr<N>
         None => blen,
       }//match
     };//let last =...
+    chars[..last-si].clone_from_slice(&self.chrs[si..last]);
+    /*
     for i in si..last
     {
       chars[i-si] = self.chrs[i];
     }
+    */
     zstr { chrs: chars,}
   }//substr
 }

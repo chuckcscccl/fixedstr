@@ -199,13 +199,13 @@ impl<const N:usize> std::convert::AsMut<str> for tstr<N>
       }
   }
 }
-impl<T:AsRef<str>+?Sized, const N:usize> std::convert::From<&T> for zstr<N>
+impl<T:AsRef<str>+?Sized, const N:usize> std::convert::From<&T> for tstr<N>
 {
-   fn from(s:&T) -> zstr<N> { zstr::make(s.as_ref()) }
+   fn from(s:&T) -> tstr<N> { tstr::make(s.as_ref()) }
 }
-impl<T:AsMut<str>+?Sized, const N:usize> std::convert::From<&mut T> for zstr<N>
+impl<T:AsMut<str>+?Sized, const N:usize> std::convert::From<&mut T> for tstr<N>
 {
-   fn from(s:&mut T) -> zstr<N> { zstr::make(s.as_mut()) }
+   fn from(s:&mut T) -> tstr<N> { tstr::make(s.as_mut()) }
 }
 
 impl<const N:usize> std::convert::From<String> for tstr<N>
@@ -319,11 +319,13 @@ impl<const N:usize,const M:usize> PartialEq<tstr<N>> for fstr<M>
   fn eq(&self, other:&tstr<N>) -> bool
   { other.to_str()==self.to_str() }
 }
+/*
 impl<const N:usize, const M:usize> PartialEq<&tstr<N>> for fstr<M>
 {
   fn eq(&self, other:&&tstr<N>) -> bool
   { other.to_str()==self.to_str() }
 }
+*/
 impl<const N:usize,const M:usize> PartialEq<fstr<N>> for tstr<M>
 {
   fn eq(&self, other:&fstr<N>) -> bool

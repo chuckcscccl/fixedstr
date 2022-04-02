@@ -128,7 +128,7 @@ fn tinytests()
   assert_eq!(u, "aμc");
   assert_eq!(u.len(),4);  // length in bytes
   assert_eq!(u.charlen(),3);  // length in chars
-  let mut ac:str16 = a.resize(); // copies to larger capacity string
+  let mut ac:str16 = a.reallocate().unwrap(); // copies to larger capacity string
   let remainder = ac.push("hijklmno");
   assert_eq!(ac.len(),15);
   assert_eq!(remainder, "");

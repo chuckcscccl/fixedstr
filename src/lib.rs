@@ -44,7 +44,7 @@
 //! let a1:fstr<8> = a; // copied, not moved
 //! let a2:&str = a.to_str();
 //! let a3:String = a.to_string();
-//! assert_eq!(a.nth_ascii(2), 'c');
+//! assert_eq!(a.nth_ascii(2), 'c');cd
 //! let ab = a.substr(1,5);  // copies substring to new fstr
 //! assert_eq!(ab,"bcde");  // can compare with &str
 //! assert!(a<ab);  // implements Ord trait (and Hash, Debug, Display)
@@ -64,7 +64,7 @@
 //! assert_eq!(&ac,"abcdefghij");
 //!```
 //!
-//![zstr] and the type aliases [str8]...[str256] implement the same capabilities as [fstr].
+//![zstr] and the type aliases [str8]...[str256] implement the same functions and traits as [fstr].
 
 
 
@@ -81,7 +81,7 @@ pub use zero_terminated::*;
 mod tiny_internal;
 use tiny_internal::*;
 
-use std::cmp::Ordering;
+use std::cmp::{Ordering,min};
 
 /// main type: string of size up to const N:
 #[derive(Copy,Clone,Eq,PartialEq,Hash)]
@@ -106,10 +106,14 @@ impl<const N:usize> fstr<N>
       }
       let mut chars = [0u8; N];
       let mut i = 0;
+      let limit = min(N,blen);
+      chars[..limit].clone_from_slice(&bytes[..limit]);
+      /* //replaced re performance lint
       for i in 0..blen
       {
         if i<N {chars[i] = bytes[i];} else {break;}
       }
+      */
       fstr {
          chrs: chars, len: blen, /* as u16 */
       }
@@ -173,12 +177,12 @@ impl<const N:usize> fstr<N>
       let clen = c.len_utf8();
       if let Some((bi,rc)) = self.to_str().char_indices().nth(i) {
         if clen==rc.len_utf8() {
-           for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
+           self.chrs[bi..bi+clen].clone_from_slice(&cbuf[..clen]);
+           //for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
            return true;
         }
       }
       return false;
-      //if i<self.len {self.chrs[i]=c as u8; true} else {false}
    }
    /// adds chars to end of current string up to maximum size N of fstr<N>,
    /// returns the portion of the push string that was NOT pushed due to
@@ -195,26 +199,20 @@ impl<const N:usize> fstr<N>
          let clen = c.len_utf8();
          c.encode_utf8(&mut buf);
          if i<=N-clen {
+           self.chrs[i..i+clen].clone_from_slice(&buf[..clen]);
+           /*
            for k in 0..clen
            {
              self.chrs[i+k] = buf[k];
            }
+           */
            i += clen;
          } else  { self.len = i; return &s[sci..];}
          sci += 1;
       }
       self.len=i;
       &s[sci..]
-   /*
-      let mut i = self.len;
-      for c in s.chars()
-      {
-         if i<N {self.chrs[i] = c as u8; i+=1;} else {self.len=N; return &s[N..];}
-      }
-      self.len = i;
-      if (i<s.len()) {&s[i..]} else {""}
-   */      
-   }
+   }//push
 
    /// returns the number of characters in the string regardless of
    /// character class
@@ -375,8 +373,7 @@ impl<const N:usize> std::cmp::Ord for fstr<N>
 impl<const M:usize> fstr<M>
 {
   /// converts an fstr\<M\> to an fstr\<N\>. If the length of the string being
-  /// converted is greater than N, the extra characters are ignored and
-  /// a warning sent to stderr.
+  /// converted is greater than N, the extra characters are ignored.
   /// This operation produces a copy (non-destructive).
   /// Example:
   ///```ignore
@@ -385,29 +382,22 @@ impl<const M:usize> fstr<M>
   ///```
   pub fn resize<const N:usize>(&self) -> fstr<N>
   {
-     if (self.len()>N) {eprintln!("!Fixedstr Warning in fstr::resize: string \"{}\" truncated while resizing to fstr<{}>",self,N);}
+     //if (self.len()>N) {eprintln!("!Fixedstr Warning in fstr::resize: string \"{}\" truncated while resizing to fstr<{}>",self,N);}
      let length = if (self.len<N) {self.len} else {N};
      let mut chars = [0u8;N];
-     for i in 0..length {chars[i] = self.chrs[i];}
+     chars[..length].clone_from_slice(&self.chrs[..length]);
+     //for i in 0..length {chars[i] = self.chrs[i];}
      fstr {
        chrs: chars,
        len: length,
      }
   }//resize
-/*
-   pub fn cat<const N:usize, const MN:usize>(&self,s:fstr<N>) -> fstr<MN>
-   {
-      let ab:fstr<MN> = self.resize();
-      
-      let mut i = ab.len;
-      for c in s.chars()
-      {
-         if i<N {self.chrs[i] = c; i+=1;} else {self.len=N; return &s[N..];}
-      }
-      self.len = i;
-      &s[i..]
-   }
-   */
+  
+  /// version of resize that does not allow string truncation due to length
+  pub fn reallocate<const N:usize>(&self) -> Option<fstr<N>>
+  {
+      if self.len() <= N {Some(self.resize())} else {None}
+  }
 }//impl fstr<M>
 
 impl<const N:usize> std::convert::AsRef<str> for fstr<N>
@@ -551,23 +541,15 @@ impl<const N:usize> fstr<N>
         None => len,
       }//match
     };//let last =...
+
+    chars[0..last-si].clone_from_slice(&self.chrs[si..last]);
+    /*
     for i in si..last
     {
       chars[i-si] = self.chrs[i];
     }
+    */
     fstr { chrs: chars, len:end-start}
-
-/*
-    let mut chars = [0u8;N];
-    if start>=self.len || end<=start { return fstr{chrs:chars, len:0}; }
-    let mut i = start;
-    while i<end && i<self.len
-    {
-       chars[i-start] = self.chrs[i];
-       i += 1;
-    }
-    fstr { chrs: chars, len:i-start }
-*/    
   }//substr
 }
 
@@ -575,7 +557,8 @@ impl<const N:usize> fstr<N>
 
 /// types for small strings that use a more efficient representation
 /// underneath.  A str8 can hold a string of up to 7 bytes (7 ascii chars).
-/// The same functions for [fstr] and [zstr] are provided for these types.
+/// The same functions for [fstr] and [zstr] are provided for these types
+/// so the documentation for the other types also applies.
 /// The size of str8 is 8 bytes.
 /// 
 /// Example:
@@ -601,8 +584,9 @@ pub type str128 = tstr<128>;
 /// Each type strN is represented underneath by a `[u8;N]` with N<=256.
 /// The first byte of the array always holds the length of the string.
 /// Each such type can hold a string of up to N-1 bytes, with max size=255.
-/// These types represent the best compromise between [fstr] and [zstr] in
-/// terms of speed and memory efficiency.
+/// These types represent the best combination of [fstr] and [zstr] in
+/// terms of speed and memory efficiency.  Consult documentation for [fstr]
+/// or [zstr] for the same functions and traits.
 pub type str256 = tstr<256>;
 
 /// strings of up to three 8-bit chars, good enough to represent abbreviations

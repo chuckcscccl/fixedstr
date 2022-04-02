@@ -3,30 +3,36 @@
 //!
 //! **The structures provided by this crate are [fstr], [zstr]** and tstr.
 //! However, tstr is not exported and can only be used through the type
-//! aliases [str8], [str16], [str32], through [str256].
+//! aliases [str4], [str8], [str16], through [str256].
 //!
 //! The size of (std::mem::size_of) types str8 and zstr<8>
-//! are 8 bytes, compared to 16 bytes for &str, providing more efficient
-//! ways of representing very small strings.
+//! are 8 bytes, compared to 16 bytes for &str (on most systems), providing more efficient
+//! ways of representing very small strings.  Unicode is supported.
 //!
-//! **Version 0.2.x** adds **unicode support** and a module for
-//! **zero_terminated strings** in the structure [zstr].
-//! These strings are more memory efficient than [fstr] but less efficient
-//! in terms of run time.
-//! 
-//! For version 0.2.2, the [str8] through [str256] type aliases where
-//! changed to refer to another, internal type distinct from [fstr] and
-//! [zstr].  This type represents strings of up to 255 bytes with a
-//! `[u8;N]` underneath where it's assumed that N<=256.  The first
-//! byte of the array holds the length of the string in bytes.  This structure
-//! represents the best combination of fstr and zstr in terms of speed
+//! The three versions of strings implemented are as follows.
+//! - A **[fstr]\<N\>**
+//! stores a string of up to N bytes.  It is represented underneath using
+//! a \[u8;N\] array and a separate usize variable holding the length.
+//! - A **[zstr]\<N\>** stores a zero-terminated string, without a separate
+//! length variable, and can hold strings of up to N-1 bytes.
+//! - The types **[str4]**, **[str8]** through **[str256]** are aliases for internal type
+//! tstr<4> through tstr<256> respectively.  These strings are stored
+//! in an array of u8 bytes with the first byte holding the length of the
+//! string.  Each tstr\<N\> can store strings of up to N-1 bytes, with
+//! maximum N=256. tstr
+//! combines the best of fstr and zstr in terms of speed
 //! and memory efficiency.  However, because Rust does not currently provide
-//! a why to specify conditions on const generics at compile time, such as
-//! `where N<=256`, the internal "tiny string" type *tstr* is not exported and can
-//! only be used through the aliases.  These strings implement that same
+//! a way to specify conditions on const generics at compile time, such as
+//! `where N<=256`, the tstr type is not exported and can
+//! only be used through the aliases.  These strings implement the same
 //! functions and traits as [fstr] and [zstr] so the documentation for
-//! these structures also apply to the hidden type.
+//! these structures also apply to the alias types.
 //!
+//! **Version 0.2.6** impls AsRef<str> and AsMut<str> traits.  A try_make
+//! function has been added that does not truncate strings.  str4, str24 and
+//! str48 were added.  [str4] can only hold three bytes but is good enough
+//! for many types of abbreviations such as those for airports.
+//! 
 //! For version 0.2.2  the fsiter construct and direct iterator
 //! implmentation for fstr has been removed. Use the [fstr::chars]
 //! function instead.
@@ -459,6 +465,12 @@ impl<const N:usize> std::fmt::Display for fstr<N>
   }
 }
 
+/*
+impl<T:AsRef<str>+?Sized, const N:usize> PartialEq<&T> for fstr<N>
+{
+   fn eq(&self, other:&&T)->bool { self.as_ref() == other.as_ref() }
+}
+*/
 
 impl<const N:usize> PartialEq<&str> for fstr<N>
 {
@@ -467,6 +479,7 @@ impl<const N:usize> PartialEq<&str> for fstr<N>
      &self.to_str()==other   // see below
   }//eq
 }
+
 impl<const N:usize> PartialEq<&str> for &fstr<N>
 {
   fn eq(&self, other:&&str) -> bool
@@ -576,7 +589,8 @@ impl<const N:usize> fstr<N>
 /// ```
 pub type str8 = tstr<8>;
 /// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr].
-/// The size of str16 is 16 bytes, which is the same as for &str.
+/// The size of str16 is 16 bytes, which is the same as for &str on most
+/// systems.
 pub type str16 = tstr<16>;
 /// A str32 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
 pub type str32 = tstr<32>;
@@ -590,3 +604,11 @@ pub type str128 = tstr<128>;
 /// These types represent the best compromise between [fstr] and [zstr] in
 /// terms of speed and memory efficiency.
 pub type str256 = tstr<256>;
+
+/// strings of up to three 8-bit chars, good enough to represent abbreviations
+/// such as those for states and airports. Each str<4> is exactly 32 bits.
+pub type str4 = tstr<4>;
+
+pub type str24 = tstr<24>;
+pub type str48 = tstr<48>;
+

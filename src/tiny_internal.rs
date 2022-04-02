@@ -18,7 +18,7 @@
 #![allow(dead_code)]
 use crate::fstr;
 use crate::zstr;
-use std::cmp::Ordering;
+use std::cmp::{Ordering,min};
 
 /// **THIS STRUCTURE IS NOT EXPORTED.**  It can only be used through the
 /// public type aliases [crate::str8] through [crate::str256].
@@ -39,12 +39,18 @@ impl<const N:usize> tstr<N>
       let mut chars = [0u8; N];
       let bytes = s.as_bytes(); // &[u8]
       let blen = bytes.len();
-      if (blen>=N) {eprintln!("!Fixedstr Warning in str::make: length of string literal \"{}\" exceeds the capacity of type str{}; string truncated",s,N);}            
+      if (blen>=N) {eprintln!("!Fixedstr Warning in str::make: length of string literal \"{}\" exceeds the capacity of type str{}; string truncated",s,N);}
+
+      let limit = min(N-1,blen);
+      chars[1..limit+1].clone_from_slice(&bytes[..limit]);
+      chars[0] = limit as u8;
+      /*
       for i in 0..blen
       {
         if i<N-1 {chars[i+1] = bytes[i];}
         else { chars[0] = i as u8; break; }
       }
+      */
       if chars[0]==0 {chars[0]=blen as u8;}
       tstr {
          chrs: chars,
@@ -115,7 +121,8 @@ impl<const N:usize> tstr<N>
       let clen = c.len_utf8();
       if let Some((bi,rc)) = self.to_str().char_indices().nth(i) {
         if clen==rc.len_utf8() {
-           for k in 0..clen {self.chrs[bi+k+1] = cbuf[k];}
+           self.chrs[bi+1..bi+clen+1].clone_from_slice(&cbuf[..clen]);
+           //for k in 0..clen {self.chrs[bi+k+1] = cbuf[k];}
            return true;
         }
       }
@@ -136,10 +143,13 @@ impl<const N:usize> tstr<N>
          let clen = c.len_utf8();
          c.encode_utf8(&mut buf);
          if i<=N-clen-1 {
+           self.chrs[i+1..i+clen+1].clone_from_slice(&buf[..clen]);
+           /*
            for k in 0..clen
            {
              self.chrs[i+k+1] = buf[k];
            }
+           */
            i += clen;
          } else { self.chrs[0]=i as u8; return &s[sci..];}
          sci += 1;
@@ -264,15 +274,22 @@ impl<const M:usize> tstr<M>
   pub fn resize<const N:usize>(&self) -> tstr<N>
   {
      let slen = self.len();
-     if (slen>=N) {eprintln!("!Fixedstr Warning in str::resize: string \"{}\" truncated while resizing to str{}",self,N);}     
+     //if (slen>=N) {eprintln!("!Fixedstr Warning in str::resize: string \"{}\" truncated while resizing to str{}",self,N);}     
      let length = if (slen<N-1) {slen} else {N-1};
      let mut chars = [0u8;N];
-     for i in 0..length {chars[i+1] = self.chrs[i+1];}
+     chars[1..length+1].clone_from_slice(&self.chrs[1..length+1]);
+     //for i in 0..length {chars[i+1] = self.chrs[i+1];}
      chars[0] = (length) as u8;
      tstr {
        chrs: chars,
      }
   }//resize
+
+  /// version of resize that does not allow string truncation due to length
+  pub fn reallocate<const N:usize>(&self) -> Option<tstr<N>>
+  {
+      if self.len() < N {Some(self.resize())} else {None}
+  }
 }//impl tstr<M>
 
 impl<const N:usize> std::fmt::Display for tstr<N>
@@ -391,10 +408,13 @@ impl<const N:usize> tstr<N>
         None => len,
       }//match
     };//let last =...
+    chars[1..last-si+1].clone_from_slice(&self.chrs[si+1..last+1]);
+    /*
     for i in si..last
     {
       chars[i-si+1] = self.chrs[i+1];
     }
+    */
     tstr { chrs: chars,}
   }//substr
 }
