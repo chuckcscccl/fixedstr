@@ -44,7 +44,7 @@
 //! let a1:fstr<8> = a; // copied, not moved
 //! let a2:&str = a.to_str();
 //! let a3:String = a.to_string();
-//! assert_eq!(a.nth_ascii(2), 'c');cd
+//! assert_eq!(a.nth_ascii(2), 'c');
 //! let ab = a.substr(1,5);  // copies substring to new fstr
 //! assert_eq!(ab,"bcde");  // can compare with &str
 //! assert!(a<ab);  // implements Ord trait (and Hash, Debug, Display)
