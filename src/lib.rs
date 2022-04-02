@@ -28,8 +28,9 @@
 //! functions and traits as [fstr] and [zstr] so the documentation for
 //! these structures also apply to the alias types.
 //!
-//! **Version 0.2.6** impls AsRef<str> and AsMut<str> traits.  A try_make
-//! function has been added that does not truncate strings.  str4, str24 and
+//! **Version 0.2.6-0.2.8** impls AsRef<str> and AsMut<str> traits.
+//! Functions try_make and reallocate
+//! have been added that do not truncate strings.  str4, str24 and
 //! str48 were added.  [str4] can only hold three bytes but is good enough
 //! for many types of abbreviations such as those for airports.
 //! 

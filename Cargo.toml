@@ -1,9 +1,10 @@
 [package]
 name = "fixedstr"
-version = "0.2.7"
-edition = "2018"
+version = "0.2.8"
+authors = ["Chuck Liang"]
+edition = "2021"
 license = "MIT"
-description = "strings of constant maximum size that can be copied and stack allocated, using Rust's new const generics"
+description = "strings of constant maximum size that can be copied and stack allocated using const generics"
 repository = "https://github.com/chuckcscccl/fixedstr/"
 keywords = ["string"]
 
