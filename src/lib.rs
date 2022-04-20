@@ -77,11 +77,13 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 
+//#[macro_use]
+//extern crate static_assertions;
+
 pub mod zero_terminated;
 pub use zero_terminated::*;
 mod tiny_internal;
 use tiny_internal::*;
-
 use std::cmp::{Ordering,min};
 
 /// main type: string of size up to const N:

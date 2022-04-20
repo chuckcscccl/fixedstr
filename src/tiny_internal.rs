@@ -20,6 +20,7 @@ use crate::fstr;
 use crate::zstr;
 use std::cmp::{Ordering,min};
 
+
 /// **THIS STRUCTURE IS NOT EXPORTED.**  It can only be used through the
 /// public type aliases [crate::str8] through [crate::str256].
 #[derive(Copy,Clone,Eq,PartialEq,Hash)]
