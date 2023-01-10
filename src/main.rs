@@ -97,7 +97,8 @@ fn ftests()
   assert!(ab=="bcde" && a1==a);  // can compare with &str and itself
   assert!(a<ab);  // implements Ord trait (and Hash
   let mut u:fstr<8> = fstr::from("aλb"); //unicode support
-  for x in u.nth(1) {assert_eq!(x,'λ');} // nth returns Option<char>
+  u.nth(1).map(|x|{assert_eq!(x,'λ')}); // nth returns Option<char>  
+  //for x in u.nth(1) {assert_eq!(x,'λ');} // nth returns Option<char>
   assert!(u.set(1,'μ'));  // changes a character of the same character class
   assert!(!u.set(1,'c')); // .set returns false on failure
   assert!(u.set(2,'c'));

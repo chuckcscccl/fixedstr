@@ -518,10 +518,21 @@ impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
 }//impl Index
 // couldn't get it to work properly, [char] is not same as &str
 // because there's no allocated string!
+/*
+///Convert fstr to &str slice
+impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
+  where IndexType:std::slice::SliceIndex<[u8]>,
+{
+  type Output = IndexType::Output;
+  fn index(&self, index:IndexType)-> &Self::Output
+  {
+     &self.chrs[index]
+  }
+}//impl Index
+*/
 
 impl<const N:usize> fstr<N>
 {
-
    /// mimics same function on str
    pub fn chars(&self) -> std::str::Chars<'_>
    { self.to_str().chars() }
