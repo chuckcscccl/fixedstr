@@ -15,7 +15,7 @@
 use crate::{fstr,tstr};
 use std::cmp::{Ordering,min};
 
-/// zstr<N>: zero-terminated utf8 strings of size up to N bytes.  Note that
+/// `zstr<N>`: zero-terminated utf8 strings of size up to N bytes.  Note that
 /// zstr supports unicode, so that the length of string in characters may
 /// be less than N.
 #[derive(Copy,Clone,Eq,PartialEq,Hash)]
@@ -25,7 +25,7 @@ pub struct zstr<const N:usize>
 }//zstr
 impl<const N:usize> zstr<N>
 {
-  /// creates a new zstr<N> with given &str.  If the length of s exceeds
+  /// creates a new `zstr<N>` with given &str.  If the length of s exceeds
   /// N, the extra characters are ignored and a warning sent to stderr.
   /// This function is also called by
   /// several others including [zstr::from].  This function can now handle
@@ -49,6 +49,20 @@ impl<const N:usize> zstr<N>
          chrs: chars,
       }
    }//make
+
+  /// Version of make that does not print warning to stderr.  If the
+  /// capacity limit is exceeded, the extra characters are ignored.
+  pub fn create(s:&str) -> zstr<N>
+     {
+      let mut chars = [0u8; N];
+      let bytes = s.as_bytes(); // &[u8]
+      let mut i = 0;
+      let limit = min(N-1,bytes.len());
+      chars[..limit].clone_from_slice(&bytes[..limit]);
+      zstr {
+         chrs: chars,
+      }
+   }//create
 
    /// version of make that does not truncate
    pub fn try_make(s:&str) -> Result<zstr<N>,&str>
@@ -129,7 +143,7 @@ impl<const N:usize> zstr<N>
       }
       return false;
    }//set
-   /// adds chars to end of current string up to maximum size N of zstr<N>,
+   /// adds chars to end of current string up to maximum size N of `zstr<N>`,
    /// returns the portion of the push string that was NOT pushed due to
    /// capacity, so
    /// if "" is returned then all characters were pushed successfully.

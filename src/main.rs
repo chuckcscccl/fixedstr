@@ -117,24 +117,31 @@ fn ftests()
 fn tinytests()
 {
   println!("starting tstr tests...");
-  let a:str8 = str8::from("abcdefg"); //creates zstr from &str
+  let a:str8 = str8::from("abcdef");
+  let a2 = a;  // copied, not moved
   let ab = a.substr(1,5);  // copies, not move substring to new string
   assert_eq!(ab, "bcde");  // can compare equality with &str
   assert_eq!(ab.len(),4);
-  println!("zstr: {}", &a); 
-  let mut u:str8 = str8::from("aλb"); //unicode support
+  println!("str8: {}", &a);
+  assert!(a<ab); // impls Ord, (and Hash, Debug, Eq, other common traits)
+  let astr:&str = a.to_str(); // convert to &str (zero copy)
+  let aowned:String = a.to_string(); // convert to owned string
+  let afstr:fstr<8> = fstr::from(a); // fstr is another fixedstr crate type
+  let azstr:zstr<16> = zstr::from(a); // so is zstr
+  let a32:str32 = a.resize(); // same type of string with 31-byte capacity
+  let mut u = str8::from("aλb"); //unicode support
   assert!(u.set(1,'μ'));  // changes a character of the same character class
   assert!(!u.set(1,'c')); // .set returns false on failure
   assert!(u.set(2,'c'));
   assert_eq!(u, "aμc");
   assert_eq!(u.len(),4);  // length in bytes
   assert_eq!(u.charlen(),3);  // length in chars
-  let mut ac:str16 = a.reallocate().unwrap(); // copies to larger capacity string
-  let remainder = ac.push("hijklmno");
+  let mut ac:str16 = a.reallocate().unwrap(); //copies to larger capacity type
+  let remainder = ac.push("ghijklmnopq"); //append up to capacity, returns remainder
   assert_eq!(ac.len(),15);
-  assert_eq!(remainder, "");
+  assert_eq!(remainder, "pq");
   println!("ac {}, remainder: {}",&ac, &remainder);
-  ac.truncate(9);
+  ac.truncate(9);  // keep first 9 chars
   assert_eq!(&ac,"abcdefghi");  
   println!("ac {}, remainder: {}",&ac, &remainder);
 
@@ -142,8 +149,8 @@ fn tinytests()
   assert_eq!(s.capacity(),7);
   assert_eq!(s.push("1234567"), "4567");
   assert_eq!(s,"aλc123");
-  assert_eq!(s.charlen(), 6);
-  assert_eq!(s.len(), 7);
+  assert_eq!(s.charlen(), 6); // length in chars
+  assert_eq!(s.len(), 7);     // length in bytes
 
   println!("size of str8: {}",std::mem::size_of::<str8>());
   println!("size of zstr<8>: {}",std::mem::size_of::<zstr<8>>());  
@@ -160,4 +167,16 @@ fn tinytests()
   let way4:str8 = way3.resize();
   way3 = way4.resize();
   println!("way3: {}, length {}",way3,way3.len());
+
+  // converting to other fixedstr crate types
+  let b:str8 = str8::from("abcdefg");
+  let mut b2:fstr<32> = fstr::from(b);
+  b2.push("hijklmnop");
+  println!("b2 is {}",&b2);
+  let mut b3:zstr<300> = zstr::from(b);
+  b3.push("hijklmnopqrstuvw");
+  println!("b3 is {}",&b3);
+  let mut b4 = str128::from(b2);
+  b4.push("xyz");
+  println!("b4 is {}",&b4);
 }//tiny tests

@@ -1,8 +1,8 @@
 //! This module is intended for internal use only.  Only a few
-//! type aliases are exported.  A tiny string or tstr<N>, with N<=256,
+//! type aliases are exported.  A tiny string or `tstr<N>`, with N<=256,
 //! is a version of fixed str that represents the best compromise between
-//! memory and runtime efficiency.  Each tstr<N> can hold a string of up to
-//! N-1 bytes, with max N=256.  A tstr<N> is represented underneath
+//! memory and runtime efficiency.  Each `tstr<N>` can hold a string of up to
+//! N-1 bytes, with max N=256.  A `tstr<N>` is represented underneath
 //! by a `[u8;N]` with the first byte always representing the length of the
 //! string.  A tstr is not necessarily zero-terminated.
 //! Because currently Rust does not allow conditions on const generics
@@ -57,6 +57,22 @@ impl<const N:usize> tstr<N>
          chrs: chars,
       }
    }//make
+
+  /// Version of make that does not print warning to stderr.  If the
+  /// capacity limit is exceeded, the extra characters are ignored.
+  pub fn create(s:&str) -> tstr<N>
+  {
+      let mut chars = [0u8; N];
+      let bytes = s.as_bytes();
+      let blen = bytes.len();
+      let limit = min(N-1,blen);
+      chars[1..limit+1].clone_from_slice(&bytes[..limit]);
+      chars[0] = limit as u8;
+      if chars[0]==0 {chars[0]=blen as u8;}
+      tstr {
+         chrs: chars,
+      }    
+  }//create
 
    /// version of make that does not truncate
    pub fn try_make(s:&str) -> Result<tstr<N>,&str>
@@ -242,7 +258,6 @@ impl<const N:usize,const M:usize> std::convert::From<zstr<M>> for tstr<N>
      tstr::<N>::make(s.to_str())
   }
 }
-
 
 
 impl<const N:usize> std::cmp::PartialOrd for tstr<N>

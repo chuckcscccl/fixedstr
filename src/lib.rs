@@ -6,7 +6,7 @@
 //! aliases [str4], [str8], [str16], through [str256].
 //!
 //! The size of (std::mem::size_of) types str8 and zstr<8>
-//! are 8 bytes, compared to 16 bytes for &str (on most systems), providing more efficient
+//! are 8 bytes, compared to 16 bytes for &str (on 64bit systems), providing more efficient
 //! ways of representing very small strings.  Unicode is supported.
 //!
 //! The three versions of strings implemented are as follows.
@@ -28,7 +28,7 @@
 //! functions and traits as [fstr] and [zstr] so the documentation for
 //! these structures also apply to the alias types.
 //!
-//! **Version 0.2.6-0.2.8** impls AsRef<str> and AsMut<str> traits.
+//! Version 0.2.6-0.2.8 impls `AsRef<str>` and `AsMut<str>` traits.
 //! Functions try_make and reallocate
 //! have been added that do not truncate strings.  str4, str24 and
 //! str48 were added.  [str4] can only hold three bytes but is good enough
@@ -95,8 +95,8 @@ pub struct fstr<const N:usize>
 }//fstr
 impl<const N:usize> fstr<N>
 {
-  /// creates a new fstr<N> with given &str.  If the length of s exceeds
-  /// N, the extra characters are ignored and a warning is sent to stderr.
+  /// creates a new `fstr<N>` with given &str.  If the length of s exceeds
+  /// N, the extra characters are ignored and a **warning is sent to stderr**.
   /// This function is also called by
   /// several others including [fstr::from].
   pub fn make(s:&str) -> fstr<N>
@@ -122,7 +122,24 @@ impl<const N:usize> fstr<N>
       }
    }//make
 
-   /// version of make that does not truncate
+  /// Version of make that does not print warning to stderr.  If the
+  /// capacity limit is exceeded, the extra characters are ignored.
+  pub fn create(s:&str) -> fstr<N>
+   {
+      let bytes = s.as_bytes(); // &[u8]
+      let mut blen = bytes.len();
+      if (blen>N) {        blen = N;      }
+      let mut chars = [0u8; N];
+      let mut i = 0;
+      let limit = min(N,blen);
+      chars[..limit].clone_from_slice(&bytes[..limit]);
+      fstr {
+         chrs: chars, len: blen,
+      }
+   }//create
+
+   /// version of make that does not truncate, if s exceeds capacity,
+   /// an Err result is returned containing s
    pub fn try_make(s:&str) -> Result<fstr<N>,&str>
    {
        if s.len()>N {Err(s)}
@@ -187,7 +204,7 @@ impl<const N:usize> fstr<N>
       }
       return false;
    }
-   /// adds chars to end of current string up to maximum size N of fstr<N>,
+   /// adds chars to end of current string up to maximum size N of `fstr<N>`,
    /// returns the portion of the push string that was NOT pushed due to
    /// capacity, so
    /// if "" is returned then all characters were pushed successfully.
@@ -586,7 +603,7 @@ impl<const N:usize> fstr<N>
 /// ```
 pub type str8 = tstr<8>;
 /// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr].
-/// The size of str16 is 16 bytes, which is the same as for &str on most
+/// The size of str16 is 16 bytes, which is the same as for &str on 64bit
 /// systems.
 pub type str16 = tstr<16>;
 /// A str32 can hold a string of up to 31 bytes. See docs for [fstr] or [zstr]
@@ -609,4 +626,5 @@ pub type str4 = tstr<4>;
 
 pub type str24 = tstr<24>;
 pub type str48 = tstr<48>;
-
+pub type str96 = tstr<96>;
+pub type str192 = tstr<192>;
