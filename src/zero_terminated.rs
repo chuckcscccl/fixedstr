@@ -78,8 +78,7 @@ impl<const N:usize> zstr<N>
      zstr::make("")
    }
 
-   /// length of the string in bytes (consistent with [str::len]). This
-   /// is a constant-time operation.
+   /// length of the string in bytes (consistent with [str::len]). 
    pub fn len(&self)->usize {
      let mut i =0;
      while self.chrs[i]!=0 {i+=1;}
