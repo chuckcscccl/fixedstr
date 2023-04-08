@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"

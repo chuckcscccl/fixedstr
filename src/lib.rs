@@ -33,7 +33,7 @@
 //! have been added that do not truncate strings.  str4, str24 and
 //! str48 were added.  [str4] can only hold three bytes but is good enough
 //! for many types of abbreviations such as those for airports.
-//! 
+//!
 //! For version 0.2.2  the fsiter construct and direct iterator
 //! implmentation for fstr has been removed. Use the [fstr::chars]
 //! function instead.
@@ -63,11 +63,14 @@
 //! assert_eq!(remainder, "qrst");
 //! ac.truncate(10); // shortens string in place
 //! assert_eq!(&ac,"abcdefghij");
+//! let c1 = str8::from("abcdef"); // string concatenation with + for strN types  
+//! let c2 = str8::from("xyz123"); // this features is not available for fstr and tstr
+//! let c3 = c1 + c2;           
+//! assert_eq!(c3,"abcdefxyz123");   
+//! assert_eq!(c3.capacity(),15);  // type of c3 is str16
 //!```
 //!
 //![zstr] and the type aliases [str8]...[str256] implement the same functions and traits as [fstr].
-
-
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -79,199 +82,201 @@
 
 //#[macro_use]
 //extern crate static_assertions;
-
+//use std::ops::{Add};
 pub mod zero_terminated;
 pub use zero_terminated::*;
 mod tiny_internal;
+use std::cmp::{min, Ordering};
 use tiny_internal::*;
-use std::cmp::{Ordering,min};
 
 /// main type: string of size up to const N:
-#[derive(Copy,Clone,Eq,PartialEq,Hash)]
-pub struct fstr<const N:usize>
-{
-  chrs : [u8;N],
-  len : usize,  // length will be <=N
-}//fstr
-impl<const N:usize> fstr<N>
-{
-  /// creates a new `fstr<N>` with given &str.  If the length of s exceeds
-  /// N, the extra characters are ignored and a **warning is sent to stderr**.
-  /// This function is also called by
-  /// several others including [fstr::from].
-  pub fn make(s:&str) -> fstr<N>
-   {
-      let bytes = s.as_bytes(); // &[u8]
-      let mut blen = bytes.len();
-      if (blen>N) {
-        eprintln!("!Fixedstr Warning in fstr::make: length of string literal \"{}\" exceeds the capacity of type fstr<{}>; string truncated",s,N);
-        blen = N;
-      }
-      let mut chars = [0u8; N];
-      let mut i = 0;
-      let limit = min(N,blen);
-      chars[..limit].clone_from_slice(&bytes[..limit]);
-      /* //replaced re performance lint
-      for i in 0..blen
-      {
-        if i<N {chars[i] = bytes[i];} else {break;}
-      }
-      */
-      fstr {
-         chrs: chars, len: blen, /* as u16 */
-      }
-   }//make
-
-  /// Version of make that does not print warning to stderr.  If the
-  /// capacity limit is exceeded, the extra characters are ignored.
-  pub fn create(s:&str) -> fstr<N>
-   {
-      let bytes = s.as_bytes(); // &[u8]
-      let mut blen = bytes.len();
-      if (blen>N) {        blen = N;      }
-      let mut chars = [0u8; N];
-      let mut i = 0;
-      let limit = min(N,blen);
-      chars[..limit].clone_from_slice(&bytes[..limit]);
-      fstr {
-         chrs: chars, len: blen,
-      }
-   }//create
-
-   /// version of make that does not truncate, if s exceeds capacity,
-   /// an Err result is returned containing s
-   pub fn try_make(s:&str) -> Result<fstr<N>,&str>
-   {
-       if s.len()>N {Err(s)}
-       else {Ok(fstr::make(s))}
-   }
-
-   /// creates an empty string, equivalent to fstr::default()
-   pub fn new() -> fstr<N>
-   {
-     fstr::make("")
-   }
-
-   /// length of the string in bytes, which will be up to the maximum size N.
-   /// This is a constant-time operation. Note that this value is consistent
-   /// with [str::len]
-   pub fn len(&self)->usize { self.len }
-
-   /// returns maximum capacity in bytes
-   pub fn capacity(&self) -> usize { N }
-
-   /// converts fstr to an owned string
-   pub fn to_string(&self) -> String
-   {
-     self.to_str().to_owned()
-     //self.chrs[0..self.len].iter().map(|x|{*x as char}).collect()
-   }
-
-   /// allows returns copy of u8 array underneath the fstr
-   pub fn as_u8(&self) -> [u8;N]
-   {
-      self.chrs
-   }
-
-   /// converts fstr to &str using [std::str::from_utf8_unchecked].  Since
-   /// fstr can only be build from valid utf8 sources, using this function
-   /// is safe.
-   pub fn to_str(&self) -> &str
-   {
-      unsafe {std::str::from_utf8_unchecked(&self.chrs[0..self.len])}
-   }
-   /// same functionality as [fstr::to_str]
-   pub fn as_str(&self) -> &str //{self.to_str()}
-   {
-      std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
-   }   
-
-   /// changes a character at character position i to c.  This function
-   /// requires that c is in the same character class (ascii or unicode)
-   /// as the char being replaced.  It never shuffles the bytes underneath.
-   /// The function returns true if the change was successful.
-   pub fn set(&mut self,i:usize, c:char) -> bool
-   {
-      let ref mut cbuf = [0u8;4];  // characters require at most 4 bytes
-      c.encode_utf8(cbuf);
-      let clen = c.len_utf8();
-      if let Some((bi,rc)) = self.to_str().char_indices().nth(i) {
-        if clen==rc.len_utf8() {
-           self.chrs[bi..bi+clen].clone_from_slice(&cbuf[..clen]);
-           //for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
-           return true;
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+pub struct fstr<const N: usize> {
+    chrs: [u8; N],
+    len: usize, // length will be <=N
+} //fstr
+impl<const N: usize> fstr<N> {
+    /// creates a new `fstr<N>` with given &str.  If the length of s exceeds
+    /// N, the extra characters are ignored and a **warning is sent to stderr**.
+    /// This function is also called by
+    /// several others including [fstr::from].
+    pub fn make(s: &str) -> fstr<N> {
+        let bytes = s.as_bytes(); // &[u8]
+        let mut blen = bytes.len();
+        if (blen > N) {
+            eprintln!("!Fixedstr Warning in fstr::make: length of string literal \"{}\" exceeds the capacity of type fstr<{}>; string truncated",s,N);
+            blen = N;
         }
-      }
-      return false;
-   }
-   /// adds chars to end of current string up to maximum size N of `fstr<N>`,
-   /// returns the portion of the push string that was NOT pushed due to
-   /// capacity, so
-   /// if "" is returned then all characters were pushed successfully.
-   pub fn push<'t>(&mut self,s:&'t str) -> &'t str
-   {
-      if s.len()<1 {return s;}
-      let mut buf = [0u8;4];
-      let mut i = self.len();
-      let mut sci = 0; // indexes characters in s
-      for c in s.chars()
-      {
-         let clen = c.len_utf8();
-         c.encode_utf8(&mut buf);
-         if i<=N-clen {
-           self.chrs[i..i+clen].clone_from_slice(&buf[..clen]);
-           /*
-           for k in 0..clen
-           {
-             self.chrs[i+k] = buf[k];
-           }
-           */
-           i += clen;
-         } else  { self.len = i; return &s[sci..];}
-         sci += 1;
-      }
-      self.len=i;
-      &s[sci..]
-   }//push
+        let mut chars = [0u8; N];
+        let mut i = 0;
+        let limit = min(N, blen);
+        chars[..limit].clone_from_slice(&bytes[..limit]);
+        /* //replaced re performance lint
+        for i in 0..blen
+        {
+          if i<N {chars[i] = bytes[i];} else {break;}
+        }
+        */
+        fstr {
+            chrs: chars,
+            len: blen, /* as u16 */
+        }
+    } //make
 
-   /// returns the number of characters in the string regardless of
-   /// character class
-   pub fn charlen(&self) -> usize
-   {
-      let v:Vec<_> = self.to_str().chars().collect();  v.len()
-   }
+    /// Version of make that does not print warning to stderr.  If the
+    /// capacity limit is exceeded, the extra characters are ignored.
+    pub fn create(s: &str) -> fstr<N> {
+        let bytes = s.as_bytes(); // &[u8]
+        let mut blen = bytes.len();
+        if (blen > N) {
+            blen = N;
+        }
+        let mut chars = [0u8; N];
+        let mut i = 0;
+        let limit = min(N, blen);
+        chars[..limit].clone_from_slice(&bytes[..limit]);
+        fstr {
+            chrs: chars,
+            len: blen,
+        }
+    } //create
 
-   /// returns the nth char of the fstr
-   pub fn nth(&self,n:usize) -> Option<char>
-   {
-      self.to_str().chars().nth(n)   
-   }
+    /// version of make that does not truncate, if s exceeds capacity,
+    /// an Err result is returned containing s
+    pub fn try_make(s: &str) -> Result<fstr<N>, &str> {
+        if s.len() > N {
+            Err(s)
+        } else {
+            Ok(fstr::make(s))
+        }
+    }
 
-   /// returns the nth byte of the string as a char.  This
-   /// function should only be called on ascii strings.  It
-   /// is designed to be quicker than [fstr::nth], and does not check array bounds or
-   /// check n against the length of the string. Nor does it check
-   /// if the value returned is within the ascii range.
-   pub fn nth_ascii(&self,n:usize) -> char
-   {
-      self.chrs[n] as char
-   }
+    /// creates an empty string, equivalent to fstr::default()
+    pub fn new() -> fstr<N> {
+        fstr::make("")
+    }
 
-   /// determines if string is an ascii string
-   pub fn is_ascii(&self) -> bool
-   { self.to_str().is_ascii() }
-   
-   /// shortens the fstr in-place (mutates).  If n is greater than the
-   /// current length of the string in chars, this operation will have no effect.
-   pub fn truncate(&mut self, n:usize)
-   {
-     if let Some((bi,c)) = self.to_str().char_indices().nth(n) {
-        //self.chrs[bi] = 0;
-        self.len = bi;
-     }
-     //if n<self.len {self.len = n;}
-   }
-}//impl fstr<N>
+    /// length of the string in bytes, which will be up to the maximum size N.
+    /// This is a constant-time operation. Note that this value is consistent
+    /// with [str::len]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// returns maximum capacity in bytes
+    pub fn capacity(&self) -> usize {
+        N
+    }
+
+    /// converts fstr to an owned string
+    pub fn to_string(&self) -> String {
+        self.to_str().to_owned()
+        //self.chrs[0..self.len].iter().map(|x|{*x as char}).collect()
+    }
+
+    /// allows returns copy of u8 array underneath the fstr
+    pub fn as_u8(&self) -> [u8; N] {
+        self.chrs
+    }
+
+    /// converts fstr to &str using [std::str::from_utf8_unchecked].  Since
+    /// fstr can only be build from valid utf8 sources, using this function
+    /// is safe.
+    pub fn to_str(&self) -> &str {
+        unsafe { std::str::from_utf8_unchecked(&self.chrs[0..self.len]) }
+    }
+    /// same functionality as [fstr::to_str]
+    pub fn as_str(&self) -> &str //{self.to_str()}
+    {
+        std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
+    }
+
+    /// changes a character at character position i to c.  This function
+    /// requires that c is in the same character class (ascii or unicode)
+    /// as the char being replaced.  It never shuffles the bytes underneath.
+    /// The function returns true if the change was successful.
+    pub fn set(&mut self, i: usize, c: char) -> bool {
+        let ref mut cbuf = [0u8; 4]; // characters require at most 4 bytes
+        c.encode_utf8(cbuf);
+        let clen = c.len_utf8();
+        if let Some((bi, rc)) = self.to_str().char_indices().nth(i) {
+            if clen == rc.len_utf8() {
+                self.chrs[bi..bi + clen].clone_from_slice(&cbuf[..clen]);
+                //for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
+                return true;
+            }
+        }
+        return false;
+    }
+    /// adds chars to end of current string up to maximum size N of `fstr<N>`,
+    /// returns the portion of the push string that was NOT pushed due to
+    /// capacity, so
+    /// if "" is returned then all characters were pushed successfully.
+    pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
+        if s.len() < 1 {
+            return s;
+        }
+        let mut buf = [0u8; 4];
+        let mut i = self.len();
+        let mut sci = 0; // indexes characters in s
+        for c in s.chars() {
+            let clen = c.len_utf8();
+            c.encode_utf8(&mut buf);
+            if i <= N - clen {
+                self.chrs[i..i + clen].clone_from_slice(&buf[..clen]);
+                /*
+                for k in 0..clen
+                {
+                  self.chrs[i+k] = buf[k];
+                }
+                */
+                i += clen;
+            } else {
+                self.len = i;
+                return &s[sci..];
+            }
+            sci += 1;
+        }
+        self.len = i;
+        &s[sci..]
+    } //push
+
+    /// returns the number of characters in the string regardless of
+    /// character class
+    pub fn charlen(&self) -> usize {
+        let v: Vec<_> = self.to_str().chars().collect();
+        v.len()
+    }
+
+    /// returns the nth char of the fstr
+    pub fn nth(&self, n: usize) -> Option<char> {
+        self.to_str().chars().nth(n)
+    }
+
+    /// returns the nth byte of the string as a char.  This
+    /// function should only be called on ascii strings.  It
+    /// is designed to be quicker than [fstr::nth], and does not check array bounds or
+    /// check n against the length of the string. Nor does it check
+    /// if the value returned is within the ascii range.
+    pub fn nth_ascii(&self, n: usize) -> char {
+        self.chrs[n] as char
+    }
+
+    /// determines if string is an ascii string
+    pub fn is_ascii(&self) -> bool {
+        self.to_str().is_ascii()
+    }
+
+    /// shortens the fstr in-place (mutates).  If n is greater than the
+    /// current length of the string in chars, this operation will have no effect.
+    pub fn truncate(&mut self, n: usize) {
+        if let Some((bi, c)) = self.to_str().char_indices().nth(n) {
+            //self.chrs[bi] = 0;
+            self.len = bi;
+        }
+        //if n<self.len {self.len = n;}
+    }
+} //impl fstr<N>
 
 /*
 impl<'t, const N:usize> std::convert::Into<&'t str> for fstr<N>
@@ -283,13 +288,15 @@ impl<'t, const N:usize> std::convert::Into<&'t str> for fstr<N>
 }
 */
 
-impl<T:AsRef<str>+?Sized, const N:usize> std::convert::From<&T> for fstr<N>
-{
-   fn from(s:&T) -> fstr<N> { fstr::make(s.as_ref()) }
+impl<T: AsRef<str> + ?Sized, const N: usize> std::convert::From<&T> for fstr<N> {
+    fn from(s: &T) -> fstr<N> {
+        fstr::make(s.as_ref())
+    }
 }
-impl<T:AsMut<str>+?Sized, const N:usize> std::convert::From<&mut T> for fstr<N>
-{
-   fn from(s:&mut T) -> fstr<N> { fstr::make(s.as_mut()) }
+impl<T: AsMut<str> + ?Sized, const N: usize> std::convert::From<&mut T> for fstr<N> {
+    fn from(s: &mut T) -> fstr<N> {
+        fstr::make(s.as_mut())
+    }
 }
 
 /*
@@ -346,94 +353,89 @@ impl<const N:usize,const M:usize> std::convert::From<&tstr<M>> for fstr<N>
 }
 */
 
-impl<const N:usize> std::convert::From<String> for fstr<N>
-{
-  fn from(s:String) -> fstr<N>
-  {
-     fstr::<N>::make(&s[..])
+impl<const N: usize> std::convert::From<String> for fstr<N> {
+    fn from(s: String) -> fstr<N> {
+        fstr::<N>::make(&s[..])
+    }
+}
+
+impl<const N: usize, const M: usize> std::convert::From<zstr<M>> for fstr<N> {
+    fn from(s: zstr<M>) -> fstr<N> {
+        fstr::<N>::make(&s.to_str())
+    }
+}
+
+impl<const N: usize, const M: usize> std::convert::From<tstr<M>> for fstr<N> {
+    fn from(s: tstr<M>) -> fstr<N> {
+        fstr::<N>::make(&s.to_str())
+    }
+}
+
+impl<const N: usize> std::cmp::PartialOrd for fstr<N> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        //Some(self.chrs[0..self.len].cmp(other.chrs[0..other.len]))
+        Some(self.cmp(other))
+    }
+}
+
+impl<const N: usize> std::cmp::Ord for fstr<N> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.chrs[0..self.len].cmp(&other.chrs[0..other.len])
+    }
+}
+
+impl<const M: usize> fstr<M> {
+    /// converts an fstr\<M\> to an fstr\<N\>. If the length of the string being
+    /// converted is greater than N, the extra characters are ignored.
+    /// This operation produces a copy (non-destructive).
+    /// Example:
+    ///```ignore
+    ///  let s1:fstr<8> = fstr::from("abcdefg");
+    ///  let s2:fstr<16> = s1.resize();
+    ///```
+    pub fn resize<const N: usize>(&self) -> fstr<N> {
+        //if (self.len()>N) {eprintln!("!Fixedstr Warning in fstr::resize: string \"{}\" truncated while resizing to fstr<{}>",self,N);}
+        let length = if (self.len < N) { self.len } else { N };
+        let mut chars = [0u8; N];
+        chars[..length].clone_from_slice(&self.chrs[..length]);
+        //for i in 0..length {chars[i] = self.chrs[i];}
+        fstr {
+            chrs: chars,
+            len: length,
+        }
+    } //resize
+
+    /// version of resize that does not allow string truncation due to length
+    pub fn reallocate<const N: usize>(&self) -> Option<fstr<N>> {
+        if self.len() <= N {
+            Some(self.resize())
+        } else {
+            None
+        }
+    }
+} //impl fstr<M>
+
+/* doesn't work
+impl<const M:usize, const N:usize> Add for fstr<M> {
+  type Output = fstr<{N+M}>;
+  fn add(self, other:fstr<N>) -> Output {
+     let mut cat:Output = self.resize();
+     cat.push(other);
+     cat
   }
+}//Add
+*/
+
+impl<const N: usize> std::convert::AsRef<str> for fstr<N> {
+    fn as_ref(&self) -> &str {
+        self.to_str()
+    }
 }
-
-impl<const N:usize,const M:usize> std::convert::From<zstr<M>> for fstr<N>
-{
-  fn from(s:zstr<M>) -> fstr<N>
-  {
-     fstr::<N>::make(&s.to_str())
-  }
+impl<const N: usize> std::convert::AsMut<str> for fstr<N> {
+    fn as_mut(&mut self) -> &mut str {
+        unsafe { std::str::from_utf8_unchecked_mut(&mut self.chrs[0..self.len]) }
+    }
 }
-
-
-impl<const N:usize,const M:usize> std::convert::From<tstr<M>> for fstr<N>
-{
-  fn from(s:tstr<M>) -> fstr<N>
-  {
-     fstr::<N>::make(&s.to_str())
-  }
-}
-
-
-
-impl<const N:usize> std::cmp::PartialOrd for fstr<N>
-{
-   fn partial_cmp(&self, other:&Self) -> Option<Ordering>
-   {
-      //Some(self.chrs[0..self.len].cmp(other.chrs[0..other.len]))
-      Some(self.cmp(other))
-   }
-}
-
-impl<const N:usize> std::cmp::Ord for fstr<N>
-{
-   fn cmp(&self, other:&Self) -> Ordering
-   {
-      self.chrs[0..self.len].cmp(&other.chrs[0..other.len])
-   }
-}
-
-impl<const M:usize> fstr<M>
-{
-  /// converts an fstr\<M\> to an fstr\<N\>. If the length of the string being
-  /// converted is greater than N, the extra characters are ignored.
-  /// This operation produces a copy (non-destructive).
-  /// Example:
-  ///```ignore
-  ///  let s1:fstr<8> = fstr::from("abcdefg");
-  ///  let s2:fstr<16> = s1.resize(); 
-  ///```
-  pub fn resize<const N:usize>(&self) -> fstr<N>
-  {
-     //if (self.len()>N) {eprintln!("!Fixedstr Warning in fstr::resize: string \"{}\" truncated while resizing to fstr<{}>",self,N);}
-     let length = if (self.len<N) {self.len} else {N};
-     let mut chars = [0u8;N];
-     chars[..length].clone_from_slice(&self.chrs[..length]);
-     //for i in 0..length {chars[i] = self.chrs[i];}
-     fstr {
-       chrs: chars,
-       len: length,
-     }
-  }//resize
-  
-  /// version of resize that does not allow string truncation due to length
-  pub fn reallocate<const N:usize>(&self) -> Option<fstr<N>>
-  {
-      if self.len() <= N {Some(self.resize())} else {None}
-  }
-}//impl fstr<M>
-
-impl<const N:usize> std::convert::AsRef<str> for fstr<N>
-{
-  fn as_ref(&self) -> &str { self.to_str() }
-}
-impl<const N:usize> std::convert::AsMut<str> for fstr<N>
-{
-  fn as_mut(&mut self) -> &mut str
-  {
-      unsafe {
-        std::str::from_utf8_unchecked_mut(&mut self.chrs[0..self.len])
-      }
-  }
-}
-
 
 /*
 /// [IntoIterator] struct for fstr
@@ -467,12 +469,10 @@ impl<const N:usize> IntoIterator for fstr<N>
 }//IntoIterator
 */
 
-impl<const N:usize> std::fmt::Display for fstr<N>
-{
-  fn fmt(&self,f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result
-  {
-     write!(f,"{}",self.to_str()) // need change!
-  }
+impl<const N: usize> std::fmt::Display for fstr<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_str()) // need change!
+    }
 }
 
 /*
@@ -482,116 +482,119 @@ impl<T:AsRef<str>+?Sized, const N:usize> PartialEq<&T> for fstr<N>
 }
 */
 
-impl<const N:usize> PartialEq<&str> for fstr<N>
-{
-  fn eq(&self, other:&&str) -> bool
-  {
-     &self.to_str()==other   // see below
-  }//eq
+impl<const N: usize> PartialEq<&str> for fstr<N> {
+    fn eq(&self, other: &&str) -> bool {
+        &self.to_str() == other // see below
+    } //eq
 }
 
-impl<const N:usize> PartialEq<&str> for &fstr<N>
-{
-  fn eq(&self, other:&&str) -> bool
-  {
-      &self.to_str() == other
-  }//eq
+impl<const N: usize> PartialEq<&str> for &fstr<N> {
+    fn eq(&self, other: &&str) -> bool {
+        &self.to_str() == other
+    } //eq
 }
-impl<'t, const N:usize> PartialEq<fstr<N>> for &'t str
-{
-  fn eq(&self, other:&fstr<N>) -> bool
-  { &other.to_str()==self }
+impl<'t, const N: usize> PartialEq<fstr<N>> for &'t str {
+    fn eq(&self, other: &fstr<N>) -> bool {
+        &other.to_str() == self
+    }
 }
-impl<'t, const N:usize> PartialEq<&fstr<N>> for &'t str
-{
-  fn eq(&self, other:&&fstr<N>) -> bool
-  { &other.to_str()==self }
+impl<'t, const N: usize> PartialEq<&fstr<N>> for &'t str {
+    fn eq(&self, other: &&fstr<N>) -> bool {
+        &other.to_str() == self
+    }
 }
 
 /// defaults to empty string
-impl<const N:usize> Default for fstr<N>
-{
-   fn default() -> Self { fstr::<N>::make("") }
+impl<const N: usize> Default for fstr<N> {
+    fn default() -> Self {
+        fstr::<N>::make("")
+    }
 }
 
-impl<const N:usize> std::fmt::Debug for fstr<N>
-{
-fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      let ds = format!("fstr<{}>:\"{}\"",N,&self.to_str());
-          f.pad(&ds)
-  }
-}  // Debug impl
-
+impl<const N: usize> std::fmt::Debug for fstr<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let ds = format!("fstr<{}>:\"{}\"", N, &self.to_str());
+        f.pad(&ds)
+    }
+} // Debug impl
 
 ///Convert fstr to &[u8] slice
-impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
-  where IndexType:std::slice::SliceIndex<[u8]>,
+impl<IndexType, const N: usize> std::ops::Index<IndexType> for fstr<N>
+where
+    IndexType: std::slice::SliceIndex<[u8]>,
 {
-  type Output = IndexType::Output;
-  fn index(&self, index:IndexType)-> &Self::Output
-  {
-     &self.chrs[index]
-  }
-}//impl Index
-// couldn't get it to work properly, [char] is not same as &str
-// because there's no allocated string!
-/*
-///Convert fstr to &str slice
-impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
-  where IndexType:std::slice::SliceIndex<[u8]>,
-{
-  type Output = IndexType::Output;
-  fn index(&self, index:IndexType)-> &Self::Output
-  {
-     &self.chrs[index]
-  }
-}//impl Index
-*/
-
-impl<const N:usize> fstr<N>
-{
-   /// mimics same function on str
-   pub fn chars(&self) -> std::str::Chars<'_>
-   { self.to_str().chars() }
-   /// mimics same function on str
-   pub fn char_indices(&self) ->std::str::CharIndices<'_>
-   { self.to_str().char_indices() }
-
-  /// returns a copy of the portion of the string, string could be truncated
-  /// if indices are out of range. Similar to slice [start..end]
-  pub fn substr(&self,start:usize, end:usize) -> fstr<N>
-  {
-    let mut chars = [0u8;N];
-    let mut inds = self.char_indices();
-    let len = self.len();
-    if start>=len || end<=start {return fstr{chrs:chars, len:0};}
-    let (si,_) = inds.nth(start).unwrap();
-    let last = if (end>=len) {len} else {
-      match inds.nth(end-start-1) {
-        Some((ei,_)) => ei,
-        None => len,
-      }//match
-    };//let last =...
-
-    chars[0..last-si].clone_from_slice(&self.chrs[si..last]);
-    /*
-    for i in si..last
-    {
-      chars[i-si] = self.chrs[i];
+    type Output = IndexType::Output;
+    fn index(&self, index: IndexType) -> &Self::Output {
+        &self.chrs[index]
     }
-    */
-    fstr { chrs: chars, len:end-start}
-  }//substr
+} //impl Index
+  // couldn't get it to work properly, [char] is not same as &str
+  // because there's no allocated string!
+  /*
+  ///Convert fstr to &str slice
+  impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
+    where IndexType:std::slice::SliceIndex<[u8]>,
+  {
+    type Output = IndexType::Output;
+    fn index(&self, index:IndexType)-> &Self::Output
+    {
+       &self.chrs[index]
+    }
+  }//impl Index
+  */
+
+impl<const N: usize> fstr<N> {
+    /// mimics same function on str
+    pub fn chars(&self) -> std::str::Chars<'_> {
+        self.to_str().chars()
+    }
+    /// mimics same function on str
+    pub fn char_indices(&self) -> std::str::CharIndices<'_> {
+        self.to_str().char_indices()
+    }
+
+    /// returns a copy of the portion of the string, string could be truncated
+    /// if indices are out of range. Similar to slice [start..end]
+    pub fn substr(&self, start: usize, end: usize) -> fstr<N> {
+        let mut chars = [0u8; N];
+        let mut inds = self.char_indices();
+        let len = self.len();
+        if start >= len || end <= start {
+            return fstr {
+                chrs: chars,
+                len: 0,
+            };
+        }
+        let (si, _) = inds.nth(start).unwrap();
+        let last = if (end >= len) {
+            len
+        } else {
+            match inds.nth(end - start - 1) {
+                Some((ei, _)) => ei,
+                None => len,
+            } //match
+        }; //let last =...
+
+        chars[0..last - si].clone_from_slice(&self.chrs[si..last]);
+        /*
+        for i in si..last
+        {
+          chars[i-si] = self.chrs[i];
+        }
+        */
+        fstr {
+            chrs: chars,
+            len: end - start,
+        }
+    } //substr
 }
-
-
 
 /// types for small strings that use a more efficient representation
 /// underneath.  A str8 can hold a string of up to 7 bytes (7 ascii chars).
 /// The same functions for [fstr] and [zstr] are provided for these types
 /// so the documentation for the other types also applies.
 /// The size of str8 is 8 bytes.
-/// 
+///
 /// Example:
 /// ```
 ///  let mut s = str8::from("aλc");
@@ -618,12 +621,27 @@ pub type str128 = tstr<128>;
 /// These types represent the best combination of [fstr] and [zstr] in
 /// terms of speed and memory efficiency.  Consult documentation for [fstr]
 /// or [zstr] for the same functions and traits.
+/// <br>
+/// <br>
+/// In addition, the strN types implements [std::ops::Add], allowing for
+/// string concatenation of strings of the same type.  For example,
+/// two str8 strings will always concatenate to str16, and similarly for
+/// all other strN types up to str128.
+///```
+///  let c1 = str8::from("abcd");
+///  let c2 = str8::from("xyz");
+///  let c3 = c1 + c2;
+///  assert_eq!(c3,"abcdxyz");
+///  assert_eq!(c3.capacity(),15);
+///```
 pub type str256 = tstr<256>;
+
+
 
 /// strings of up to three 8-bit chars, good enough to represent abbreviations
 /// such as those for states and airports. Each str<4> is exactly 32 bits.
 pub type str4 = tstr<4>;
-
+pub type str12 = tstr<12>;
 pub type str24 = tstr<24>;
 pub type str48 = tstr<48>;
 pub type str96 = tstr<96>;
