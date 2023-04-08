@@ -6,7 +6,7 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
 ```
   let a:str8 = str8::from("abcdef"); //a str8 can hold up to 7 bytes
   let a2 = a;  // copied, not moved
-  let ab = a.substr(1,5);  // copies, not move substring to new string
+  let ab = a.substr(1,5);  // copies substring to new string
   assert_eq!(ab, "bcde");  // can compare equality with &str
   assert_eq!(ab.len(),4);
   println!("str8: {}", &a);  // impls Display
@@ -28,7 +28,12 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
   assert_eq!(ac.len(),15);
   assert_eq!(remainder, "pq");
   ac.truncate(9);  // keep first 9 chars
-  assert_eq!(&ac,"abcdefghi");  
+  assert_eq!(&ac,"abcdefghi");
+  let c1 = str8::from("abcd"); // string concatenation with + for strN types  
+  let c2 = str8::from("xyz");
+  let c3 = c1 + c2;           
+  assert_eq!(c3,"abcdxyz");
+  assert_eq!(c3.capacity(),15);  // type of c3 is str16
 ```
 
 Consult the documentation for details.

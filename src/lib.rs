@@ -28,6 +28,10 @@
 //! functions and traits as [fstr] and [zstr] so the documentation for
 //! these structures also apply to the alias types.
 //!
+//! Version 0.2.10 allows str4-str128 strings to be concatenated with
+//! the `+` operator, resulting in strings with twice the capacity,
+//! str8-str256.  This feature is only implemented for the strN types.
+//!
 //! Version 0.2.6-0.2.8 impls `AsRef<str>` and `AsMut<str>` traits.
 //! Functions try_make and reallocate
 //! have been added that do not truncate strings.  str4, str24 and
@@ -623,7 +627,7 @@ pub type str128 = tstr<128>;
 /// or [zstr] for the same functions and traits.
 /// <br>
 /// <br>
-/// In addition, the strN types implements [std::ops::Add], allowing for
+/// In addition, the str4-str128 types implement [std::ops::Add], allowing for
 /// string concatenation of strings of the same type.  For example,
 /// two str8 strings will always concatenate to str16, and similarly for
 /// all other strN types up to str128.
