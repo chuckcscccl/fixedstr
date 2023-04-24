@@ -7,8 +7,8 @@
 //use std::mem;
 //mod lib;
 //use lib::*;
+use std::fmt::Write;
 use fixedstr::*;
-
 fn main() {
     let s1: fstr<16> = fstr::from("abc");
     let mut s2: fstr<8> = fstr::from("and xyz");
@@ -35,6 +35,15 @@ fn main() {
     s4 = s1.resize();
     let s5 = fstr::<8>::new();
     let ss5 = s5.as_str();
+
+    let mut s6 = fstr::<32>::new();
+    let result = write!(&mut s6,"hello {}, {}, {}",1,2,3);
+    assert_eq!(s6,"hello 1, 2, 3");
+    println!("s6 is {}, result is {:?}",&s6, &result);
+
+    let s7 = str_format!(fstr<32>,"abc {}, {}",1,10);
+    println!("s7 is {}",&s7);
+    
     othertests();
     ztests();
     ftests();

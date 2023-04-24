@@ -87,6 +87,7 @@
 //#[macro_use]
 //extern crate static_assertions;
 //use std::ops::{Add};
+//use std::fmt::Write;
 pub mod zero_terminated;
 pub use zero_terminated::*;
 mod tiny_internal;
@@ -650,3 +651,44 @@ pub type str24 = tstr<24>;
 pub type str48 = tstr<48>;
 pub type str96 = tstr<96>;
 pub type str192 = tstr<192>;
+
+
+////////////// std::fmt::Write trait
+/// Usage:
+/// ```
+///   use std::fmt::Write;
+///   let mut s = fstr::<32>::new();
+///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
+/// ```
+impl<const N:usize> std::fmt::Write for fstr<N> {
+  fn write_str(&mut self, s:&str) -> std::fmt::Result //Result<(),std::fmt::Error>
+  {
+    if s.len() + self.len() > N {return Err(std::fmt::Error::default());}
+    self.push(s);
+//    let rest = self.push(s);
+//    if rest.len()>0 {return Err(std::fmt::Error::default());}
+    Ok(())
+  }//write_str
+}//std::fmt::Write trait
+
+
+fn fstr_write<const N:usize>(args:std::fmt::Arguments) -> fstr<N> {
+     use std::fmt::Write;
+     let mut fstr0 = fstr::<N>::new();
+     //let result = std::fmt::write(&mut fstr0, args);
+     let result = fstr0.write_fmt(args);
+     fstr0  
+}
+
+
+#[macro_export]
+macro_rules! str_format {
+  ($ty_size:ty, $($args:tt)*) => {
+     {use std::fmt::Write;
+     let mut fstr0 = <$ty_size>::new();
+     write!(&mut fstr0, $($args)*).expect("ERROR: fstr_format failed");
+     fstr0}
+  };
+}
+//     let result = write!(&mut fstr0,"{}","hello world {}",1);
+
