@@ -479,3 +479,22 @@ pub type ztr8 = zstr<8>;
 pub type ztr16 = zstr<16>;
 pub type ztr32 = zstr<32>;
 pub type ztr64 = zstr<64>;
+
+
+////////////// std::fmt::Write trait
+/// Usage:
+/// ```
+///   use std::fmt::Write;
+///   let mut s = zstr::<32>::new();
+///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
+///   /* or */
+///   let s2 = str_format!(zstr<16>,"abx{}{}{}",1,2,3);
+/// ```
+impl<const N:usize> std::fmt::Write for zstr<N> {
+  fn write_str(&mut self, s:&str) -> std::fmt::Result //Result<(),std::fmt::Error>
+  {
+    if s.len() + self.len() > N-1 {return Err(std::fmt::Error::default());}
+    self.push(s);
+    Ok(())
+  }//write_str
+}//std::fmt::Write trait

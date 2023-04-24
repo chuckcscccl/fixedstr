@@ -69,9 +69,15 @@
 //! assert_eq!(&ac,"abcdefghij");
 //! let c1 = str8::from("abcdef"); // string concatenation with + for strN types  
 //! let c2 = str8::from("xyz123"); // this features is not available for fstr and tstr
-//! let c3 = c1 + c2;           
+//! let c3 = c1 + c2;        // New in Version 0.4.10   
 //! assert_eq!(c3,"abcdefxyz123");   
 //! assert_eq!(c3.capacity(),15);  // type of c3 is str16
+//!
+//! // New in Version 0.4.11:
+//! let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls std::fmt::Write
+//! assert_eq!(c4,"abc 123");  // str_format! truncates if capacity exceeded
+//! let c5 = try_format!(str8,"abcdef{}","ghijklmn");
+//! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 //!```
 //!
 //![zstr] and the type aliases [str8]...[str256] implement the same functions and traits as [fstr].
@@ -659,19 +665,22 @@ pub type str192 = tstr<192>;
 ///   use std::fmt::Write;
 ///   let mut s = fstr::<32>::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
+///   /* or */
+///   let s2 = str_format(<fstr<24>,"hello {}, {}, {}",1,2,3);
+///   let s3 = try_format(<fstr<4>,"hello {}, {}, {}",1,2,3); // returns None
 /// ```
 impl<const N:usize> std::fmt::Write for fstr<N> {
   fn write_str(&mut self, s:&str) -> std::fmt::Result //Result<(),std::fmt::Error>
   {
-    if s.len() + self.len() > N {return Err(std::fmt::Error::default());}
-    self.push(s);
-//    let rest = self.push(s);
-//    if rest.len()>0 {return Err(std::fmt::Error::default());}
+    //if s.len() + self.len() > N {return Err(std::fmt::Error::default());}
+    //self.push(s);
+    let rest = self.push(s);
+    if rest.len()>0 {return Err(std::fmt::Error::default());}
     Ok(())
   }//write_str
 }//std::fmt::Write trait
 
-
+/*
 fn fstr_write<const N:usize>(args:std::fmt::Arguments) -> fstr<N> {
      use std::fmt::Write;
      let mut fstr0 = fstr::<N>::new();
@@ -679,16 +688,35 @@ fn fstr_write<const N:usize>(args:std::fmt::Arguments) -> fstr<N> {
      let result = fstr0.write_fmt(args);
      fstr0  
 }
-
+*/
 
 #[macro_export]
+/// creates a formated string of given type (by implementing [std::fmt::Write]):
+/// ```
+///    let s = str_format!(str8,"abc{}{}{}",1,2,3);
+/// ```
+/// will truncate if capacity exceeded, without warning.
 macro_rules! str_format {
   ($ty_size:ty, $($args:tt)*) => {
      {use std::fmt::Write;
      let mut fstr0 = <$ty_size>::new();
-     write!(&mut fstr0, $($args)*).expect("ERROR: fstr_format failed");
+     let res=write!(&mut fstr0, $($args)*);
      fstr0}
   };
 }
-//     let result = write!(&mut fstr0,"{}","hello world {}",1);
 
+#[macro_export]
+/// version of [str_format]! that returns an Option of the given type.
+/// ```
+///  let s = try_format!(str32,"abcdefg{}","hijklmnop").unwrap();
+///  let s2 = try_format!(str8,"abcdefg{}","hijklmnop");
+///  assert!(s2.is_none());
+/// ```
+macro_rules! try_format {
+  ($ty_size:ty, $($args:tt)*) => {
+     {use std::fmt::Write;
+     let mut fstr0 = <$ty_size>::new();
+     let result = write!(&mut fstr0, $($args)*);
+     if result.is_ok() {Some(fstr0)} else {None}}     
+  };
+}
