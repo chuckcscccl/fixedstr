@@ -28,6 +28,9 @@
 //! functions and traits as [fstr] and [zstr] so the documentation for
 //! these structures also apply to the alias types.
 //!
+//! Version 0.2.11 impls [std::fmt::Write] and adds [str_format]! and
+//! [try_format]! macros.
+//!
 //! Version 0.2.10 allows str4-str128 strings to be concatenated with
 //! the `+` operator, resulting in strings with twice the capacity,
 //! str8-str256.  This feature is only implemented for the strN types.
