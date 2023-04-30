@@ -32,7 +32,7 @@
 //!
 //! Version 0.2.12 includes contribution from
 //! [wallefan](https://github.com/wallefan),
-//! and added serde support for serialization.
+//! and added optional serde support for serialization.
 //! This feature can be enabled by giving cargo the
 //! **`--features serde`** option.
 //!
