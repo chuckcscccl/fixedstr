@@ -542,12 +542,13 @@ where
         &self.chrs[index]
     }
 } //impl Index
+
   // couldn't get it to work properly, [char] is not same as &str
   // because there's no allocated string!
-  /*
+/*
   ///Convert fstr to &str slice
   impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
-    where IndexType:std::slice::SliceIndex<[u8]>,
+    where IndexType:std::slice::SliceIndex<str>,
   {
     type Output = IndexType::Output;
     fn index(&self, index:IndexType)-> &Self::Output
@@ -555,7 +556,7 @@ where
        &self.chrs[index]
     }
   }//impl Index
-  */
+*/
 
 impl<const N: usize> fstr<N> {
     /// mimics same function on str
@@ -650,8 +651,6 @@ pub type str128 = tstr<128>;
 ///```
 pub type str256 = tstr<256>;
 
-
-
 /// strings of up to three 8-bit chars, good enough to represent abbreviations
 /// such as those for states and airports. Each str<4> is exactly 32 bits.
 pub type str4 = tstr<4>;
@@ -660,7 +659,6 @@ pub type str24 = tstr<24>;
 pub type str48 = tstr<48>;
 pub type str96 = tstr<96>;
 pub type str192 = tstr<192>;
-
 
 ////////////// std::fmt::Write trait
 /// Usage:
@@ -672,16 +670,18 @@ pub type str192 = tstr<192>;
 ///   let s2 = str_format(<fstr<24>,"hello {}, {}, {}",1,2,3);
 ///   let s3 = try_format(<fstr<4>,"hello {}, {}, {}",1,2,3); // returns None
 /// ```
-impl<const N:usize> std::fmt::Write for fstr<N> {
-  fn write_str(&mut self, s:&str) -> std::fmt::Result //Result<(),std::fmt::Error>
-  {
-    //if s.len() + self.len() > N {return Err(std::fmt::Error::default());}
-    //self.push(s);
-    let rest = self.push(s);
-    if rest.len()>0 {return Err(std::fmt::Error::default());}
-    Ok(())
-  }//write_str
-}//std::fmt::Write trait
+impl<const N: usize> std::fmt::Write for fstr<N> {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
+    {
+        //if s.len() + self.len() > N {return Err(std::fmt::Error::default());}
+        //self.push(s);
+        let rest = self.push(s);
+        if rest.len() > 0 {
+            return Err(std::fmt::Error::default());
+        }
+        Ok(())
+    } //write_str
+} //std::fmt::Write trait
 
 /*
 fn fstr_write<const N:usize>(args:std::fmt::Arguments) -> fstr<N> {
@@ -689,7 +689,7 @@ fn fstr_write<const N:usize>(args:std::fmt::Arguments) -> fstr<N> {
      let mut fstr0 = fstr::<N>::new();
      //let result = std::fmt::write(&mut fstr0, args);
      let result = fstr0.write_fmt(args);
-     fstr0  
+     fstr0
 }
 */
 
@@ -720,6 +720,6 @@ macro_rules! try_format {
      {use std::fmt::Write;
      let mut fstr0 = <$ty_size>::new();
      let result = write!(&mut fstr0, $($args)*);
-     if result.is_ok() {Some(fstr0)} else {None}}     
+     if result.is_ok() {Some(fstr0)} else {None}}
   };
 }
