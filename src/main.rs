@@ -7,8 +7,8 @@
 //use std::mem;
 //mod lib;
 //use lib::*;
-use std::fmt::Write;
 use fixedstr::*;
+use std::fmt::Write;
 fn main() {
     let s1: fstr<16> = fstr::from("abc");
     let mut s2: fstr<8> = fstr::from("and xyz");
@@ -37,15 +37,15 @@ fn main() {
     let ss5 = s5.as_str();
 
     let mut s6 = fstr::<32>::new();
-    let result = write!(&mut s6,"hello {}, {}, {}",1,2,3);
-    assert_eq!(s6,"hello 1, 2, 3");
-    println!("s6 is {}, result is {:?}",&s6, &result);
+    let result = write!(&mut s6, "hello {}, {}, {}", 1, 2, 3);
+    assert_eq!(s6, "hello 1, 2, 3");
+    println!("s6 is {}, result is {:?}", &s6, &result);
 
-    let s7 = str_format!(fstr<32>,"abc {}, {}",1,10);
-    println!("s7 is {}",&s7);
-    let s8 = try_format!(fstr<32>,"abcdefg {}, {}",1,10);
-    println!("s8 is {}",&s8.unwrap());
-    
+    let s7 = str_format!(fstr<32>, "abc {}, {}", 1, 10);
+    println!("s7 is {}", &s7);
+    let s8 = try_format!(fstr<32>, "abcdefg {}, {}", 1, 10);
+    println!("s8 is {}", &s8.unwrap());
+
     othertests();
     ztests();
     ftests();
@@ -93,8 +93,8 @@ fn ztests() {
     assert_eq!(&ac, "abcdefghi");
     println!("ac {}, remainder: {}", &ac, &remainder);
 
-    let c4 = str_format!(zstr<32>,"abc {}",123);
-    assert_eq!(c4,"abc 123");
+    let c4 = str_format!(zstr<32>, "abc {}", 123);
+    assert_eq!(c4, "abc 123");
 } //ztr tests
 
 fn ftests() {
@@ -189,21 +189,24 @@ fn tinytests() {
     b4.push("xyz");
     println!("b4 is {}", &b4);
 
+    let (upper,lower) = (str8::make("ABC"), str8::make("abc"));
+    assert_eq!(upper, lower.to_ascii_uppercase());
+
     let c1 = str8::from("abcdef");
     let c2 = str8::from("xyz123");
     let c3 = c1 + c2;
-    assert_eq!(c3,"abcdefxyz123");
-    assert_eq!(c3.capacity(),15);
+    assert_eq!(c3, "abcdefxyz123");
+    assert_eq!(c3.capacity(), 15);
     //println!("c3 is {}, capacity {}",&c3, &c3.capacity());
 
-    let c4 = str_format!(str16,"abc {}{}{}",1,2,3);
-    assert_eq!(c4,"abc 123");
-//    let c4 = str_format!(str16,"abc {}",&c1);
-//    println!("c4 is {}",&c4);
+    let c4 = str_format!(str16, "abc {}{}{}", 1, 2, 3);
+    assert_eq!(c4, "abc 123");
+    //    let c4 = str_format!(str16,"abc {}",&c1);
+    //    println!("c4 is {}",&c4);
     //assert_eq!(c4,"abc abcdef");
-    let c5 = try_format!(str8,"abc {}{}",&c1,&c2);
-    assert!(c5.is_none()); 
-    let s = try_format!(str32,"abcdefg{}","hijklmnop").unwrap();
-    let s2 = try_format!(str8,"abcdefg{}","hijklmnop");
+    let c5 = try_format!(str8, "abc {}{}", &c1, &c2);
+    assert!(c5.is_none());
+    let s = try_format!(str32, "abcdefg{}", "hijklmnop").unwrap();
+    let s2 = try_format!(str8, "abcdefg{}", "hijklmnop");
     assert!(s2.is_none());
 } //tiny tests

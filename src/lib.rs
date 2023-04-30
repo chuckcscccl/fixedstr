@@ -28,6 +28,9 @@
 //! functions and traits as [fstr] and [zstr] so the documentation for
 //! these structures also apply to the alias types.
 //!
+//! Version 0.3.0 was contributed by [wallefan](https://github.com/wallefan)
+//! and added serde support for serialization.
+//!
 //! Version 0.2.11 impls [std::fmt::Write] and adds [str_format]! and
 //! [try_format]! macros.
 //!
@@ -70,9 +73,12 @@
 //! assert_eq!(remainder, "qrst");
 //! ac.truncate(10); // shortens string in place
 //! assert_eq!(&ac,"abcdefghij");
+//! let (upper,lower) = (str8::make("ABC"), str8::make("abc"));
+//! assert_eq!(upper, lower.to_ascii_uppercase()); // no owned String needed
+//!  
 //! let c1 = str8::from("abcdef"); // string concatenation with + for strN types  
 //! let c2 = str8::from("xyz123"); // this features is not available for fstr and tstr
-//! let c3 = c1 + c2;        // New in Version 0.4.10   
+//! let c3 = c1 + c2;        // new in Version 0.2.10   
 //! assert_eq!(c3,"abcdefxyz123");   
 //! assert_eq!(c3.capacity(),15);  // type of c3 is str16
 //!
@@ -290,6 +296,41 @@ impl<const N: usize> fstr<N> {
         }
         //if n<self.len {self.len = n;}
     }
+
+    /// in-place modification of ascii characters to lower-case
+    pub fn make_ascii_lowercase(&mut self) {
+      for b in &mut self.chrs[..self.len] {
+        if *b>=65 && *b<=90 { *b |= 32; }
+      }
+    }//make_ascii_lowercase
+
+    /// in-place modification of ascii characters to upper-case
+    pub fn make_ascii_uppercase(&mut self) {
+      for b in &mut self.chrs[..self.len] {
+        if *b>=97 && *b<=122 { *b -= 32; }
+      }      
+    }
+
+    /// Constructs a clone of this fstr but with only upper-case ascii
+    /// characters.  This contrasts with [str::to_ascii_uppercase],
+    /// which creates an owned String. 
+    pub fn to_ascii_uppercase(&self) -> Self
+    {
+      let mut cp = self.clone();
+      cp.make_ascii_uppercase();
+      cp
+    }
+
+    /// Constructs a clone of this fstr but with only lower-case ascii
+    /// characters.  This contrasts with [str::to_ascii_lowercase],
+    /// which creates an owned String.
+    pub fn to_ascii_lowercase(&self) -> Self
+    {
+      let mut cp = *self;
+      cp.make_ascii_lowercase();
+      cp
+    }
+
 } //impl fstr<N>
 
 #[cfg(feature="serde")]

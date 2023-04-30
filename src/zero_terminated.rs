@@ -213,6 +213,43 @@ impl<const N: usize> zstr<N> {
     pub fn char_indices(&self) -> std::str::CharIndices<'_> {
         self.to_str().char_indices()
     }
+
+    /// in-place modification of ascii characters to lower-case
+    pub fn make_ascii_lowercase(&mut self) {
+      for b in &mut self.chrs {
+        if *b==0 {break;}
+        else if *b>=65 && *b<=90 { *b += 32; }
+      }
+    }//make_ascii_lowercase
+
+    /// in-place modification of ascii characters to upper-case
+    pub fn make_ascii_uppercase(&mut self) {
+      for b in &mut self.chrs {
+        if *b==0 {break;}
+        else if *b>=97 && *b<=122 { *b -= 32; }
+      }      
+    }
+
+    /// Constructs a clone of this fstr but with only upper-case ascii
+    /// characters.  This contrasts with [str::to_ascii_uppercase],
+    /// which creates an owned String. 
+    pub fn to_ascii_uppercase(&self) -> Self
+    {
+      let mut cp = self.clone();
+      cp.make_ascii_uppercase();
+      cp
+    }
+
+    /// Constructs a clone of this fstr but with only lower-case ascii
+    /// characters.  This contrasts with [str::to_ascii_lowercase],
+    /// which creates an owned String.
+    pub fn to_ascii_lowercase(&self) -> Self
+    {
+      let mut cp = *self;
+      cp.make_ascii_lowercase();
+      cp
+    }
+
 } //impl zstr<N>
 
 impl<const N: usize> std::convert::AsRef<str> for zstr<N> {
@@ -480,7 +517,6 @@ pub type ztr16 = zstr<16>;
 pub type ztr32 = zstr<32>;
 pub type ztr64 = zstr<64>;
 
-
 ////////////// std::fmt::Write trait
 /// Usage:
 /// ```
@@ -490,11 +526,13 @@ pub type ztr64 = zstr<64>;
 ///   /* or */
 ///   let s2 = str_format!(zstr<16>,"abx{}{}{}",1,2,3);
 /// ```
-impl<const N:usize> std::fmt::Write for zstr<N> {
-  fn write_str(&mut self, s:&str) -> std::fmt::Result //Result<(),std::fmt::Error>
-  {
-    if s.len() + self.len() > N-1 {return Err(std::fmt::Error::default());}
-    self.push(s);
-    Ok(())
-  }//write_str
-}//std::fmt::Write trait
+impl<const N: usize> std::fmt::Write for zstr<N> {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
+    {
+        if s.len() + self.len() > N - 1 {
+            return Err(std::fmt::Error::default());
+        }
+        self.push(s);
+        Ok(())
+    } //write_str
+} //std::fmt::Write trait

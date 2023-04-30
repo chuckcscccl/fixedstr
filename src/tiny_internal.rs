@@ -19,7 +19,7 @@
 #![allow(dead_code)]
 use crate::fstr;
 use crate::zstr;
-use crate::{str4,str8,str12,str16,str24,str32,str48,str64,str96,str128,str192,str256};
+use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
 use std::cmp::{min, Ordering};
 use std::ops::Add;
 
@@ -39,7 +39,7 @@ impl<const N: usize> tstr<N> {
         if (N > 256 || N < 1) {
             panic!("only tstr<1> to tstr<256> are valid");
         }
-        */ 
+        */
         let mut chars = [0u8; N];
         let bytes = s.as_bytes(); // &[u8]
         let blen = bytes.len();
@@ -218,7 +218,45 @@ impl<const N: usize> tstr<N> {
     pub fn char_indices(&self) -> std::str::CharIndices<'_> {
         self.to_str().char_indices()
     }
+
+    /// in-place modification of ascii characters to lower-case
+    pub fn make_ascii_lowercase(&mut self) {
+      let end = (self.chrs[0] as usize)+1;
+      for b in &mut self.chrs[1..end] {
+        if *b>=65 && *b<=90 { *b |= 32; }
+      }
+    }//make_ascii_lowercase
+
+    /// in-place modification of ascii characters to upper-case
+    pub fn make_ascii_uppercase(&mut self) {
+      let end = (self.chrs[0] as usize)+1;    
+      for b in &mut self.chrs[1..end] {
+        if *b>=97 && *b<=122 { *b -= 32; }
+      }      
+    }
+
+    /// Constructs a clone of this fstr but with only upper-case ascii
+    /// characters.  This contrasts with [str::to_ascii_uppercase],
+    /// which creates an owned String. 
+    pub fn to_ascii_uppercase(&self) -> Self
+    {
+      let mut cp = self.clone();
+      cp.make_ascii_uppercase();
+      cp
+    }
+
+    /// Constructs a clone of this fstr but with only lower-case ascii
+    /// characters.  This contrasts with [str::to_ascii_lowercase],
+    /// which creates an owned String.
+    pub fn to_ascii_lowercase(&self) -> Self
+    {
+      let mut cp = *self;
+      cp.make_ascii_lowercase();
+      cp
+    }
+
 } //impl tstr<N>
+
 
 impl<const N: usize> std::convert::AsRef<str> for tstr<N> {
     fn as_ref(&self) -> &str {
@@ -300,7 +338,7 @@ impl<const M: usize> tstr<M> {
         } else {
             None
         }
-    }//reallocate
+    } //reallocate
 } //impl tstr<M>
 
 impl<const N: usize> std::fmt::Display for tstr<N> {
@@ -427,124 +465,124 @@ impl<const N: usize> tstr<N> {
 }
 
 impl Add for str8 {
-  type Output = str16;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str16;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str16 {
-  type Output = str32;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str32;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str32 {
-  type Output = str64;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;     
-     cat
-  }
-}//Add
+    type Output = str64;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str64 {
-  type Output = str128;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;          
-     cat
-  }
-}//Add
+    type Output = str128;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str128 {
-  type Output = str256;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;               
-     cat
-  }
-}//Add
+    type Output = str256;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str4 {
-  type Output = str8;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str8;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str12 {
-  type Output = str24;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str24;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str24 {
-  type Output = str48;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str48;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str48 {
-  type Output = str96;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str96;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 impl Add for str96 {
-  type Output = str192;
-  fn add(self, other:Self) -> Self::Output {
-     let mut cat:Self::Output = self.resize();
-     let slen = self.len();
-     let olen = other.len();
-     cat.chrs[slen+1..slen+olen+1].copy_from_slice(&other.chrs[1..olen+1]);
-     cat.chrs[0] = (slen+olen) as u8;
-     cat
-  }
-}//Add
+    type Output = str192;
+    fn add(self, other: Self) -> Self::Output {
+        let mut cat: Self::Output = self.resize();
+        let slen = self.len();
+        let olen = other.len();
+        cat.chrs[slen + 1..slen + olen + 1].copy_from_slice(&other.chrs[1..olen + 1]);
+        cat.chrs[0] = (slen + olen) as u8;
+        cat
+    }
+} //Add
 
 ////////////// std::fmt::Write trait
 /// Usage:
@@ -555,11 +593,13 @@ impl Add for str96 {
 ///   /* or */
 ///   let s2 = str_format!(str32,"abx{}{}{}",1,2,3");
 /// ```
-impl<const N:usize> std::fmt::Write for tstr<N> {
-  fn write_str(&mut self, s:&str) -> std::fmt::Result //Result<(),std::fmt::Error>
-  {
-    if s.len() + self.len() > N-1 {return Err(std::fmt::Error::default());}
-    self.push(s);
-    Ok(())
-  }//write_str
-}//std::fmt::Write trait
+impl<const N: usize> std::fmt::Write for tstr<N> {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
+    {
+        if s.len() + self.len() > N - 1 {
+            return Err(std::fmt::Error::default());
+        }
+        self.push(s);
+        Ok(())
+    } //write_str
+} //std::fmt::Write trait
