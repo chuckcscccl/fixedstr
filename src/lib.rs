@@ -28,7 +28,10 @@
 //! functions and traits as [fstr] and [zstr] so the documentation for
 //! these structures also apply to the alias types.
 //!
-//! Version 0.3.0 was contributed by [wallefan](https://github.com/wallefan)
+//! **Recent Updates:**
+//!
+//! Version 0.2.12 includes contribution from
+//! [wallefan](https://github.com/wallefan),
 //! and added serde support for serialization.
 //!
 //! Version 0.2.11 impls [std::fmt::Write] and adds [str_format]! and
