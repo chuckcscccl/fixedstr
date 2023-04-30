@@ -292,6 +292,39 @@ impl<const N: usize> fstr<N> {
     }
 } //impl fstr<N>
 
+#[cfg(feature="serde")]
+mod serde_support {
+    use serde::{Serialize, Deserialize, Serializer, Deserializer, de::Visitor};
+    use super::*;
+    macro_rules! generate_impl {
+        ($ty: ident, $visitor: ident) => {
+            impl<const N: usize> Serialize for $ty<N> {
+                fn serialize<S: Serializer>(&self, serializer:S) -> Result<S::Ok, S::Error> {
+                    serializer.serialize_str(self.as_str())
+                }
+            }
+            impl<'de, const N: usize> Deserialize<'de> for $ty<N> {
+                fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                    deserializer.deserialize_str($visitor)
+                }
+            }
+            struct $visitor<const N: usize>;
+            impl<'de, const N: usize> Visitor<'de> for $visitor<N> {
+                type Value = $ty<N>;
+                fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    f.write_str("a string")
+                }
+                fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                    $ty::try_make(s).map_err(|_| E::custom("string too long"))
+                }
+            }
+        }
+    }
+    generate_impl!(fstr, FstrVisitor);
+    generate_impl!(zstr, ZstrVisitor);
+    generate_impl!(tstr, TstrVisitor);
+}
+
 /*
 impl<'t, const N:usize> std::convert::Into<&'t str> for fstr<N>
 {
