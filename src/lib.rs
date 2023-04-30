@@ -33,9 +33,11 @@
 //! Version 0.2.12 includes contribution from
 //! [wallefan](https://github.com/wallefan),
 //! and added serde support for serialization.
+//! This feature can be enabled by giving cargo the
+//! **`--features serde`** option.
 //!
-//! Version 0.2.11 impls [std::fmt::Write] and adds [str_format]! and
-//! [try_format]! macros.
+//! Version 0.2.11 impls [std::fmt::Write], thereby enabling the [write!]
+//! macro. Also adds new macros [str_format!] and [try_format!].
 //!
 //! Version 0.2.10 allows str4-str128 strings to be concatenated with
 //! the `+` operator, resulting in strings with twice the capacity,
