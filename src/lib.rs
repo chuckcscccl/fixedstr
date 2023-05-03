@@ -94,7 +94,7 @@
 //! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 //!```
 //!
-//![zstr] and the type aliases [str8]...[str256] implement the same functions and traits as [fstr].
+//![zstr] and the type aliases [str4]...[str256] implement the same functions and traits as [fstr].
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -113,6 +113,8 @@ pub use zero_terminated::*;
 mod tiny_internal;
 use std::cmp::{min, Ordering};
 use tiny_internal::*;
+
+mod flex_internal;
 
 /// main type: string of size up to const N:
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
@@ -746,8 +748,8 @@ pub type str192 = tstr<192>;
 ///   let mut s = fstr::<32>::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
 ///   /* or */
-///   let s2 = str_format(<fstr<24>,"hello {}, {}, {}",1,2,3);
-///   let s3 = try_format(<fstr<4>,"hello {}, {}, {}",1,2,3); // returns None
+///   let s2 = str_format!(<fstr<24>,"hello {}, {}, {}",1,2,3);
+///   let s3 = try_format!(<fstr<4>,"hello {}, {}, {}",1,2,3); // returns None
 /// ```
 impl<const N: usize> std::fmt::Write for fstr<N> {
     fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
