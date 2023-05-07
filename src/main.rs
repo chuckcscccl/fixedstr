@@ -50,6 +50,7 @@ fn main() {
     ztests();
     ftests();
     tinytests();
+    indexing();
 } //main
 
 fn othertests() {
@@ -130,6 +131,7 @@ fn tinytests() {
     let a2 = a; // copied, not moved
     let ab = a.substr(1, 5); // copies, not move substring to new string
     assert_eq!(ab, "bcde"); // can compare equality with &str
+    assert_eq!(&a[..3], "abc"); // impls Index
     assert_eq!(ab.len(), 4);
     println!("str8: {}", &a);
     assert!(a < ab); // impls Ord, (and Hash, Debug, Eq, other common traits)
@@ -210,3 +212,13 @@ fn tinytests() {
     let s2 = try_format!(str8, "abcdefg{}", "hijklmnop");
     assert!(s2.is_none());
 } //tiny tests
+
+// index tests
+fn indexing() {
+  let mut s = <zstr<8>>::from("abcd");
+  s[0] = b'A';
+  assert_eq!(&s[0..3],"Abc");
+  let mut t = str8::from("abc123");
+  println!("{:?}",&t[1..]);
+
+}//indexing

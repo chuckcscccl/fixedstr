@@ -1,8 +1,25 @@
-// This module implements [zstr], which are zero-terminated strings of
-// fixed lengths.  Compared to [crate::fstr], zstr
-// are more memory efficient but with some of the operations taking slightly
-// longer. Type zstr\<N\> can store strings consisting of up to N-1 bytes
-// whereas fstr\<N\> can store strings consisting of up to N bytes.
+//! This module implements [zstr], which are zero-terminated strings of
+//! fixed maximum lengths.  Compared to [crate::fstr], these strings 
+//! are more memory efficient but with some of the operations taking slightly
+//! longer. Type zstr\<N\> can store strings consisting of up to N-1 bytes
+//! whereas fstr\<N\> can store strings consisting of up to N bytes.
+//! Also, it is assumed that the zstr may carray non-textul data and therefore
+//! implements some of the traits differently.
+//!
+//! **`zstr<N>`** also implements the [std::ops::IndexMut] trait for usize.
+//! This allows destructive changes to single bytes, such as
+//! ```rust
+//!   let mut s = <zstr<8>>::from("abcd");
+//!   s[0] = b'A';
+//!   assert_eq!(&s[0..3],"Abc");
+//! ```
+//! The consequence of IndexMut is that the buffer may not represent an
+//! utf8 string.  In fact, a [zstr::from_raw] method also exists.
+//! In constrast, fstr and the alias types str4-str256 do not implement
+//! IndexMut.  This distinction of zstr means also means that
+//! the [std::ops::Index] traits are separately implemented for the
+//! Range types.
+
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -13,6 +30,8 @@
 #![allow(dead_code)]
 use crate::{fstr, tstr};
 use std::cmp::{min, Ordering};
+use std::ops::{Range,RangeFull,RangeFrom,RangeTo};
+use std::ops::{RangeInclusive,RangeToInclusive};
 
 /// `zstr<N>`: zero-terminated utf8 strings of size up to N bytes.  Note that
 /// zstr supports unicode, so that the length of string in characters may
@@ -71,6 +90,25 @@ impl<const N: usize> zstr<N> {
         zstr::make("")
     }
 
+
+  /// creates a new `zstr<N>` with given u8 slice.  If the length of s exceeds
+  /// N, the extra characters are ignored.  The last byte of the array is
+  /// is set to 0 to ensure that the string is zero-terminated.  This
+  /// operation does not check if the u8 slice is an utf8 source.
+  pub fn from_raw(s:&[u8]) -> zstr<N>
+  {
+     let mut s2 = s;
+     if s.len()>N { s2 = &s[..N]; }
+     let mut z = zstr {
+       chrs: [0;N],
+     };
+     z.chrs[0..s2.len()].copy_from_slice(s2);
+     if (z.chrs.len()>0) {z.chrs[z.chrs.len()-1]=0;}
+     z
+  }//from_raw
+
+
+
     /// length of the string in bytes (consistent with [str::len]).
     pub fn len(&self) -> usize {
         let mut i = 0;
@@ -101,9 +139,9 @@ impl<const N: usize> zstr<N> {
         std::string::String::from_utf8(vs).expect("Invalid utf8 string")
     }
 
-    /// returns copy of u8 array underneath the zstr
+    /// returns slice of u8 array underneath the zstr, including terminating 0
     pub fn as_bytes(&self) -> &[u8] {
-        &self.chrs[..self.blen()]
+        &self.chrs[..self.blen()+1]
     }
 
     /// converts zstr to &str using [std::str::from_utf8_unchecked].
@@ -112,7 +150,7 @@ impl<const N: usize> zstr<N> {
     pub fn to_str(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(&self.chrs[0..self.blen()]) }
     }
-    /// checked version of [zstr::to_str]
+    /// checked version of [zstr::to_str], may panic
     pub fn as_str(&self) -> &str {
         std::str::from_utf8(&self.chrs[0..self.blen()]).unwrap()
     }
@@ -125,7 +163,7 @@ impl<const N: usize> zstr<N> {
         let ref mut cbuf = [0u8; 4];
         c.encode_utf8(cbuf);
         let clen = c.len_utf8();
-        if let Some((bi, rc)) = self.to_str().char_indices().nth(i) {
+        if let Some((bi, rc)) = self.as_str().char_indices().nth(i) {
             if clen == rc.len_utf8() {
                 self.chrs[bi..bi + clen].clone_from_slice(&cbuf[..clen]);
                 //for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
@@ -172,13 +210,13 @@ impl<const N: usize> zstr<N> {
     /// returns the number of characters in the string regardless of
     /// character class
     pub fn charlen(&self) -> usize {
-        let v: Vec<_> = self.to_str().chars().collect();
+        let v: Vec<_> = self.as_str().chars().collect();
         v.len()
     }
 
     /// returns the nth char of the zstr
     pub fn nth(&self, n: usize) -> Option<char> {
-        self.to_str().chars().nth(n)
+        self.as_str().chars().nth(n)
         //if n<self.len() {Some(self.chrs[n] as char)} else {None}
     }
 
@@ -193,25 +231,25 @@ impl<const N: usize> zstr<N> {
 
     /// determines if string is an ascii string
     pub fn is_ascii(&self) -> bool {
-        self.to_str().is_ascii()
+        self.as_str().is_ascii()
     }
 
     /// shortens the zstr in-place (mutates).  If n is greater than the
     /// current length of the string, this operation will have no effect.
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
-        if let Some((bi, c)) = self.to_str().char_indices().nth(n) {
+        if let Some((bi, c)) = self.as_str().char_indices().nth(n) {
             self.chrs[bi] = 0;
         }
     }
 
     /// mimics same function on str
     pub fn chars(&self) -> std::str::Chars<'_> {
-        self.to_str().chars()
+        self.as_str().chars()
     }
     /// mimics same function on str
     pub fn char_indices(&self) -> std::str::CharIndices<'_> {
-        self.to_str().char_indices()
+        self.as_str().char_indices()
     }
 
     /// in-place modification of ascii characters to lower-case
@@ -254,7 +292,7 @@ impl<const N: usize> zstr<N> {
 
 impl<const N: usize> std::convert::AsRef<str> for zstr<N> {
     fn as_ref(&self) -> &str {
-        self.to_str()
+        self.as_str()
     }
 }
 impl<const N: usize> std::convert::AsMut<str> for zstr<N> {
@@ -328,6 +366,7 @@ impl<const N:usize,const M:usize> std::convert::From<&tstr<M>> for zstr<N>
 
 */
 
+
 impl<const N: usize> std::convert::From<String> for zstr<N> {
     fn from(s: String) -> zstr<N> {
         zstr::<N>::make(&s[..])
@@ -391,18 +430,18 @@ impl<const M: usize> zstr<M> {
 
 impl<const N: usize> std::fmt::Display for zstr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_str())
+        write!(f, "{}", self.as_str())
     }
 }
 
 impl<const N: usize> PartialEq<&str> for zstr<N> {
     fn eq(&self, other: &&str) -> bool {
-        self.to_str() == *other // see below
+        self.as_str() == *other // see below
     } //eq
 }
 impl<const N: usize> PartialEq<&str> for &zstr<N> {
     fn eq(&self, other: &&str) -> bool {
-        &self.to_str() == other
+        &self.as_str() == other
         /*
           let obytes = other.as_bytes();
           let olen = obytes.len();
@@ -418,12 +457,12 @@ impl<const N: usize> PartialEq<&str> for &zstr<N> {
 }
 impl<'t, const N: usize> PartialEq<zstr<N>> for &'t str {
     fn eq(&self, other: &zstr<N>) -> bool {
-        &other.to_str() == self
+        &other.as_str() == self
     }
 }
 impl<'t, const N: usize> PartialEq<&zstr<N>> for &'t str {
     fn eq(&self, other: &&zstr<N>) -> bool {
-        &other.to_str() == self
+        &other.as_str() == self
     }
 }
 
@@ -436,49 +475,36 @@ impl<const N: usize> Default for zstr<N> {
 
 impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
     fn eq(&self, other: &zstr<N>) -> bool {
-        other.to_str() == self.to_str()
+        other.as_str() == self.to_str()
     }
 }
 /*
 impl<const N:usize, const M:usize> PartialEq<&zstr<N>> for fstr<M>
 {
   fn eq(&self, other:&&zstr<N>) -> bool
-  { other.to_str()==self.to_str() }
+  { other.as_str()==self.to_str() }
 }
 */
 impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
     fn eq(&self, other: &fstr<N>) -> bool {
-        other.to_str() == self.to_str()
+        other.to_str() == self.as_str()
     }
 }
 impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for zstr<M> {
     fn eq(&self, other: &&fstr<N>) -> bool {
-        other.to_str() == self.to_str()
+        other.to_str() == self.as_str()
     }
 }
 
 impl<const N: usize> std::fmt::Debug for zstr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ds = format!("zstr<{}>:\"{}\"", N, &self.to_str());
+        let ds = format!("zstr<{}>:\"{}\"", N, &self.as_str());
         f.pad(&ds)
         //        f.debug_struct("zstr")
         //         .field("chrs:",&self.to_str())
         //         .finish()
     }
 } // Debug impl
-
-///Convert zstr to &[u8] slice
-impl<IndexType, const N: usize> std::ops::Index<IndexType> for zstr<N>
-where
-    IndexType: std::slice::SliceIndex<[u8]>,
-{
-    type Output = IndexType::Output;
-    fn index(&self, index: IndexType) -> &Self::Output {
-        &self.chrs[index]
-    }
-} //impl Index
-  // couldn't get it to work properly, [char] is not same as &str
-  // because there's no allocated string!
 
 impl<const N: usize> zstr<N> {
     /// returns a copy of the portion of the string, string could be truncated
@@ -536,3 +562,76 @@ impl<const N: usize> std::fmt::Write for zstr<N> {
         Ok(())
     } //write_str
 } //std::fmt::Write trait
+
+
+
+/*
+///Convert zstr to &str
+impl<IndexType, const N: usize> std::ops::Index<IndexType> for zstr<N>
+where
+    IndexType: std::slice::SliceIndex<str>,
+{
+    type Output = IndexType::Output;
+    fn index(&self, index: IndexType) -> &Self::Output {
+        &self.as_str()[index]
+    }
+} //impl Index
+*/
+
+
+///The implementation of `Index<usize>` for types `zstr<N>` is different
+///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
+///byte.  The type returned by this trait is &u8, not &str.
+impl<const N:usize> std::ops::Index<usize> for zstr<N>
+{
+  type Output = u8;
+  fn index(&self, index:usize)-> &Self::Output
+  {
+     &self.chrs[index]
+  }
+}//impl Index
+impl<const N:usize> std::ops::IndexMut<usize> for zstr<N>
+{
+  fn index_mut(&mut self, index:usize)-> &mut Self::Output
+  {
+     &mut self.chrs[index]
+  }
+}//impl Index
+
+
+impl<const N:usize> std::ops::Index<Range<usize>> for zstr<N> {
+  type Output = str;
+  fn index(&self, index:Range<usize>)-> &Self::Output  {
+     &self.as_str()[index]
+  }
+}//impl Index
+impl<const N:usize> std::ops::Index<RangeTo<usize>> for zstr<N> {
+  type Output = str;
+  fn index(&self, index:RangeTo<usize>)-> &Self::Output  {
+     &self.as_str()[index]
+  }
+}//impl Index
+impl<const N:usize> std::ops::Index<RangeFrom<usize>> for zstr<N> {
+  type Output = str;
+  fn index(&self, index:RangeFrom<usize>)-> &Self::Output  {
+     &self.as_str()[index]
+  }
+}//impl Index
+impl<const N:usize> std::ops::Index<RangeInclusive<usize>> for zstr<N> {
+  type Output = str;
+  fn index(&self, index:RangeInclusive<usize>)-> &Self::Output  {
+     &self.as_str()[index]
+  }
+}//impl Index
+impl<const N:usize> std::ops::Index<RangeToInclusive<usize>> for zstr<N> {
+  type Output = str;
+  fn index(&self, index:RangeToInclusive<usize>)-> &Self::Output  {
+     &self.as_str()[index]
+  }
+}//impl Index
+impl<const N:usize> std::ops::Index<RangeFull> for zstr<N> {
+  type Output = str;
+  fn index(&self, index:RangeFull)-> &Self::Output  {
+     &self.as_str()[index]
+  }
+}//impl Index

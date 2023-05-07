@@ -21,7 +21,8 @@ use crate::fstr;
 use crate::zstr;
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
 use std::cmp::{min, Ordering};
-use std::ops::Add;
+use std::ops::{Add,Range,Index,IndexMut,RangeFull,RangeFrom,RangeTo};
+use std::ops::{RangeInclusive,RangeToInclusive};
 
 /// **THIS STRUCTURE IS NOT EXPORTED.**  It can only be used through the
 /// public type aliases [crate::str4] through [crate::str256].
@@ -125,7 +126,7 @@ impl<const N: usize> tstr<N> {
     pub fn to_str(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(&self.chrs[1..self.len() + 1]) }
     }
-    /// alias for [tstr::to_str]
+    /// checked version of [tstr::to_str], may panic
     pub fn as_str(&self) -> &str {
         std::str::from_utf8(&self.chrs[1..self.len() + 1]).unwrap()
     }
@@ -418,20 +419,18 @@ impl<const N: usize> std::fmt::Debug for tstr<N> {
     }
 } // Debug impl
 
-/*
-///Convert tstr to &[u8] slice
-impl<IndexType,const N:usize> std::ops::Index<IndexType> for tstr<N>
-  where IndexType:std::slice::SliceIndex<[u8]>,
+
+///Convert fstr to &str slice
+impl<IndexType, const N: usize> std::ops::Index<IndexType> for tstr<N>
+where
+    IndexType: std::slice::SliceIndex<str>,
 {
-  type Output = IndexType::Output;
-  fn index(&self, index:IndexType)-> &Self::Output
-  {
-     &self.chrs[index+1]
-  }
-}//impl Index
-// couldn't get it to work properly, [char] is not same as &str
-// because there's no allocated string!
-*/
+    type Output = IndexType::Output;
+    fn index(&self, index: IndexType) -> &Self::Output {
+        &self.to_str()[index]
+    }
+} //impl Index
+
 
 impl<const N: usize> tstr<N> {
     /// returns a copy of the portion of the string, string could be truncated

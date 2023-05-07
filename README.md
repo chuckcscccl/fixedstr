@@ -1,5 +1,5 @@
 Library for strings of fixed maximum lengths that can be copied and
-stack-allocated using Rust's const generics feature.  Certain provided
+stack-allocated using const generics.  Certain provided
 types such as `zstr<8>` and `str8` are smaller in size than a &str.
 
 #### Examples
@@ -7,9 +7,10 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
   let a:str8 = str8::from("abcdef"); //a str8 can hold up to 7 bytes
   let a2 = a;  // copied, not moved
   let ab = a.substr(1,5);  // copies substring to new string
-  assert_eq!(ab, "bcde");  // can compare equality with &str
+  assert_eq!(ab, "bcde");  // can compare for equality with &str
   assert_eq!(ab.len(),4);
-  println!("str8: {}", &a);  // impls Display
+  println!("str8: {}", &a);   // impls Display
+  assert_eq!(&a[..3], "abc"); // impls Index for Range types
   assert!(a<ab); // and Ord, Hash, Debug, Eq, other common traits
   let astr:&str = a.to_str(); // convert to &str (zero copy)
   let aowned:String = a.to_string(); // convert to owned string
@@ -42,6 +43,10 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
+
+  let mut s = <zstr<8>>::from("abcd");
+  s[0] = b'A';   // impls IndexMut for zstr (not for fstr nor strN types)
+  assert_eq!('A', ac.nth_ascii(0));
 ```
 
-Consult the documentation for details.
+Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.

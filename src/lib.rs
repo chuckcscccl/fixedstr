@@ -25,10 +25,15 @@
 //! a way to specify conditions on const generics at compile time, such as
 //! `where N<=256`, the tstr type is not exported and can
 //! only be used through the aliases.  These strings implement the same
-//! functions and traits as [fstr] and [zstr] so the documentation for
-//! these structures also apply to the alias types.
+//! functions and traits as fstr\<N\> so **the documentation for [fstr]
+//! also apply to the alias types**.
 //!
 //! **Recent Updates:**
+//!
+//! Version 0.3.0 modified the implementations of the [std::ops::Index] traits
+//! to return &str slices (as opposed to &\[u8\] slices in pre-3.0 versions).  In addition,
+//! IndexMut\<usize\> is separately implemented for the [zstr] type, allowing
+//! this type to represent more than just utf8 strings.
 //!
 //! Version 0.2.12 includes contribution from
 //! [wallefan](https://github.com/wallefan),
@@ -63,7 +68,8 @@
 //! assert_eq!(a.nth_ascii(2), 'c');
 //! let ab = a.substr(1,5);  // copies substring to new fstr
 //! assert_eq!(ab,"bcde");  // can compare with &str
-//! assert!(a<ab);  // implements Ord trait (and Hash, Debug, Display)
+//! assert_eq!(&a[1..4],"bcd"); // implements Index
+//! assert!(a<ab);  // implements Ord (and Hash, Debug, Display, other traits)
 //! let mut u:fstr<8> = fstr::from("aλb"); //unicode support
 //! for x in u.nth(1) {assert_eq!(x,'λ');} // nth returns Option<char>
 //! assert!(u.set(1,'μ'));  // changes a character of the same character class
@@ -87,12 +93,17 @@
 //! assert_eq!(c3,"abcdefxyz123");   
 //! assert_eq!(c3.capacity(),15);  // type of c3 is str16
 //!
-//! // New in Version 0.4.11:
+//! // New in Version 0.2.11:
 //! let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls std::fmt::Write
 //! assert_eq!(c4,"abc 123");  // str_format! truncates if capacity exceeded
 //! let c5 = try_format!(str8,"abcdef{}","ghijklmn");
 //! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
-//!```
+//!
+//! // New in Version 0.3.0:
+//! let mut s = <zstr<8>>::from("abcd");
+//! s[0] = b'A';            // implements IndexMut<usize> (only for zstr)
+//! assert_eq!(&s[0..3],"Abc");
+//! ```
 //!
 //![zstr] and the type aliases [str4]...[str256] implement the same functions and traits as [fstr].
 
@@ -212,7 +223,8 @@ impl<const N: usize> fstr<N> {
     pub fn to_str(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(&self.chrs[0..self.len]) }
     }
-    /// same functionality as [fstr::to_str]
+    /// same functionality as [fstr::to_str], but using [std::str::from_utf8]
+    /// and may technically panic.
     pub fn as_str(&self) -> &str //{self.to_str()}
     {
         std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
@@ -613,31 +625,37 @@ impl<const N: usize> std::fmt::Debug for fstr<N> {
     }
 } // Debug impl
 
-///Convert fstr to &[u8] slice
+
+///Convert fstr to &str slice
 impl<IndexType, const N: usize> std::ops::Index<IndexType> for fstr<N>
 where
-    IndexType: std::slice::SliceIndex<[u8]>,
+    IndexType: std::slice::SliceIndex<str>,
 {
     type Output = IndexType::Output;
     fn index(&self, index: IndexType) -> &Self::Output {
+        &self.to_str()[index]
+    }
+} //impl Index
+
+/*
+impl<const N: usize> std::ops::Index<usize> for fstr<N>
+{
+    type Output = u8;
+    fn index(&self, index: usize) -> &Self::Output {
         &self.chrs[index]
     }
 } //impl Index
 
-  // couldn't get it to work properly, [char] is not same as &str
-  // because there's no allocated string!
-/*
-  ///Convert fstr to &str slice
-  impl<IndexType,const N:usize> std::ops::Index<IndexType> for fstr<N>
-    where IndexType:std::slice::SliceIndex<str>,
-  {
-    type Output = IndexType::Output;
-    fn index(&self, index:IndexType)-> &Self::Output
-    {
-       &self.chrs[index]
+impl<const N: usize> std::ops::IndexMut<usize> for fstr<N>
+{
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        //&mut self.chrs[index..index+1]
+        self.as_mut()[index..index+1]
     }
-  }//impl Index
+} //impl Index
 */
+
+
 
 impl<const N: usize> fstr<N> {
     /// mimics same function on str

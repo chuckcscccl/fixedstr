@@ -109,16 +109,77 @@ impl<const N:usize> Flexstring<N>
       owned(_) => true,
     }
   }//is_owned
+
+  pub fn if_fixed<F>(&mut self, f:&mut F) where F:FnMut(&mut tstr<N>)
+  {
+     if let fixed(s) = &mut self.inner {f(s);}
+  }
+
+  pub fn map_fixed<F,U>(&mut self, f:&mut F) -> Option<U>
+    where F:FnMut(&mut tstr<N>)-> U
+  {
+     if let fixed(s) = &mut self.inner {Some(f(s))} else {None}
+  }
+
+  pub fn map_mut<F,U>(&mut self, f:&mut F) -> U
+    where F:FnMut(&mut str)-> U
+  {
+     match &mut self.inner {
+       fixed(s) => f(s.as_mut()),
+       owned(s) => f(&mut s[..]),
+     }//match
+  }//map
+
+  pub fn map<F,U>(&self, f:&F) -> U
+    where F:Fn(&str)-> U
+  {
+     match &self.inner {
+       fixed(s) => f(s.to_str()),
+       owned(s) => f(&s[..]),
+     }//match
+  }//map
+
+
+  pub fn map_or<F,G,U>(&self, f:&F, g:&G) -> U
+    where F:Fn(&tstr<N>)-> U, G:Fn(&str) -> U
+  {
+     match &self.inner {
+       fixed(s) => f(s),
+       owned(s) => g(&s[..]),
+     }//match
+  }//map
+
+  pub fn map_or_mut<F,G,U>(&mut self, f:&mut F, g:&mut G) -> U
+    where F:FnMut(&mut tstr<N>)-> U, G:FnMut(&mut str) -> U
+  {
+     match &mut self.inner {
+       fixed(s) => f(s),
+       owned(s) => g(&mut s[..]),
+     }//match
+  }//map
+
   
 
-  pub fn push_str(&mut self, s:&str) {
+  /*
+  pub fn if_owned<F>(&mut self, f:&mut F) where F:FnMut(&mut tstr<N>)
+  {
+     if let fixed(s) = &mut self.inner {f(s);}
+  }
+  */
+  
+  /// this function will append the Flexstring with the given slice,
+  /// switching to the owned representation if necessary.  The function
+  /// returns true if the representation still uses a `tstr<N>` type, and
+  /// false if the representation is an owned string.
+  pub fn push_str(&mut self, s:&str) -> bool {
     match &mut self.inner {
-      fixed(fs) if fs.len()+s.len() < N => { fs.push(s); },
+      fixed(fs) if fs.len()+s.len() < N => { fs.push(s); true},
       fixed(fs) => {
         let fss = fs.to_string() + s;
         self.inner = owned(fss);
+        false
       },
-      owned(ns) => {ns.push_str(s);},
+      owned(ns) => {ns.push_str(s); false},
     }//match
   }//push
 
