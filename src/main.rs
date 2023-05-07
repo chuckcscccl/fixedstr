@@ -141,6 +141,8 @@ fn tinytests() {
     let azstr: zstr<16> = zstr::from(a); // so is zstr
     let a32: str32 = a.resize(); // same type of string with 31-byte capacity
     let mut u = str8::from("aλb"); //unicode support
+    assert_eq!(u.nth(1), Some('λ'));  // get nth character
+    assert_eq!(u.nth_ascii(3), 'b');  // get nth byte as ascii character
     assert!(u.set(1, 'μ')); // changes a character of the same character class
     assert!(!u.set(1, 'c')); // .set returns false on failure
     assert!(u.set(2, 'c'));
