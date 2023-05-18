@@ -30,6 +30,11 @@
 //!
 //! **Recent Updates:**
 //!
+//! Version 0.3.1 implements `Deref<Target=str>` and removed
+//! some redundant procedures.  The functions `to_ascii_lowercase`
+//! and `to_ascii_uppercase` **has been renamed to `to_ascii_lower` and
+//! `to_ascii_upper`**, to avoid clash with those from the Deref trait.
+//!
 //! Version 0.3.0 modified the implementations of the [std::ops::Index] traits
 //! to return &str slices (as opposed to &\[u8\] slices in pre-3.0 versions).  In addition,
 //! IndexMut\<usize\> is separately implemented for the [zstr] type, allowing
@@ -53,10 +58,6 @@
 //! have been added that do not truncate strings.  str4, str24 and
 //! str48 were added.  [str4] can only hold three bytes but is good enough
 //! for many types of abbreviations such as those for airports.
-//!
-//! For version 0.2.2  the fsiter construct and direct iterator
-//! implmentation for fstr has been removed. Use the [fstr::chars]
-//! function instead.
 
 //!  ## Examples
 //!
@@ -333,7 +334,7 @@ impl<const N: usize> fstr<N> {
     /// Constructs a clone of this fstr but with only upper-case ascii
     /// characters.  This contrasts with [str::to_ascii_uppercase],
     /// which creates an owned String. 
-    pub fn to_ascii_uppercase(&self) -> Self
+    pub fn to_ascii_upper(&self) -> Self
     {
       let mut cp = self.clone();
       cp.make_ascii_uppercase();
@@ -343,7 +344,7 @@ impl<const N: usize> fstr<N> {
     /// Constructs a clone of this fstr but with only lower-case ascii
     /// characters.  This contrasts with [str::to_ascii_lowercase],
     /// which creates an owned String.
-    pub fn to_ascii_lowercase(&self) -> Self
+    pub fn to_ascii_lower(&self) -> Self
     {
       let mut cp = *self;
       cp.make_ascii_lowercase();
@@ -394,6 +395,14 @@ impl<'t, const N:usize> std::convert::Into<&'t str> for fstr<N>
   }
 }
 */
+
+impl<const N:usize> std::ops::Deref for fstr<N>
+{
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+      self.to_str()
+    }
+}
 
 impl<T: AsRef<str> + ?Sized, const N: usize> std::convert::From<&T> for fstr<N> {
     fn from(s: &T) -> fstr<N> {
@@ -658,6 +667,7 @@ impl<const N: usize> std::ops::IndexMut<usize> for fstr<N>
 
 
 impl<const N: usize> fstr<N> {
+    /*
     /// mimics same function on str
     pub fn chars(&self) -> std::str::Chars<'_> {
         self.to_str().chars()
@@ -666,7 +676,8 @@ impl<const N: usize> fstr<N> {
     pub fn char_indices(&self) -> std::str::CharIndices<'_> {
         self.to_str().char_indices()
     }
-
+    */
+    
     /// returns a copy of the portion of the string, string could be truncated
     /// if indices are out of range. Similar to slice [start..end]
     pub fn substr(&self, start: usize, end: usize) -> fstr<N> {

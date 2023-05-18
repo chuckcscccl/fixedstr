@@ -4,12 +4,14 @@
 #![allow(unused_parens)]
 #![allow(unused_mut)]
 #![allow(unused_assignments)]
+#![allow(unused_imports)]
 //use std::mem;
 //mod lib;
 //use lib::*;
 use fixedstr::*;
 use std::fmt::Write;
 fn main() {
+/*
     let s1: fstr<16> = fstr::from("abc");
     let mut s2: fstr<8> = fstr::from("and xyz");
     let s2r = s2.push(" and 1234");
@@ -46,13 +48,17 @@ fn main() {
     let s8 = try_format!(fstr<32>, "abcdefg {}, {}", 1, 10);
     println!("s8 is {}", &s8.unwrap());
 
+    let mut f1 = fstr::<16>::from("abcdefg");
+    let f2 = f1.to_ascii_uppercase();
+    //f1 = f2; // copy?
     othertests();
     ztests();
     ftests();
     tinytests();
     indexing();
+*/
 } //main
-
+/*
 fn othertests() {
     let s1: fstr<8> = fstr::from("abcdefg");
     let s2: fstr<16> = s1.resize();
@@ -194,7 +200,7 @@ fn tinytests() {
     println!("b4 is {}", &b4);
 
     let (upper,lower) = (str8::make("ABC"), str8::make("abc"));
-    assert_eq!(upper, lower.to_ascii_uppercase());
+    assert_eq!(upper, lower.to_ascii_upper());
 
     let c1 = str8::from("abcdef");
     let c2 = str8::from("xyz123");
@@ -224,3 +230,4 @@ fn indexing() {
   println!("{:?}",&t[1..]);
 
 }//indexing
+*/

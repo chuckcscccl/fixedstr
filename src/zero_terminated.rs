@@ -242,7 +242,7 @@ impl<const N: usize> zstr<N> {
             self.chrs[bi] = 0;
         }
     }
-
+    /*
     /// mimics same function on str
     pub fn chars(&self) -> std::str::Chars<'_> {
         self.as_str().chars()
@@ -251,7 +251,8 @@ impl<const N: usize> zstr<N> {
     pub fn char_indices(&self) -> std::str::CharIndices<'_> {
         self.as_str().char_indices()
     }
-
+    */
+    
     /// in-place modification of ascii characters to lower-case
     pub fn make_ascii_lowercase(&mut self) {
       for b in &mut self.chrs {
@@ -271,7 +272,7 @@ impl<const N: usize> zstr<N> {
     /// Constructs a clone of this fstr but with only upper-case ascii
     /// characters.  This contrasts with [str::to_ascii_uppercase],
     /// which creates an owned String. 
-    pub fn to_ascii_uppercase(&self) -> Self
+    pub fn to_ascii_upper(&self) -> Self
     {
       let mut cp = self.clone();
       cp.make_ascii_uppercase();
@@ -281,7 +282,7 @@ impl<const N: usize> zstr<N> {
     /// Constructs a clone of this fstr but with only lower-case ascii
     /// characters.  This contrasts with [str::to_ascii_lowercase],
     /// which creates an owned String.
-    pub fn to_ascii_lowercase(&self) -> Self
+    pub fn to_ascii_lower(&self) -> Self
     {
       let mut cp = *self;
       cp.make_ascii_lowercase();
@@ -289,6 +290,14 @@ impl<const N: usize> zstr<N> {
     }
 
 } //impl zstr<N>
+
+impl<const N:usize> std::ops::Deref for zstr<N>
+{
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+      self.to_str()
+    }
+}
 
 impl<const N: usize> std::convert::AsRef<str> for zstr<N> {
     fn as_ref(&self) -> &str {

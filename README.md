@@ -33,7 +33,7 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
   ac.truncate(9);  // keep first 9 chars
   assert_eq!(&ac,"abcdefghi");
   let (upper,lower) = (str8::make("ABC"), str8::make("abc"));
-  assert_eq!(upper, lower.to_ascii_uppercase()); // no owned String needed
+  assert_eq!(upper, lower.to_ascii_upper()); // no owned String needed
 
   let c1 = str8::from("abcd"); // string concatenation with + for strN types  
   let c2 = str8::from("xyz");
