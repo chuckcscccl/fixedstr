@@ -1,9 +1,10 @@
 //! Library for strings of fixed maximum lengths that can be copied and
 //! stack-allocated using const generics.
 //!
-//! **The structures provided by this crate are [fstr], [zstr]** and tstr.
+//! **The structures provided by this crate are [fstr], [zstr], [Flexstr]** and tstr.
 //! However, tstr is not exported and can only be used through the type
-//! aliases [str4], [str8], [str16], through [str256].
+//! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
+//! with [Flexstr].
 //!
 //! The size of (std::mem::size_of) types str8 and zstr<8>
 //! are 8 bytes, compared to 16 bytes for &str (on 64bit systems), providing more efficient
@@ -128,7 +129,7 @@
 //use std::fmt::Write;
 pub mod zero_terminated;
 pub use zero_terminated::*;
-pub mod tiny_internal;
+mod tiny_internal;
 use std::cmp::{min, Ordering};
 use tiny_internal::*;
 
