@@ -58,7 +58,7 @@ fn main() {
     tinytests();
     indexing();
     flextest();
-*/    
+*/        
 } //main
 /*
 fn othertests() {
@@ -266,5 +266,13 @@ fn flextest() {
     u2.push_str("aaaaaaaa");
     println!("{} len {}",&u2,u2.len());
     assert!(u2.is_fixed());
+
+    let mut s:Flexstr<8> = Flexstr::from("abcdef");
+    assert!(s.is_fixed());
+    s.push_str("ghijk");
+    assert!(s.is_owned());
+    s.truncate(7);
+    assert!(s.is_fixed());
 }//flextest
 */
+

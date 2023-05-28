@@ -13,13 +13,24 @@
 //! may switch the representation back to a fixed string.
 //! The default N is 32.  **The largest N for which the axiom holds
 //! is 256.**  For all N>256, the internal representation is always an owned
-//! string. 
+//! string.
+//!
+//! Example:
+//! ```
+//!  let mut s:Flexstr<8> = Flexstr::from("abcdef");
+//!  assert!(s.is_fixed());
+//!  s.push_str("ghijk");
+//!  assert!(s.is_owned());
+//!  s.truncate(7);
+//!  assert!(s.is_fixed());
+//! ```
 //!
 //! The intended use of this datatype is for
 //! situations when the lengths of strings are *usually* less than N, with
 //! only occasional exceptions that require a different representation.
 //! However, unlike the other string types in this crate, a Flexstr cannot
-//! be copied and is thus subject to move semantics.
+//! be copied and is thus subject to move semantics.  The serde serialization
+//! option is also supported (`features serde`).
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
