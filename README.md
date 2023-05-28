@@ -55,4 +55,4 @@ Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for detai
 
 <br>
 
-**Recent Addition:** module [flexible_string](https://docs.rs/fixedstr/latest/fixedstr/flexible_string/index.html
+**Recent Addition:** module [flexible_string](https://docs.rs/fixedstr/latest/fixedstr/flexible_string/index.html)
