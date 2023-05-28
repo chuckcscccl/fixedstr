@@ -31,7 +31,7 @@ pub struct tstr<const N: usize = 256> {
     chrs: [u8; N],
 } //tstr
 impl<const N: usize> tstr<N> {
-    /// creates a new tstr<N> with given &str.  If the length of s exceeds
+    /// creates a new `tstr<N>` with given &str.  If the length of s exceeds
     /// N, the extra characters are ignored.  This function is also called by
     /// several others including [tstr::from].  This function can now handle
     /// utf8 strings properly.
@@ -148,7 +148,7 @@ impl<const N: usize> tstr<N> {
         }
         return false;
     } //set
-    /// adds chars to end of current string up to maximum size N of tstr<N>,
+    /// adds chars to end of current string up to maximum size N of `tstr<N>`,
     /// returns the portion of the push string that was NOT pushed due to
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
@@ -598,7 +598,7 @@ impl Add for str96 {
 ///   let mut s = str16::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
 ///   /* or */
-///   let s2 = str_format!(str32,"abx{}{}{}",1,2,3");
+///   let s2 = str_format!(str32,"abx{}{}{}",1,2,3);
 /// ```
 impl<const N: usize> std::fmt::Write for tstr<N> {
     fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>

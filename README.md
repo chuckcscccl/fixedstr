@@ -52,3 +52,7 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
 ```
 
 Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.
+
+<br>
+
+**Recent Addition:** module [flexible_string](https://docs.rs/fixedstr/latest/fixedstr/flexible_string/index.html

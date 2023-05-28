@@ -9,6 +9,7 @@
 //mod lib;
 //use lib::*;
 use fixedstr::*;
+use flexible_string::Flexstr;
 use std::fmt::Write;
 fn main() {
 /*
@@ -56,7 +57,8 @@ fn main() {
     ftests();
     tinytests();
     indexing();
-*/
+    flextest();
+*/    
 } //main
 /*
 fn othertests() {
@@ -230,4 +232,39 @@ fn indexing() {
   println!("{:?}",&t[1..]);
 
 }//indexing
+
+
+fn flextest() {
+    println!("starting Flexstr tests...");
+    let mut a:Flexstr<8> = Flexstr::from("abcdef");
+    a.truncate(5);
+    assert_eq!(a, "abcde"); // can compare equality with &str
+    assert_eq!(&a[..3], "abc"); // impls Index
+    println!("Flexstr slice: {}", &a[1..4]);
+    let ab = Flexstr::<8>::from("bcdefghijklmnop");
+    assert!(a.is_fixed());
+    assert!(!ab.is_fixed());
+    let a2:str8 = a.get_str().unwrap();
+    assert!(a < ab); // impls Ord, (and Hash, Debug, Eq, other common traits)
+    let astr: &str = a.to_str(); // convert to &str (zero copy)
+    let aowned: String = a.to_string(); // convert to owned string
+    //let b = a.take_string();
+    let mut u = Flexstr::<8>::from("aλb"); //unicode support
+    assert_eq!(u.nth(1), Some('λ'));  // get nth character
+    assert_eq!(u.nth_ascii(3), 'b');  // get nth byte as ascii character
+    assert!(u.set(1, 'μ')); // changes a character of the same character class
+    assert!(!u.set(1, 'c')); // .set returns false on failure
+    assert!(u.set(2, 'c'));
+    assert_eq!(u, "aμc");
+    assert_eq!(u.len(), 4); // length in bytes
+    assert_eq!(u.charlen(), 3); // length in chars
+    let mut v:Flexstr<4> = Flexstr::from("aμcxyz");
+    v.set(1,'λ');
+    println!("v: {}",&v);
+
+    let mut u2:Flexstr<16> = u.resize();
+    u2.push_str("aaaaaaaa");
+    println!("{} len {}",&u2,u2.len());
+    assert!(u2.is_fixed());
+}//flextest
 */

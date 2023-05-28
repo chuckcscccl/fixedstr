@@ -9,7 +9,7 @@
 //! are 8 bytes, compared to 16 bytes for &str (on 64bit systems), providing more efficient
 //! ways of representing very small strings.  Unicode is supported.
 //!
-//! The three versions of strings implemented are as follows.
+//! The four versions of strings implemented are as follows.
 //! - A **[fstr]\<N\>**
 //! stores a string of up to N bytes.  It is represented underneath using
 //! a \[u8;N\] array and a separate usize variable holding the length.
@@ -27,8 +27,14 @@
 //! only be used through the aliases.  These strings implement the same
 //! functions and traits as fstr\<N\> so **the documentation for [fstr]
 //! also apply to the alias types**.
+//! - A **[Flexstr]\<N\>** uses an internal enum that is either a tstr\<N\>
+//!   or an owned String, in case the length of the string exceeds N.
+//!   This type is designed for situations where strings only 
+//!   occasionally exceed the limit of N-1 bytes.
 //!
 //! **Recent Updates:**
+//!
+//! Version 0.3.2 introduced the [Flexstr] type.
 //!
 //! Version 0.3.1 implements `Deref<Target=str>` and removed
 //! some redundant procedures.  The functions `to_ascii_lowercase`
@@ -122,13 +128,18 @@
 //use std::fmt::Write;
 pub mod zero_terminated;
 pub use zero_terminated::*;
-mod tiny_internal;
+pub mod tiny_internal;
 use std::cmp::{min, Ordering};
 use tiny_internal::*;
 
-mod flex_internal;
+// #[cfg(feature="flex")]
+pub mod flexible_string;
+// #[cfg(feature="flex")]
+pub use flexible_string::*;
 
-/// main type: string of size up to const N:
+/// string of size up to const N, using a separate variable to store the length.
+/// This type is not as memory-efficient as the alias types [str4]-[str256], but
+/// provides documentation on the implemented functions.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct fstr<const N: usize> {
     chrs: [u8; N],
@@ -219,7 +230,7 @@ impl<const N: usize> fstr<N> {
     }
 
     /// converts fstr to &str using [std::str::from_utf8_unchecked].  Since
-    /// fstr can only be build from valid utf8 sources, using this function
+    /// fstr can only be built from valid utf8 sources, this function
     /// is safe.
     pub fn to_str(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(&self.chrs[0..self.len]) }
@@ -301,12 +312,12 @@ impl<const N: usize> fstr<N> {
     pub fn nth_ascii(&self, n: usize) -> char {
         self.chrs[n] as char
     }
-
+/*
     /// determines if string is an ascii string
     pub fn is_ascii(&self) -> bool {
         self.to_str().is_ascii()
     }
-
+*/
     /// shortens the fstr in-place (mutates).  If n is greater than the
     /// current length of the string in chars, this operation will have no effect.
     pub fn truncate(&mut self, n: usize) {
@@ -384,6 +395,7 @@ mod serde_support {
     generate_impl!(fstr, FstrVisitor);
     generate_impl!(zstr, ZstrVisitor);
     generate_impl!(tstr, TstrVisitor);
+    generate_impl!(Flexstr, FlexstrVisitor);
 }
 
 /*
@@ -587,7 +599,7 @@ impl<const N:usize> IntoIterator for fstr<N>
 
 impl<const N: usize> std::fmt::Display for fstr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_str()) // need change!
+        write!(f, "{}", self.to_str())
     }
 }
 
@@ -634,7 +646,7 @@ impl<const N: usize> std::fmt::Debug for fstr<N> {
     }
 } // Debug impl
 
-
+/*
 ///Convert fstr to &str slice
 impl<IndexType, const N: usize> std::ops::Index<IndexType> for fstr<N>
 where
@@ -645,6 +657,7 @@ where
         &self.to_str()[index]
     }
 } //impl Index
+*/
 
 /*
 impl<const N: usize> std::ops::Index<usize> for fstr<N>
