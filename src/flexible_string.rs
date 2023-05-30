@@ -8,7 +8,7 @@
 //! For example, a `Flexstr<16>` will hold a string of up to 15 bytes 
 //! in an u8-array of size 16. The first byte of the array holds the length of
 //! the string.  If subsequent operations such as [Flexstr::push_str]
-//! extends the array past 15 bytes, the representation will switch to an owned
+//! extends the string past 15 bytes, the representation will switch to an owned
 //! String.  Conversely, an operation such as [Flexstr::truncate]
 //! may switch the representation back to a fixed string.
 //! The default N is 32.  **The largest N for which the axiom holds

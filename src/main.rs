@@ -58,7 +58,10 @@ fn main() {
     tinytests();
     indexing();
     flextest();
-*/        
+*/
+    //let ab = Flexstr::<32>::from("bcdefghijklmnop");
+    //println!("size of ab: {}",std::mem::size_of::<Flexstr<64>>());
+    
 } //main
 /*
 fn othertests() {
