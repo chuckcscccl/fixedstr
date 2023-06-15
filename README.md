@@ -3,7 +3,7 @@ stack-allocated using const generics.  Certain provided
 types such as `zstr<8>` and `str8` are smaller in size than a &str on
 typical systems.
 
-Recent improvements include a *flexible string* type that uses an
+Recent improvements include a `Flexstr` type that uses an
 internal enum that can be either a fixed-capacity string or an owned
 String.
 
