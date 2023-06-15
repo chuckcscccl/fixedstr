@@ -89,8 +89,14 @@ impl<const N:usize> Flexstr<N>
 {
   /// Creates a new `Flexstr<N>` with given &str.  If the length of the &str
   /// is less than N and N<=256, the internal representation is an `[u8;N]`
-  /// array with the first byte holding the length of the string.  Otherwise,
+  /// array with the first byte holding the length of the string. Otherwise,
   /// the internal representation is an owned String.
+  ///
+  ///  The Flexstr type satisfies the following axiom:
+  /// >   *For N <= 256, a `Flexstr<N>` is represented internally by an
+  ///     owned String if and only if the length of the string is greater
+  ///     than or equal to N*.
+
   pub fn make(s:&str) -> Self
   {
      if s.len()<N && N<=256 {Flexstr{inner:fixed(tstr::<N>::from(s))}}
@@ -102,7 +108,7 @@ impl<const N:usize> Flexstr<N>
   pub fn try_make(s: &str) -> Result<Flexstr<N>, &str> {
        Ok(Flexstr::make(s))
     }
-/*
+
   /// length of the string in bytes. This is a constant-time operation.
   pub fn len(&self) -> usize
   {
@@ -111,7 +117,7 @@ impl<const N:usize> Flexstr<N>
       owned(s) => s.len(),
     }//match
   }//len
-*/
+
   /// creates an empty string, equivalent to [Flexstr::default]
   pub fn new() -> Self { Self::default() }
 
@@ -244,22 +250,22 @@ impl<const N:usize> Flexstr<N>
 
   /// applies the destructive closure only if the internal representation
   /// is a fixed string
-  pub fn if_fixed<F>(&mut self, f:&mut F) where F:FnMut(&mut tstr<N>)
+  pub fn if_fixed<F>(&mut self, f:F) where F:FnOnce(&mut tstr<N>)
   {
      if let fixed(s) = &mut self.inner {f(s);}
   }
 
   /// applies the destructive closure only if the internal representation
   /// is a fixed string
-  pub fn if_owned<F>(&mut self, f:&mut F) where F:FnMut(&mut str)
+  pub fn if_owned<F>(&mut self, f:F) where F:FnOnce(&mut str)
   {
      if let owned(s) = &mut self.inner {f(s);}
   }
 
   /// applies closure f if the internal representation is a fixed string,
   /// or closure g if the internal representation is an owned string.
-  pub fn map_or<F,G,U>(&self, f:&F, g:&G) -> U
-    where F:Fn(&tstr<N>)-> U, G:Fn(&str) -> U
+  pub fn map_or<F,G,U>(&self, f:F, g:G) -> U
+    where F:FnOnce(&tstr<N>)-> U, G:FnOnce(&str) -> U
   {
      match &self.inner {
        fixed(s) => f(s),
@@ -267,7 +273,7 @@ impl<const N:usize> Flexstr<N>
      }//match
   }//map
 
-  /// version of [Flexstr::map_or] accepting mut-closures
+  /// version of [Flexstr::map_or] accepting FnMut closures
   pub fn map_or_mut<F,G,U>(&mut self, f:&mut F, g:&mut G) -> U
     where F:FnMut(&mut tstr<N>)-> U, G:FnMut(&mut str) -> U
   {
@@ -293,26 +299,53 @@ impl<const N:usize> Flexstr<N>
     }//match
   }//push
 
-/*
+  /// appends string with a single character, switching to the String
+  /// representation if necessary.  Returns true if resulting string
+  /// remains fixed.
   pub fn push(&mut self, c:char) -> bool {
-     
-  }
-*/
+     let clen = c.len_utf8();
+     match &mut self.inner {
+       owned(s) => { s.push(c); false},
+       fixed(s) if s.len()+clen>=N => {
+         let mut fss = s.to_string();  fss.push(c);
+	 self.inner = owned(fss);
+	 false
+       },
+       fixed(s) => {
+         let mut buf = [0u8;4];
+	 let bstr = c.encode_utf8(&mut buf);
+	 s.push(bstr);
+	 true
+       }
+     }//match
+  }//push
+
   
-  /// this function truncates a string, returning true if the truncated
-  /// string is fixed, and false if owned.  The operation has no
-  /// effect if n is larger than the length of the string
+  /// this function truncates a string at the indicated byte position,
+  /// returning true if the truncated string is fixed, and false if owned.
+  /// The operation has no effect if n is larger than the length of the
+  /// string.  The operation will **panic** if n is not on a character
+  /// boundary, similar to [String::truncate].
   pub fn truncate(&mut self, n: usize) -> bool {
     match &mut self.inner {
-      fixed(fs) if n<fs.len() => { fs.truncate(n); true },
+      fixed(fs) if n<fs.len() => { fs.truncate_bytes(n); true },
       fixed(_) => {true},
       owned(s) if n<N => {
+        assert!(s.is_char_boundary(n));
         self.inner = fixed(tstr::<N>::from(&s[..n]));
         true
       },
       owned(s) => { if n<s.len() {s.truncate(n);} false},
     }//match
   }//truncate
+
+    /// resets string to empty
+    pub fn clear(&mut self) {
+      match &mut self.inner {
+         fixed(s) => {s.clear();},
+         owned(s) => { self.inner = fixed(tstr::default());},
+      }
+    }//clear
 
   /// returns string corresponding to slice indices as a copy or clone.
   pub fn substr(&self, start: usize, end: usize) -> Flexstr<N> {
@@ -321,6 +354,28 @@ impl<const N:usize> Flexstr<N>
       owned(s) => Self::from(&s[start..end]),
     }
   }//substr
+
+
+  /// Splits the string into a `tstr<N>` portion and a String portion.
+  /// The structure inherits the fixed part and the String returned will
+  /// contain the extra bytes that does not fit.  Example:
+  ///
+  /// ```
+  ///   let mut fs:Flexstr<4> = Flexstr::from("abcdefg");
+  ///   let extras = fs.split_off();
+  ///   assert!( &fs=="abc" && &extras=="defg" && fs.is_fixed());
+  /// ```
+  pub fn split_off(&mut self) -> String {
+    match &mut self.inner {
+      fixed(s) => { String::default() },
+      owned(s) => {
+	 let answer = String::from(&s[N-1..]);
+         self.inner = fixed( tstr::<N>::from(&s[..N-1]) );
+	 answer
+      }
+    }//match
+  }//split_off
+
 } //impl<N>
 
 
@@ -416,6 +471,18 @@ impl<const N: usize> std::fmt::Write for Flexstr<N> {
     } //write_str
 } //std::fmt::Write trait
 
+
+impl<const N: usize> std::convert::From<String> for Flexstr<N> {
+    /// *will consume owned string and convert it to a fixed
+    /// representation if its length is less than N*
+    fn from(s: String) -> Self {
+        if s.len()>=N {
+	  Flexstr{inner:owned(s)}
+	} else {
+	  Flexstr{inner:fixed(tstr::<N>::from(&s[..]))}
+	}
+    }
+}//from String
 
 impl<const M: usize> Flexstr<M> {
   /// returns a copy/clone of the string with new fixed capacity N.

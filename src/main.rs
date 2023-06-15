@@ -13,6 +13,18 @@ use flexible_string::Flexstr;
 use std::fmt::Write;
 fn main() {
 /*
+  maintest();
+    othertests();
+    ztests();
+    ftests();
+    tinytests();
+    indexing();
+    flextest();
+*/
+}//main
+
+/*
+fn maintest() {
     let s1: fstr<16> = fstr::from("abc");
     let mut s2: fstr<8> = fstr::from("and xyz");
     let s2r = s2.push(" and 1234");
@@ -52,18 +64,9 @@ fn main() {
     let mut f1 = fstr::<16>::from("abcdefg");
     let f2 = f1.to_ascii_uppercase();
     //f1 = f2; // copy?
-    othertests();
-    ztests();
-    ftests();
-    tinytests();
-    indexing();
-    flextest();
-*/
-    //let ab = Flexstr::<32>::from("bcdefghijklmnop");
-    //println!("size of ab: {}",std::mem::size_of::<Flexstr<64>>());
-    
-} //main
-/*
+}//maintest
+
+
 fn othertests() {
     let s1: fstr<8> = fstr::from("abcdefg");
     let s2: fstr<16> = s1.resize();
@@ -276,6 +279,20 @@ fn flextest() {
     assert!(s.is_owned());
     s.truncate(7);
     assert!(s.is_fixed());
+    let ab = Flexstr::<32>::from("bcdefghijklmnop");
+    println!("size of ab: {}",std::mem::size_of::<Flexstr<32>>());
+
+    let mut vv = Flexstr::<8>::from("abcd");
+    vv.push('e');
+    //vv.push('λ');
+    println!("vv: {}",&vv);
+
+    vv.push_str("abcdefasdfasdfadfssfs");
+    let vvs = vv.split_off();
+    println!("vv: {},  vvs: {}",&vv,&vvs);
+
+    let mut fs:Flexstr<4> = Flexstr::from("abcdefg");
+    let extras = fs.split_off();
+    assert!( &fs=="abc" && &extras=="defg" && fs.is_fixed());
 }//flextest
 */
-

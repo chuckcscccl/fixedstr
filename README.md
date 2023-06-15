@@ -1,6 +1,11 @@
 Library for strings of fixed maximum lengths that can be copied and
 stack-allocated using const generics.  Certain provided
-types such as `zstr<8>` and `str8` are smaller in size than a &str.
+types such as `zstr<8>` and `str8` are smaller in size than a &str on
+typical systems.
+
+Recent improvements include a *flexible string* type that uses an
+internal enum that can be either a fixed-capacity string or an owned
+String.
 
 #### Examples
 ```
@@ -53,6 +58,3 @@ types such as `zstr<8>` and `str8` are smaller in size than a &str.
 
 Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.
 
-<br>
-
-**Recent Addition:** module [flexible_string](https://docs.rs/fixedstr/latest/fixedstr/flexible_string/index.html)

@@ -199,13 +199,18 @@ impl<const N: usize> zstr<N> {
                 self.chrs[i] = 0;
                 return &s[sci..];
             }
-            sci += 1;
+            sci += clen;
         }
         if i < N {
             self.chrs[i] = 0;
         } // zero-terminate
         &s[sci..]
     } //push
+
+    /// alias for [zstr::push]
+    pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
+      self.push(s)
+    }
 
     /// returns the number of characters in the string regardless of
     /// character class
@@ -234,14 +239,31 @@ impl<const N: usize> zstr<N> {
         self.as_str().is_ascii()
     }
 
-    /// shortens the zstr in-place (mutates).  If n is greater than the
-    /// current length of the string, this operation will have no effect.
+    /// shortens the zstr in-place. Note that n indicates
+    /// a *character* position to truncate up to, not the byte position.
+    /// If n is greater than the
+    /// current character length of the string, this operation will have no effect.
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
         if let Some((bi, c)) = self.as_str().char_indices().nth(n) {
             self.chrs[bi] = 0;
         }
     }
+    
+    /// truncates string up to *byte* position n.  **Panics** if n is
+    /// not on a character boundary, similar to [String::truncate]
+    pub fn truncate_bytes(&mut self, n: usize) {
+         if n<N {
+           assert!(self.is_char_boundary(n));
+    	   self.chrs[n] = 0;
+	 }
+    }
+    
+    /// resets string to empty string
+    pub fn clear(&mut self) {
+      self.chrs[0]=0;
+    }
+    
     /*
     /// mimics same function on str
     pub fn chars(&self) -> std::str::Chars<'_> {

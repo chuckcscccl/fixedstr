@@ -287,11 +287,16 @@ impl<const N: usize> fstr<N> {
                 self.len = i;
                 return &s[sci..];
             }
-            sci += 1;
+            sci += clen;
         }
         self.len = i;
         &s[sci..]
     } //push
+
+    /// alias for [fstr::push]
+    pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
+      self.push(s)
+    }
 
     /// returns the number of characters in the string regardless of
     /// character class
@@ -313,13 +318,10 @@ impl<const N: usize> fstr<N> {
     pub fn nth_ascii(&self, n: usize) -> char {
         self.chrs[n] as char
     }
-/*
-    /// determines if string is an ascii string
-    pub fn is_ascii(&self) -> bool {
-        self.to_str().is_ascii()
-    }
-*/
-    /// shortens the fstr in-place (mutates).  If n is greater than the
+
+    /// shortens the fstr in-place (mutates).  Note that n indicates
+    /// a *character* position to truncate up to, not the byte position.
+    //  If n is greater than the
     /// current length of the string in chars, this operation will have no effect.
     pub fn truncate(&mut self, n: usize) {
         if let Some((bi, c)) = self.to_str().char_indices().nth(n) {
@@ -327,6 +329,20 @@ impl<const N: usize> fstr<N> {
             self.len = bi;
         }
         //if n<self.len {self.len = n;}
+    }
+
+    /// truncates string up to *byte* position n.  **Panics** if n is
+    /// not on a character boundary, similar to [String::truncate]
+    pub fn truncate_bytes(&mut self, n: usize) {
+       if (n<self.len) {
+         assert!(self.is_char_boundary(n));
+	 self.len = n
+       }
+    }
+
+    /// resets string to empty string
+    pub fn clear(&mut self) {
+      self.len=0;
     }
 
     /// in-place modification of ascii characters to lower-case

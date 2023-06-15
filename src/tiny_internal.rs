@@ -158,30 +158,29 @@ impl<const N: usize> tstr<N> {
         }
         let mut buf = [0u8; 4];
         let mut i = self.len();
-        let mut sci = 0; // indexes characters in s
+	let mut sci = 0; // length in bytes
         for c in s.chars() {
             let clen = c.len_utf8();
             c.encode_utf8(&mut buf);
-            if i <= N - clen - 1 {
-                self.chrs[i + 1..i + clen + 1].copy_from_slice(&buf[..clen]);
-                /*
-                for k in 0..clen
-                {
-                  self.chrs[i+k+1] = buf[k];
-                }
-                */
+            if i+clen+1 <= N {
+                self.chrs[i+1 .. i+clen+1].copy_from_slice(&buf[..clen]);
                 i += clen;
             } else {
                 self.chrs[0] = i as u8;
                 return &s[sci..];
             }
-            sci += 1;
+	    sci += clen;
         }
         if i < N {
             self.chrs[0] = i as u8;
         } // set length
         &s[sci..]
     } //push
+
+    /// alias for [push]
+    pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
+      self.push(s)
+    }
 
     /// returns the nth char of the tstr
     pub fn nth(&self, n: usize) -> Option<char> {
@@ -202,14 +201,30 @@ impl<const N: usize> tstr<N> {
         self.to_str().is_ascii()
     }
 
-    /// shortens the tstr in-place (mutates).  If n is greater than the
-    /// current length of the string, this operation will have no effect.
+    /// shortens the tstr in-place (mutates).  n indicates the number of
+    /// *characters* to keep in thestring. If n is greater than the
+    /// current character-length ([charlen]) of the string, this operation will have no effect.
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
         if let Some((bi, c)) = self.to_str().char_indices().nth(n) {
             self.chrs[0] = bi as u8;
         }
     }
+    
+    /// truncates string up to *byte* position n.  **Panics** if n is
+    /// not on a character boundary, similar to [String::truncate]
+    pub fn truncate_bytes(&mut self, n: usize) {
+       if (n<self.chrs[0] as usize) {
+         assert!(self.is_char_boundary(n));
+	 self.chrs[0] = n as u8;
+       }
+    }
+
+    /// resets string to empty string
+    pub fn clear(&mut self) {
+      self.chrs[0]=0;
+    }
+    
     /*
     /// mimics same function on str
     pub fn chars(&self) -> std::str::Chars<'_> {
