@@ -3,7 +3,9 @@ stack-allocated using const generics.  Certain provided
 types such as `zstr<8>` and `str8` are smaller in size than a &str on
 typical systems.
 
-Recent improvements include a `Flexstr` type that uses an
+**There is now a companion crate: [no_std_strings](https://crates.io/crates/no_std_strings)** that offers **`#![no_std]`** versions of types zstr and tstr.
+
+Recent improvements also include a `Flexstr` type that uses an
 internal enum that can be either a fixed-capacity string or an owned
 String.
 
