@@ -657,9 +657,8 @@ impl<const N: usize> Default for fstr<N> {
 }
 
 impl<const N: usize> std::fmt::Debug for fstr<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ds = format!("fstr<{}>:\"{}\"", N, &self.to_str());
-        f.pad(&ds)
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.pad(&self.to_str())
     }
 } // Debug impl
 

@@ -528,12 +528,17 @@ impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for zstr<M> {
 }
 
 impl<const N: usize> std::fmt::Debug for zstr<N> {
+    /*
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let ds = format!("zstr<{}>:\"{}\"", N, &self.as_str());
         f.pad(&ds)
         //        f.debug_struct("zstr")
         //         .field("chrs:",&self.to_str())
         //         .finish()
+    }
+    */
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.pad(&self.to_str())
     }
 } // Debug impl
 
