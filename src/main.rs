@@ -5,26 +5,69 @@
 #![allow(unused_mut)]
 #![allow(unused_assignments)]
 #![allow(unused_imports)]
-//use std::mem;
-//mod lib;
-//use lib::*;
-use fixedstr::*;
-use flexible_string::Flexstr;
-use std::fmt::Write;
+#![allow(dead_code)]
+
+//use fixedstr::*;
+
 fn main() {
 /*
+  nostdtest();
+  ztests();
+  #[cfg(feature = "std")]
   maintest();
-    othertests();
-    ztests();
-    ftests();
-    tinytests();
-    indexing();
-    flextest();
+  #[cfg(feature = "std")]  
+  flextest();
+  #[cfg(feature = "std")]  
+  tinytests();  
 */
 }//main
 
 /*
+fn nostdtest() {
+  let a:str8 = str8::from("abcdef"); //a str8 can hold up to 7 bytes
+  let a2 = a;  // copied, not moved
+  let ab = a.substr(1,5);  // copies substring to new string
+  assert_eq!(ab, "bcde");  // compare for equality with &str
+  assert_eq!(&a[..3], "abc"); // impls Index for Range types
+  assert!(a<ab); // and Ord, Hash, Eq, Debug, Display, other common traits
+  let astr:&str = a.to_str(); // convert to &str
+  let azstr:zstr<16> = zstr::from(a); // so is zstr
+  let a32:str32 = a.resize(); // same kind of string but with 31-byte capacity  
+  let mut u = str8::from("aλb"); //unicode support
+  assert_eq!(u.nth(1), Some('λ'));  // get nth character
+  assert_eq!(u.nth_bytechar(3), 'b');  // get nth byte as ascii character
+  assert!(u.set(1,'μ'));  // changes a character of the same character class
+  assert!(!u.set(1,'c')); // .set returns false on failure
+  assert!(u.set(2,'c'));
+  assert_eq!(u, "aμc");
+  assert_eq!(u.len(),4);  // length in bytes
+  assert_eq!(u.charlen(),3);  // length in chars
+  let mut ac:str16 = a.reallocate().unwrap(); //copies to larger capacity type
+  let remainder = ac.push("ghijklmnopq"); //append up to capacity, returns remainder
+  assert_eq!(ac.len(),15);
+  assert_eq!(remainder, "pq");
+  ac.truncate(9);  // keep first 9 chars
+  assert_eq!(&ac,"abcdefghi");
+  let (upper,lower) = (str8::make("ABC"), str8::make("abc"));
+  assert_eq!(upper, lower.to_ascii_upper()); // no owned String needed
+
+  let c1 = str8::from("abcd"); // string concatenation with + for strN types  
+  let c2 = str8::from("xyz");
+  let c3 = c1 + c2;           
+  assert_eq!(c3,"abcdxyz");
+  assert_eq!(c3.capacity(),15);  // type of c3 is str16
+
+  let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls std::fmt::Write
+  assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
+  let c5 = try_format!(str8,"abcdef{}","ghijklmn");
+  assert!(c5.is_none());  // try_format! returns None if capacity exceeded
+}//nostdtest
+
+#[cfg(feature = "std")]
 fn maintest() {
+    extern crate std;
+    use std::println;
+    use std::fmt::Write;
     let s1: fstr<16> = fstr::from("abc");
     let mut s2: fstr<8> = fstr::from("and xyz");
     let s2r = s2.push(" and 1234");
@@ -64,35 +107,17 @@ fn maintest() {
     let mut f1 = fstr::<16>::from("abcdefg");
     let f2 = f1.to_ascii_uppercase();
     //f1 = f2; // copy?
+
+    let mut s = <zstr<8>>::from("abcd");
+    s[0] = b'A';   // impls IndexMut for zstr (not for fstr nor strN types)
+    assert_eq!('A', s.nth_ascii(0));
 }//maintest
-
-
-fn othertests() {
-    let s1: fstr<8> = fstr::from("abcdefg");
-    let s2: fstr<16> = s1.resize();
-    let s3: fstr<8> = fstr::from("abcdxr");
-    println!("cmp test: {}", s3 > s1);
-
-    //  let s = [65u8, 66,67];
-    //  let st = &s[..] as &str;
-
-    let chrs = ['a', 'b', 'c', '\0'];
-    // try to coerce into str
-    let rawp = (&chrs[..]) as *const [char];
-    let raw2 = rawp as *const &str;
-    println!("what is raw2? {:?}", raw2); // mem addr
-
-    //unsafe {
-    //let string1:&str = std::mem::transmute::<&[char], &str>(&chrs[0..3]);
-    //println!("got str: {:?}",string1);
-    //}
-} //othertests
 
 fn ztests() {
     let a: zstr<8> = zstr::from("abcdefg"); //creates zstr from &str
     let ab = a.substr(1, 5); // copies, not move substring to new string
     assert_eq!(ab, "bcde"); // can compare equality with &str
-    println!("zstr: {}", &a);
+    //println!("zstr: {}", &a);
     let mut u: zstr<8> = zstr::from("aλb"); //unicode support
     assert!(u.set(1, 'μ')); // changes a character of the same character class
     assert!(!u.set(1, 'c')); // .set returns false on failure
@@ -106,12 +131,13 @@ fn ztests() {
     assert_eq!(remainder, "pqrst");
     ac.truncate(9);
     assert_eq!(&ac, "abcdefghi");
-    println!("ac {}, remainder: {}", &ac, &remainder);
+    //println!("ac {}, remainder: {}", &ac, &remainder);
 
     let c4 = str_format!(zstr<32>, "abc {}", 123);
     assert_eq!(c4, "abc 123");
 } //ztr tests
 
+#[cfg(feature = "std")]
 fn ftests() {
     let a: fstr<8> = fstr::from("abcdefg"); //creates fstr from &str
     let a1: fstr<8> = a; // copied, not moved
@@ -139,7 +165,72 @@ fn ftests() {
     println!("ac {}, remainder: {}", &ac, &remainder);
 } //ftr tests
 
+
+#[cfg(feature = "std")]
+fn flextest() {
+  extern crate std;
+  use std::println;
+  use std::fmt::Write;
+    println!("starting Flexstr tests...");
+    let mut a:Flexstr<8> = Flexstr::from("abcdef");
+    a.truncate(5);
+    assert_eq!(a, "abcde"); // can compare equality with &str
+    assert_eq!(&a[..3], "abc"); // impls Index
+    println!("Flexstr slice: {}", &a[1..4]);
+    let ab = Flexstr::<8>::from("bcdefghijklmnop");
+    assert!(a.is_fixed());
+    assert!(!ab.is_fixed());
+    let a2:str8 = a.get_str().unwrap();
+    assert!(a < ab); // impls Ord, (and Hash, Debug, Eq, other common traits)
+    let astr: &str = a.to_str(); // convert to &str (zero copy)
+    let aowned: String = a.to_string(); // convert to owned string
+    //let b = a.take_string();
+    let mut u = Flexstr::<8>::from("aλb"); //unicode support
+    assert_eq!(u.nth(1), Some('λ'));  // get nth character
+    assert_eq!(u.nth_ascii(3), 'b');  // get nth byte as ascii character
+    assert!(u.set(1, 'μ')); // changes a character of the same character class
+    assert!(!u.set(1, 'c')); // .set returns false on failure
+    assert!(u.set(2, 'c'));
+    assert_eq!(u, "aμc");
+    assert_eq!(u.len(), 4); // length in bytes
+    assert_eq!(u.charlen(), 3); // length in chars
+    let mut v:Flexstr<4> = Flexstr::from("aμcxyz");
+    v.set(1,'λ');
+    println!("v: {}",&v);
+
+    let mut u2:Flexstr<16> = u.resize();
+    u2.push_str("aaaaaaaa");
+    println!("{} len {}",&u2,u2.len());
+    assert!(u2.is_fixed());
+
+    let mut s:Flexstr<8> = Flexstr::from("abcdef");
+    assert!(s.is_fixed());
+    s.push_str("ghijk");
+    assert!(s.is_owned());
+    s.truncate(7);
+    assert!(s.is_fixed());
+    let ab = Flexstr::<32>::from("bcdefghijklmnop");
+    println!("size of ab: {}",std::mem::size_of::<Flexstr<32>>());
+
+    let mut vv = Flexstr::<8>::from("abcd");
+    vv.push('e');
+    //vv.push('λ');
+    println!("vv: {}",&vv);
+
+    vv.push_str("abcdefasdfasdfadfssfs");
+    let vvs = vv.split_off();
+    println!("vv: {},  vvs: {}",&vv,&vvs);
+
+    let mut fs:Flexstr<4> = Flexstr::from("abcdefg");
+    let extras = fs.split_off();
+    assert!( &fs=="abc" && &extras=="defg" && fs.is_fixed());
+}//flextest
+
+#[cfg(feature = "std")]
 fn tinytests() {
+  extern crate std;
+  use std::println;
+  use std::fmt::Write;
     println!("starting tstr tests...");
     let a: str8 = str8::from("abcdef");
     let a2 = a; // copied, not moved
@@ -228,6 +319,30 @@ fn tinytests() {
     let s2 = try_format!(str8, "abcdefg{}", "hijklmnop");
     assert!(s2.is_none());
 } //tiny tests
+*/
+
+
+/*
+fn othertests() {
+    let s1: fstr<8> = fstr::from("abcdefg");
+    let s2: fstr<16> = s1.resize();
+    let s3: fstr<8> = fstr::from("abcdxr");
+    println!("cmp test: {}", s3 > s1);
+
+    //  let s = [65u8, 66,67];
+    //  let st = &s[..] as &str;
+
+    let chrs = ['a', 'b', 'c', '\0'];
+    // try to coerce into str
+    let rawp = (&chrs[..]) as *const [char];
+    let raw2 = rawp as *const &str;
+    println!("what is raw2? {:?}", raw2); // mem addr
+
+    //unsafe {
+    //let string1:&str = std::mem::transmute::<&[char], &str>(&chrs[0..3]);
+    //println!("got str: {:?}",string1);
+    //}
+} //othertests
 
 // index tests
 fn indexing() {
@@ -238,61 +353,5 @@ fn indexing() {
   println!("{:?}",&t[1..]);
 
 }//indexing
-
-
-fn flextest() {
-    println!("starting Flexstr tests...");
-    let mut a:Flexstr<8> = Flexstr::from("abcdef");
-    a.truncate(5);
-    assert_eq!(a, "abcde"); // can compare equality with &str
-    assert_eq!(&a[..3], "abc"); // impls Index
-    println!("Flexstr slice: {}", &a[1..4]);
-    let ab = Flexstr::<8>::from("bcdefghijklmnop");
-    assert!(a.is_fixed());
-    assert!(!ab.is_fixed());
-    let a2:str8 = a.get_str().unwrap();
-    assert!(a < ab); // impls Ord, (and Hash, Debug, Eq, other common traits)
-    let astr: &str = a.to_str(); // convert to &str (zero copy)
-    let aowned: String = a.to_string(); // convert to owned string
-    //let b = a.take_string();
-    let mut u = Flexstr::<8>::from("aλb"); //unicode support
-    assert_eq!(u.nth(1), Some('λ'));  // get nth character
-    assert_eq!(u.nth_ascii(3), 'b');  // get nth byte as ascii character
-    assert!(u.set(1, 'μ')); // changes a character of the same character class
-    assert!(!u.set(1, 'c')); // .set returns false on failure
-    assert!(u.set(2, 'c'));
-    assert_eq!(u, "aμc");
-    assert_eq!(u.len(), 4); // length in bytes
-    assert_eq!(u.charlen(), 3); // length in chars
-    let mut v:Flexstr<4> = Flexstr::from("aμcxyz");
-    v.set(1,'λ');
-    println!("v: {}",&v);
-
-    let mut u2:Flexstr<16> = u.resize();
-    u2.push_str("aaaaaaaa");
-    println!("{} len {}",&u2,u2.len());
-    assert!(u2.is_fixed());
-
-    let mut s:Flexstr<8> = Flexstr::from("abcdef");
-    assert!(s.is_fixed());
-    s.push_str("ghijk");
-    assert!(s.is_owned());
-    s.truncate(7);
-    assert!(s.is_fixed());
-    let ab = Flexstr::<32>::from("bcdefghijklmnop");
-    println!("size of ab: {}",std::mem::size_of::<Flexstr<32>>());
-
-    let mut vv = Flexstr::<8>::from("abcd");
-    vv.push('e');
-    //vv.push('λ');
-    println!("vv: {}",&vv);
-
-    vv.push_str("abcdefasdfasdfadfssfs");
-    let vvs = vv.split_off();
-    println!("vv: {},  vvs: {}",&vv,&vvs);
-
-    let mut fs:Flexstr<4> = Flexstr::from("abcdefg");
-    let extras = fs.split_off();
-    assert!( &fs=="abc" && &extras=="defg" && fs.is_fixed());
-}//flextest
 */
+

@@ -1,9 +1,13 @@
 Library for strings of fixed maximum lengths that can be copied and
-stack-allocated using const generics.  Certain provided
+stack-allocated.  Certain provided
 types such as `zstr<8>` and `str8` are smaller in size than a &str on
 typical systems.
 
-**There is now a companion crate: [no_std_strings](https://crates.io/crates/no_std_strings)** that offers **`#![no_std]`** versions of types zstr and tstr.
+**Starting in Version 0.4.0, this crate supports `#![no_std]`, although
+this feature is not enabled by default.**  Giving cargo the
+`--no-default-features` option will enable `no_std` and provide only the
+zstr and tstr types with some reduced functionality.
+<br>
 
 Recent improvements also include a `Flexstr` type that uses an
 internal enum that can be either a fixed-capacity string or an owned
@@ -52,10 +56,6 @@ String.
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
-
-  let mut s = <zstr<8>>::from("abcd");
-  s[0] = b'A';   // impls IndexMut for zstr (not for fstr nor strN types)
-  assert_eq!('A', ac.nth_ascii(0));
 ```
 
 Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.

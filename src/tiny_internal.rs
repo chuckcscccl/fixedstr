@@ -17,15 +17,24 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
+
+#[cfg(feature = "std")]
+extern crate std;
+
+#[cfg(feature = "std")]
 use crate::fstr;
+
 use crate::zstr;
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
-use std::cmp::{min, Ordering};
-use std::ops::{Add,Range,Index,IndexMut,RangeFull,RangeFrom,RangeTo};
-use std::ops::{RangeInclusive,RangeToInclusive};
+use core::cmp::{min, Ordering};
+use core::ops::{Add,Range,Index,IndexMut,RangeFull,RangeFrom,RangeTo};
+use core::ops::{RangeInclusive,RangeToInclusive};
 
-/// **THIS STRUCTURE IS NOT EXPORTED.**  It can only be used through the
+/// **This structure is only exported with the `features pub_tstr` option.**
+/// Otherwise, it can only be referenced through the
 /// public type aliases [crate::str4] through [crate::str256].
+/// This type supports `#![no_std]` by giving cargo the
+/// the `no-default-features` option.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct tstr<const N: usize = 256> {
     chrs: [u8; N],
@@ -36,18 +45,14 @@ impl<const N: usize> tstr<N> {
     /// several others including [tstr::from].  This function can now handle
     /// utf8 strings properly.
     pub fn make(s: &str) -> tstr<N> {
-        /* inefficient
-        if (N > 256 || N < 1) {
-            panic!("only tstr<1> to tstr<256> are valid");
-        }
-        */
         let mut chars = [0u8; N];
         let bytes = s.as_bytes(); // &[u8]
         let blen = bytes.len();
+        /*
         if (blen >= N) {
             eprintln!("!Fixedstr Warning in str::make: length of string literal \"{}\" exceeds the capacity of type str{}; string truncated",s,N);
         }
-
+        */
         let limit = min(N - 1, blen);
         chars[1..limit + 1].copy_from_slice(&bytes[..limit]);
         chars[0] = limit as u8;
@@ -64,8 +69,7 @@ impl<const N: usize> tstr<N> {
         tstr { chrs: chars }
     } //make
 
-    /// Version of make that does not print warning to stderr.  If the
-    /// capacity limit is exceeded, the extra characters are ignored.
+    /// alias for [Self::make]
     pub fn create(s: &str) -> tstr<N> {
         let mut chars = [0u8; N];
         let bytes = s.as_bytes();
@@ -79,7 +83,8 @@ impl<const N: usize> tstr<N> {
         tstr { chrs: chars }
     } //create
 
-    /// version of make that does not truncate
+    /// version of make that returns the string in an `Err(_)` if
+    /// truncation is requried, or in an `Ok(_)` if no truncation is required
     pub fn try_make(s: &str) -> Result<tstr<N>, &str> {
         if s.len() > N - 1 {
             Err(s)
@@ -102,8 +107,7 @@ impl<const N: usize> tstr<N> {
     /// returns the number of characters in the string regardless of
     /// character class
     pub fn charlen(&self) -> usize {
-        let v: Vec<_> = self.to_str().chars().collect();
-        v.len()
+        self.to_str().chars().count()
     }
 
     /// returns maximum capacity in bytes
@@ -112,8 +116,9 @@ impl<const N: usize> tstr<N> {
     }
 
     /// converts tstr to an owned string
-    pub fn to_string(&self) -> String {
-        let vs: Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
+    #[cfg(feature = "std")]    
+    pub fn to_string(&self) -> std::string::String {
+        let vs: std::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
         std::string::String::from_utf8(vs).expect("Invalid utf8 string")
     }
 
@@ -122,13 +127,13 @@ impl<const N: usize> tstr<N> {
         &self.chrs[1..self.len() + 1]
     }
 
-    /// converts tstr to &str using [std::str::from_utf8_unchecked]
+    /// converts tstr to &str using [core::str::from_utf8_unchecked]
     pub fn to_str(&self) -> &str {
-        unsafe { std::str::from_utf8_unchecked(&self.chrs[1..self.len() + 1]) }
+        unsafe { core::str::from_utf8_unchecked(&self.chrs[1..self.len() + 1]) }
     }
     /// checked version of [tstr::to_str], may panic
     pub fn as_str(&self) -> &str {
-        std::str::from_utf8(&self.chrs[1..self.len() + 1]).unwrap()
+        core::str::from_utf8(&self.chrs[1..self.len() + 1]).unwrap()
     }
 
     /// changes a character at character position i to c.  This function
@@ -177,7 +182,7 @@ impl<const N: usize> tstr<N> {
         &s[sci..]
     } //push
 
-    /// alias for [push]
+    /// alias for [Self::push]
     pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
       self.push(s)
     }
@@ -188,10 +193,15 @@ impl<const N: usize> tstr<N> {
     }
 
     /// returns the nth byte of the string as a char.  This
-    /// function should only be called on ascii strings.  It
+    /// function should only be called, for example, on ascii strings.  It
     /// is designed to be quicker than [tstr::nth], and does not check array bounds or
     /// check n against the length of the string. Nor does it check
-    /// if the value returned is within the ascii range.
+    /// if the value returned is a valid character.
+    pub fn nth_bytechar(&self, n: usize) -> char {
+        self.chrs[n + 1] as char
+    }
+
+    /// alias for [Self::nth_bytechar] (for backwards compatibility)
     pub fn nth_ascii(&self, n: usize) -> char {
         self.chrs[n + 1] as char
     }
@@ -203,7 +213,7 @@ impl<const N: usize> tstr<N> {
 
     /// shortens the tstr in-place (mutates).  n indicates the number of
     /// *characters* to keep in thestring. If n is greater than the
-    /// current character-length ([charlen]) of the string, this operation will have no effect.
+    /// current character-length ([Self::charlen]) of the string, this operation will have no effect.
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
         if let Some((bi, c)) = self.to_str().char_indices().nth(n) {
@@ -212,7 +222,7 @@ impl<const N: usize> tstr<N> {
     }
     
     /// truncates string up to *byte* position n.  **Panics** if n is
-    /// not on a character boundary, similar to [String::truncate]
+    /// not on a character boundary, similar to truncate on owned Strings.
     pub fn truncate_bytes(&mut self, n: usize) {
        if (n<self.chrs[0] as usize) {
          assert!(self.is_char_boundary(n));
@@ -224,18 +234,7 @@ impl<const N: usize> tstr<N> {
     pub fn clear(&mut self) {
       self.chrs[0]=0;
     }
-    
-    /*
-    /// mimics same function on str
-    pub fn chars(&self) -> std::str::Chars<'_> {
-        self.to_str().chars()
-    }
-    /// mimics same function on str
-    pub fn char_indices(&self) -> std::str::CharIndices<'_> {
-        self.to_str().char_indices()
-    }
-    */
-    
+
     /// in-place modification of ascii characters to lower-case
     pub fn make_ascii_lowercase(&mut self) {
       let end = (self.chrs[0] as usize)+1;
@@ -274,7 +273,7 @@ impl<const N: usize> tstr<N> {
 
 } //impl tstr<N>
 
-impl<const N:usize> std::ops::Deref for tstr<N>
+impl<const N:usize> core::ops::Deref for tstr<N>
 {
     type Target = str;
     fn deref(&self) -> &Self::Target {
@@ -282,54 +281,56 @@ impl<const N:usize> std::ops::Deref for tstr<N>
     }
 }
 
-impl<const N: usize> std::convert::AsRef<str> for tstr<N> {
+impl<const N: usize> core::convert::AsRef<str> for tstr<N> {
     fn as_ref(&self) -> &str {
         self.to_str()
     }
 }
-impl<const N: usize> std::convert::AsMut<str> for tstr<N> {
+impl<const N: usize> core::convert::AsMut<str> for tstr<N> {
     fn as_mut(&mut self) -> &mut str {
         let blen = self.len() + 1;
-        unsafe { std::str::from_utf8_unchecked_mut(&mut self.chrs[1..blen]) }
+        unsafe { core::str::from_utf8_unchecked_mut(&mut self.chrs[1..blen]) }
     }
 }
-impl<T: AsRef<str> + ?Sized, const N: usize> std::convert::From<&T> for tstr<N> {
+impl<T: AsRef<str> + ?Sized, const N: usize> core::convert::From<&T> for tstr<N> {
     fn from(s: &T) -> tstr<N> {
         tstr::make(s.as_ref())
     }
 }
-impl<T: AsMut<str> + ?Sized, const N: usize> std::convert::From<&mut T> for tstr<N> {
+impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for tstr<N> {
     fn from(s: &mut T) -> tstr<N> {
         tstr::make(s.as_mut())
     }
 }
 
-impl<const N: usize> std::convert::From<String> for tstr<N> {
-    fn from(s: String) -> tstr<N> {
+#[cfg(feature = "std")]
+impl<const N: usize> core::convert::From<std::string::String> for tstr<N> {
+    fn from(s: std::string::String) -> tstr<N> {
         tstr::<N>::make(&s[..])
     }
 }
 
+#[cfg(feature = "std")]
 impl<const N: usize, const M: usize> std::convert::From<fstr<M>> for tstr<N> {
     fn from(s: fstr<M>) -> tstr<N> {
         tstr::<N>::make(s.to_str())
     }
 }
 
-impl<const N: usize, const M: usize> std::convert::From<zstr<M>> for tstr<N> {
+impl<const N: usize, const M: usize> core::convert::From<zstr<M>> for tstr<N> {
     fn from(s: zstr<M>) -> tstr<N> {
         tstr::<N>::make(s.to_str())
     }
 }
 
-impl<const N: usize> std::cmp::PartialOrd for tstr<N> {
+impl<const N: usize> core::cmp::PartialOrd for tstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         //Some(self.chrs[0..self.len()].cmp(other.chrs[0..other.len()]))
         Some(self.cmp(other))
     }
 }
 
-impl<const N: usize> std::cmp::Ord for tstr<N> {
+impl<const N: usize> core::cmp::Ord for tstr<N> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.chrs[1..self.len() + 1].cmp(&other.chrs[1..other.len() + 1])
     }
@@ -346,7 +347,6 @@ impl<const M: usize> tstr<M> {
     ///```
     pub fn resize<const N: usize>(&self) -> tstr<N> {
         let slen = self.len();
-        //if (slen>=N) {eprintln!("!Fixedstr Warning in str::resize: string \"{}\" truncated while resizing to str{}",self,N);}
         let length = if (slen < N - 1) { slen } else { N - 1 };
         let mut chars = [0u8; N];
         chars[1..length + 1].copy_from_slice(&self.chrs[1..length + 1]);
@@ -365,8 +365,8 @@ impl<const M: usize> tstr<M> {
     } //reallocate
 } //impl tstr<M>
 
-impl<const N: usize> std::fmt::Display for tstr<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<const N: usize> core::fmt::Display for tstr<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", self.to_str())
     }
 }
@@ -398,62 +398,43 @@ impl<const N: usize> Default for tstr<N> {
         tstr::<N>::make("")
     }
 }
-
+#[cfg(feature = "std")]
 impl<const N: usize, const M: usize> PartialEq<tstr<N>> for fstr<M> {
     fn eq(&self, other: &tstr<N>) -> bool {
         other.to_str() == self.to_str()
     }
 }
-/*
-impl<const N:usize, const M:usize> PartialEq<&tstr<N>> for fstr<M>
-{
-  fn eq(&self, other:&&tstr<N>) -> bool
-  { other.to_str()==self.to_str() }
-}
-*/
+#[cfg(feature = "std")]
 impl<const N: usize, const M: usize> PartialEq<fstr<N>> for tstr<M> {
     fn eq(&self, other: &fstr<N>) -> bool {
         other.to_str() == self.to_str()
     }
 }
-impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for tstr<M> {
-    fn eq(&self, other: &&fstr<N>) -> bool {
-        other.to_str() == self.to_str()
-    }
-}
+
 impl<const N: usize, const M: usize> PartialEq<zstr<N>> for tstr<M> {
     fn eq(&self, other: &zstr<N>) -> bool {
         other.to_str() == self.to_str()
     }
 }
-impl<const N: usize, const M: usize> PartialEq<&zstr<N>> for tstr<M> {
-    fn eq(&self, other: &&zstr<N>) -> bool {
-        other.to_str() == self.to_str()
-    }
-}
 
-impl<const N: usize> std::fmt::Debug for tstr<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        //      let ds = format!("tstr<{}>:\"{}\"",N,&self.to_str());
+impl<const N: usize> core::fmt::Debug for tstr<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.pad(&self.to_str())
-        //        f.debug_struct("tstr")
-        //         .field("chrs:",&self.to_str())
-        //         .finish()
     }
 } // Debug impl
 
-
-///Convert fstr to &str slice
-impl<IndexType, const N: usize> std::ops::Index<IndexType> for tstr<N>
+/*
+///Convert tstr to &str slice
+impl<IndexType, const N: usize> core::ops::Index<IndexType> for tstr<N>
 where
-    IndexType: std::slice::SliceIndex<str>,
+    IndexType: core::slice::SliceIndex<str>,
 {
     type Output = IndexType::Output;
     fn index(&self, index: IndexType) -> &Self::Output {
         &self.to_str()[index]
     }
 } //impl Index
-
+*/
 
 impl<const N: usize> tstr<N> {
     /// returns a copy of the portion of the string, string could be truncated
@@ -606,22 +587,22 @@ impl Add for str96 {
     }
 } //Add
 
-////////////// std::fmt::Write trait
+////////////// core::fmt::Write trait
 /// Usage:
 /// ```
-///   use std::fmt::Write;
+///   use core::fmt::Write;
 ///   let mut s = str16::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
 ///   /* or */
 ///   let s2 = str_format!(str32,"abx{}{}{}",1,2,3);
 /// ```
-impl<const N: usize> std::fmt::Write for tstr<N> {
-    fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
+impl<const N: usize> core::fmt::Write for tstr<N> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result //Result<(),core::fmt::Error>
     {
         if s.len() + self.len() > N - 1 {
-            return Err(std::fmt::Error::default());
+            return Err(core::fmt::Error::default());
         }
         self.push(s);
         Ok(())
     } //write_str
-} //std::fmt::Write trait
+} //core::fmt::Write trait

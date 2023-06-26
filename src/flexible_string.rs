@@ -40,6 +40,10 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
+extern crate std;
+use std::string::String;
+use std::eprintln;
+use std::vec::Vec;
 use crate::fstr;
 use crate::zstr;
 use crate::tstr;
@@ -80,6 +84,8 @@ impl<const N:usize> Clone for Strunion<N> {
   }
 }//impl Clone
 
+/// A `Flexstr<N>` is represented internally as a `tstr<N>` if the length of
+/// the string is less than N bytes, and by an owned String otherwise.
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Flexstr<const N:usize=32>
 {
@@ -196,12 +202,16 @@ impl<const N:usize> Flexstr<N>
   /// returns the nth byte of the string as a char.  This function
   /// is designed to be quicker than [Flexstr::nth] and does not check
   /// for bounds.
-  pub fn nth_ascii(&self, n:usize) -> char {
+  pub fn nth_bytechar(&self, n:usize) -> char {
     match &self.inner {
        fixed(s) => s.nth_ascii(n),
        owned(s) => s.as_bytes()[n] as char,
     }
-  }//nth_ascii
+  }//nth_bytechar
+
+  /// alias for [Self::nth_bytechar] (for backwards compatibility)
+  pub fn nth_ascii(&self, n:usize) -> char { self.nth_bytechar(n) }
+
 
   /// returns a u8-slice that represents the underlying string. The first
   /// byte of the slice is **not** the length of the string regarless of

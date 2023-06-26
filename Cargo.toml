@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.3.4"
+version = "0.4.0"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"
@@ -10,11 +10,12 @@ keywords = ["string"]
 
 
 [features]
+default = ["std"]
 serde=["dep:serde"]
-#flex=[]
+std=[]
+pub_tstr=[]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#static_assertions = "1.1.0"
-serde={version="1", optional=true}
+serde={version="1", optional=true, default-features=false}
