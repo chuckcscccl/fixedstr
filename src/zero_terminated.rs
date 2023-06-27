@@ -128,7 +128,7 @@ impl<const N: usize> zstr<N> {
         return i;
     }
 
-    /// converts zstr to an owned string
+    /// converts zstr to an owned string (not available when no_std enforced)
     #[cfg(feature = "std")]
     pub fn to_string(&self) -> std::string::String {
         let vs: std::vec::Vec<_> = self.chrs[0..self.blen()].iter().map(|x| *x).collect();

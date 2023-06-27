@@ -115,7 +115,7 @@ impl<const N: usize> tstr<N> {
         N - 1
     }
 
-    /// converts tstr to an owned string
+    /// converts tstr to an owned string (not available when no_std enforced)
     #[cfg(feature = "std")]    
     pub fn to_string(&self) -> std::string::String {
         let vs: std::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();

@@ -51,7 +51,7 @@
 //!   This type is designed for situations where strings only 
 //!   occasionally exceed the limit of N-1 bytes.
 //!
-//! **List of all optional features:**
+//! **Optional features:**
 //!
 //! - *`#![no_std]`*: this feature is enabled by giving cargo the `--no-default-features` option. Only reduced versions of [zstr] and tstr become available.
 //! - *serde* : (`--features serde`); Serialization was initially contributed
