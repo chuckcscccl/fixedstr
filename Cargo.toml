@@ -1,12 +1,12 @@
 [package]
 name = "fixedstr"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"
 description = "strings of constant maximum size that can be copied and stack allocated using const generics"
 repository = "https://github.com/chuckcscccl/fixedstr/"
-keywords = ["string"]
+keywords = ["string","no-std"]
 
 
 [features]

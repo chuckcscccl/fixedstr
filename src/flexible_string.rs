@@ -1,36 +1,5 @@
 //! This module implements **[Flexstr]**, which uses an internal enum
 //! to hold either a fixed string of up to a maximum length, or an owned [String].
-//! The structure satisfies the following axiom:
-//! >   *For N <= 256, a `Flexstr<N>` is represented internally by an
-//!     owned String if and only if the length of the string is greater than
-//!     or equal to N*.
-//!
-//! For example, a `Flexstr<16>` will hold a string of up to 15 bytes 
-//! in an u8-array of size 16. The first byte of the array holds the length of
-//! the string.  If subsequent operations such as [Flexstr::push_str]
-//! extends the string past 15 bytes, the representation will switch to an owned
-//! String.  Conversely, an operation such as [Flexstr::truncate]
-//! may switch the representation back to a fixed string.
-//! The default N is 32.  **The largest N for which the axiom holds
-//! is 256.**  For all N>256, the internal representation is always an owned
-//! string.
-//!
-//! Example:
-//! ```
-//!  let mut s:Flexstr<8> = Flexstr::from("abcdef");
-//!  assert!(s.is_fixed());
-//!  s.push_str("ghijk");
-//!  assert!(s.is_owned());
-//!  s.truncate(7);
-//!  assert!(s.is_fixed());
-//! ```
-//!
-//! The intended use of this datatype is for
-//! situations when the lengths of strings are *usually* less than N, with
-//! only occasional exceptions that require a different representation.
-//! However, unlike the other string types in this crate, a Flexstr cannot
-//! be copied and is thus subject to move semantics.  The serde serialization
-//! option is also supported (`features serde`).
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -86,6 +55,47 @@ impl<const N:usize> Clone for Strunion<N> {
 
 /// A `Flexstr<N>` is represented internally as a `tstr<N>` if the length of
 /// the string is less than N bytes, and by an owned String otherwise.
+/// The structure satisfies the following axiom:
+/// >   *For N <= 256, a `Flexstr<N>` is represented internally by an
+///     owned String if and only if the length of the string is greater than
+///     or equal to N*.
+///
+/// For example, a `Flexstr<16>` will hold a string of up to 15 bytes 
+/// in an u8-array of size 16. The first byte of the array holds the length of
+/// the string.  If subsequent operations such as [Flexstr::push_str]
+/// extends the string past 15 bytes, the representation will switch to an owned
+/// String.  Conversely, an operation such as [Flexstr::truncate]
+/// may switch the representation back to a fixed string.
+/// The default N is 32.  **The largest N for which the axiom holds
+/// is 256.**  For all N>256, the internal representation is always an owned
+/// string.
+///
+/// Example:
+/// ```ignore
+///  let mut s:Flexstr<8> = Flexstr::from("abcdef");
+///  assert!(s.is_fixed());
+///  s.push_str("ghijk");
+///  assert!(s.is_owned());
+///  s.truncate(7);
+///  assert!(s.is_fixed());
+/// ```
+///
+/// The intended use of this datatype is for
+/// situations when the lengths of strings are *usually* less than N, with
+/// only occasional exceptions that require a different representation.
+/// However, unlike the other string types in this crate, a Flexstr cannot be
+/// copied and is thus subject to **move semantics**.  The serde serialization
+/// option is also supported (`features serde`).
+///
+/// In addition, this type impls the `Add` trait for string concatenation:
+///
+/// ```ignore
+///  let a = flexstr8::from("abcd");
+///  let b = &a + "efg";
+///  assert_eq!(&b,"abcdefg");
+/// ```
+///
+
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Flexstr<const N:usize=32>
 {
@@ -93,16 +103,7 @@ pub struct Flexstr<const N:usize=32>
 }
 impl<const N:usize> Flexstr<N>
 {
-  /// Creates a new `Flexstr<N>` with given &str.  If the length of the &str
-  /// is less than N and N<=256, the internal representation is an `[u8;N]`
-  /// array with the first byte holding the length of the string. Otherwise,
-  /// the internal representation is an owned String.
-  ///
-  ///  The Flexstr type satisfies the following axiom:
-  /// >   *For N <= 256, a `Flexstr<N>` is represented internally by an
-  ///     owned String if and only if the length of the string is greater
-  ///     than or equal to N*.
-
+  /// Creates a new `Flexstr<N>` with given &str.
   pub fn make(s:&str) -> Self
   {
      if s.len()<N && N<=256 {Flexstr{inner:fixed(tstr::<N>::from(s))}}
@@ -330,6 +331,23 @@ impl<const N:usize> Flexstr<N>
      }//match
   }//push
 
+
+  /// remove and return last character in string, if it exists
+  pub fn pop(&mut self) -> Option<char> {
+    if self.len()==0 {return None;}
+    match &mut self.inner {
+      fixed(s) => s.pop_char(),
+      owned(s) if s.len()>N => s.pop(),
+      owned(s) => {  // change representation
+        let lastchar = s.pop();
+        self.inner = fixed(tstr::from(&s));
+        lastchar
+      }
+    }//match
+  }//pop
+
+  /// alias for [Self::pop]
+  pub fn pop_char(&mut self) -> Option<char> { self.pop() }
   
   /// this function truncates a string at the indicated byte position,
   /// returning true if the truncated string is fixed, and false if owned.
@@ -509,3 +527,66 @@ impl<const M: usize> Flexstr<M> {
     Flexstr::from(self)
   }
 }
+
+/* redundant
+impl<const N:usize> Add for &Flexstr<N> {
+  type Output = Flexstr<N>;
+  fn add(self, other:Self) -> Self::Output {
+    match (&self.inner, &other.inner) {
+       (owned(a),b) => {
+         let mut a2 = a.clone();
+         a2.push_str(&other);
+         Flexstr{inner:owned(a2)}
+       },
+       (a,owned(b)) => {
+         let mut a2 = self.clone().to_string();
+         a2.push_str(&other);
+         Flexstr{inner:owned(a2)}         
+       },
+       (fixed(a), fixed(b)) if a.len() + b.len() >= N => {
+         let mut a2 = a.to_string();
+         a2.push_str(&b);
+         Flexstr{inner:owned(a2)}       
+       },
+       (fixed(a), fixed(b)) => {
+         let mut a2 = *a; //copy
+         a2.push(&b);
+         Flexstr{inner:fixed(a2)}
+       }
+    }//match
+  }
+}//Add
+*/
+
+impl<const N:usize> Add<&str> for &Flexstr<N> {
+  type Output = Flexstr<N>;
+  fn add(self, other:&str) -> Self::Output {
+    match (&self.inner, other) {
+       (owned(a),b) => {
+         let mut a2 = a.clone();
+         a2.push_str(other);
+         Flexstr{inner:owned(a2)}
+       },
+       (fixed(a), b) if a.len() + b.len() >= N => {
+         let mut a2 = a.to_string();
+         a2.push_str(b);
+         Flexstr{inner:owned(a2)}       
+       },
+       (fixed(a), b) => {
+         let mut a2 = *a; //copy
+         a2.push(b);
+         Flexstr{inner:fixed(a2)}
+       }
+    }//match
+  }
+}//Add, Rhs = &str
+
+
+
+/// convenient type aliases for [Flexstr]
+pub type flexstr8 = Flexstr<8>;
+pub type flexstr16 = Flexstr<16>;
+pub type flexstr32 = Flexstr<32>;
+pub type flexstr64 = Flexstr<64>;
+pub type flexstr128 = Flexstr<128>;
+pub type flexstr256 = Flexstr<256>;

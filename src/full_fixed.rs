@@ -174,6 +174,25 @@ impl<const N: usize> fstr<N> {
       self.push(s)
     }
 
+    /// pushes a single character to the end of the string, returning
+    /// true on success.
+    pub fn push_char(&mut self, c:char) -> bool {
+       let clen = c.len_utf8();
+       if self.len+clen > N {return false;}
+       let mut buf = [0u8;4]; // char buffer
+       let bstr = c.encode_utf8(&mut buf);
+       self.push(bstr);
+       true
+    }// push_char
+
+    /// remove and return last character in string, if it exists
+    pub fn pop_char(&mut self) -> Option<char> {
+       if self.len()==0 {return None;}
+       let (ci,lastchar) = self.char_indices().last().unwrap();
+       self.len = ci;
+       Some(lastchar)
+    }//pop
+
     /// returns the number of characters in the string regardless of
     /// character class
     pub fn charlen(&self) -> usize {

@@ -8,17 +8,27 @@
 #![allow(dead_code)]
 
 //use fixedstr::*;
-
 fn main() {
 /*
   nostdtest();
   ztests();
+  
   #[cfg(feature = "std")]
   maintest();
   #[cfg(feature = "std")]  
   flextest();
   #[cfg(feature = "std")]  
   tinytests();  
+
+//popping test:
+  let mut a = Flexstr::<8>::from("abcdef");
+  assert_eq!(a.pop_char().unwrap(), 'f');
+  println!("a: {}",&a);
+
+  use fixedstr::*;
+  let a = flexstr16::from("abcd");
+  let c:flexstr16 = &a + "efg";
+  assert_eq!(&c,"abcdefg");
 */
 }//main
 
@@ -62,6 +72,7 @@ fn nostdtest() {
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 }//nostdtest
+
 
 #[cfg(feature = "std")]
 fn maintest() {

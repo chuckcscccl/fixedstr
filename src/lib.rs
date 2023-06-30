@@ -223,6 +223,7 @@ mod serde_support {
 ///  assert_eq!(s.charlen(), 6);
 ///  assert_eq!(s.len(), 7);  
 /// ```
+
 pub type str8 = tstr<8>;
 /// A str16 can hold a string of up to 15 bytes. See docs for [fstr] or [zstr].
 /// The size of str16 is 16 bytes, which is the same as for &str on 64bit
@@ -234,16 +235,15 @@ pub type str32 = tstr<32>;
 pub type str64 = tstr<64>;
 /// A str28 can hold a string of up to 127 bytes. See docs for [fstr] or [zstr]
 pub type str128 = tstr<128>;
+
 /// Each type strN is represented underneath by a `[u8;N]` with N<=256.
 /// The first byte of the array always holds the length of the string.
 /// Each such type can hold a string of up to N-1 bytes, with max size=255.
 /// These types represent the best combination of [fstr] and [zstr] in
 /// terms of speed and memory efficiency.  Consult documentation for [fstr]
 /// or [zstr] for the same functions and traits.
-/// <br>
-/// <br>
-/// In addition, the str4-str128 types implement [core::ops::Add], allowing for
-/// string concatenation of strings of the same type.  For example,
+///<br>
+/// In addition, the str4-str128 types implement [core::ops::Add].
 /// two str8 strings will always concatenate to str16, and similarly for
 /// all other strN types up to str128.
 ///```
@@ -253,10 +253,13 @@ pub type str128 = tstr<128>;
 ///  assert_eq!(c3,"abcdxyz");
 ///  assert_eq!(c3.capacity(),15);
 ///```
+
 pub type str256 = tstr<256>;
 
-/// strings of up to three 8-bit chars, good enough to represent abbreviations
+///
+/// <br>strings of up to three 8-bit chars, good enough to represent abbreviations
 /// such as those for states and airports. Each str<4> is exactly 32 bits.
+/// Alias for internal type `tstr<4>`.
 pub type str4 = tstr<4>;
 pub type str12 = tstr<12>;
 pub type str24 = tstr<24>;
