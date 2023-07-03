@@ -1,9 +1,14 @@
 //! This module implements [zstr], which are zero-terminated strings of
-//! fixed maximum lengths.  Compared to [crate::fstr], these strings 
+//! fixed maximum lengths.  Each `zstr<N>` is represented underneath with
+//! an u8-array of size N.  Compared to [crate::fstr], these strings 
 //! are more memory efficient but with some of the operations taking slightly
-//! longer. Type zstr\<N\> can store strings consisting of up to N-1 bytes
+//! longer.  However, *all* bytes of the array following the string
+//! are set to zero.  This allows the first zero-byte of the array to
+//! be found by binary search, giving an O(log N) length function.
+//!
+//!Type zstr\<N\> can store strings consisting of up to N-1 bytes
 //! whereas fstr\<N\> can store strings consisting of up to N bytes.
-//! Also, it is assumed that the zstr may carray non-textul data and therefore
+//! Also, it is assumed that the zstr may carray non-textual data and therefore
 //! implements some of the traits differently.
 
 #![allow(unused_variables)]
@@ -21,9 +26,12 @@ use core::cmp::{min, Ordering};
 #[cfg(feature = "std")]
 extern crate std;
 
-/// `zstr<N>`: zero-terminated utf8 strings of size up to N bytes.  Note that
-/// zstr supports unicode, so that the length of string in characters may
-/// be less than N.  This type supports `#![no_std]` by giving cargo the
+/// `zstr<N>`: utf8 strings of size up to N bytes. The strings are
+/// zero-terminated with the additional requirement that all bytes following
+/// the first zero are also zeros in the underlying array.
+/// This allows for an O(log N) [zstr::len] function.
+///
+/// This type supports `#![no_std]` by giving cargo the
 /// the `no-default-features` option.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct zstr<const N: usize> {
@@ -70,7 +78,7 @@ impl<const N: usize> zstr<N> {
     /// alias for [zstr::make]
     pub fn create(s: &str) -> zstr<N> { Self::make(s) }    
 
-    /// version of make that returns the string in an `Err(_)` if
+    /// version of make that returns the same string in an `Err(_)` if
     /// truncation is requried, or in an `Ok(_)` if no truncation is required
     pub fn try_make(s: &str) -> Result<zstr<N>, &str> {
         if s.len() > N - 1 {
@@ -86,32 +94,30 @@ impl<const N: usize> zstr<N> {
     }
 
 
-  /// creates a new `zstr<N>` with given u8 slice.  If the length of s exceeds
-  /// N, the extra characters are ignored.  The last byte of the array is
-  /// is set to 0 to ensure that the string is zero-terminated.  This
-  /// operation does not check if the u8 slice is an utf8 source.
+  /// creates a new `zstr<N>` with given `&[u8]` slice.  If the length of the 
+  /// slice exceeds N-1, the extra bytes are ignored.  All bytes of the slice
+  /// following the first zero-byte are also ignored.
+  /// **This operation does not check if the u8 slice is an utf8 source.**
+  /// This function is unique to zstr and not available for the
+  /// other string types in this crate.
   pub fn from_raw(s:&[u8]) -> zstr<N>
   {
-     let mut s2 = s;
-     if s.len()>N { s2 = &s[..N]; }
      let mut z = zstr {
        chrs: [0;N],
      };
-     z.chrs[0..s2.len()].copy_from_slice(s2);
-     if (z.chrs.len()>0) {z.chrs[z.chrs.len()-1]=0;}
+     let mut i = 0;
+     while i<N-1 && i<s.len() && s[i]!=0 {
+       z.chrs[i] = s[i];
+       i+=1;
+     }
      z
   }//from_raw
 
-
-
-    /// length of the string in bytes (consistent with [str::len]).
+    /// Length of the string in bytes (consistent with [str::len]).
+    /// This function uses binary search to find the first zero-byte
+    /// and runs in O(log N) time for each `zstr<N>`.
     pub fn len(&self) -> usize {
-        let mut i = 0;
-        while self.chrs[i] != 0 {
-            i += 1;
-        }
-        return i;
-        //return core::str::from_utf8(&self.chrs[0..i]).unwrap().len();
+       self.blen()
     }
 
     /// returns maximum capacity in bytes
@@ -119,6 +125,7 @@ impl<const N: usize> zstr<N> {
         N - 1
     }
 
+    /*
     // returns the byte length of the string, which will be less than N
     fn blen(&self) -> usize {
         let mut i = 0;
@@ -127,6 +134,23 @@ impl<const N: usize> zstr<N> {
         }
         return i;
     }
+    */
+
+    // new blen function uses binary search to find first 0 byte.
+    fn blen(&self) -> usize {
+       let (mut min, mut max) = (0,N);
+       let mut mid = 0;
+       while min<max {
+         mid = (min+max)/2;
+         if self.chrs[mid]==0 { // go left
+           max = mid;
+         }
+         else { // go right
+           min = mid+1;
+         }
+       }//while
+       min
+    }//blen, O(log n)
 
     /// converts zstr to an owned string (not available when no_std enforced)
     #[cfg(feature = "std")]
@@ -223,9 +247,11 @@ impl<const N: usize> zstr<N> {
 
     /// remove and return last character in string, if it exists
     pub fn pop_char(&mut self) -> Option<char> {
-       if self.len()==0 {return None;}
+       if self.chrs[0]==0 {return None;} // length zero
        let (ci,lastchar) = self.char_indices().last().unwrap();
-       self.chrs[ci]=0;
+       //self.chrs[ci]=0;
+       let mut cm = ci;
+       while cm<N && self.chrs[cm]!=0 {self.chrs[cm]=0; cm+=1;}
        Some(lastchar)
     }//pop
 
@@ -266,7 +292,9 @@ impl<const N: usize> zstr<N> {
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
         if let Some((bi, c)) = self.as_str().char_indices().nth(n) {
-            self.chrs[bi] = 0;
+            let mut bm = bi;
+            while bm<N && self.chrs[bm]!=0 { self.chrs[bm]=0; bm+=1;}
+            //self.chrs[bi] = 0;
         }
     }
     
@@ -275,13 +303,16 @@ impl<const N: usize> zstr<N> {
     pub fn truncate_bytes(&mut self, n: usize) {
          if n<N {
            assert!(self.is_char_boundary(n));
-    	   self.chrs[n] = 0;
+    	   //self.chrs[n] = 0;
+           let mut m = n;
+           while m<N && self.chrs[m]!=0 { self.chrs[m]=0; m+=1; }
 	 }
-    }
+    }//truncate_bytes
     
     /// resets string to empty string
     pub fn clear(&mut self) {
-      self.chrs[0]=0;
+      self.chrs = [0;N];
+      //self.chrs[0]=0;
     }
     
     
@@ -373,6 +404,7 @@ impl<const N: usize, const M: usize> core::convert::From<tstr<M>> for zstr<N> {
         zstr::<N>::make(s.to_str())
     }
 }
+
 
 impl<const N: usize> core::cmp::PartialOrd for zstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {

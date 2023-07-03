@@ -63,6 +63,10 @@
 //!
 //! **Recent Updates:**
 //!
+//! Version 0.4.2 improved the implementation of zstr to require all bytes
+//! following the first zero byte to also be zeros, which allows the length
+//! of the string to be found by binary search.  
+//!
 //! Version 0.4.0 introduced no_std support
 //!
 //! Version 0.3.2 introduced the [Flexstr] type.

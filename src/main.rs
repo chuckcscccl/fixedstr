@@ -7,12 +7,22 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
+//extern crate sp_io;
+//#[no_std]
+
+/*
+#![feature(lang_items)]
+
+#[lang = "eh_personality"]
+extern "C" fn eh_personality() {}
+*/
+
 //use fixedstr::*;
 fn main() {
-/*
+/*  
   nostdtest();
   ztests();
-  
+
   #[cfg(feature = "std")]
   maintest();
   #[cfg(feature = "std")]  
@@ -73,6 +83,36 @@ fn nostdtest() {
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 }//nostdtest
 
+fn ztests() {
+    let a: zstr<8> = zstr::from("abcdefg"); //creates zstr from &str
+    let ab = a.substr(1, 5); // copies, not move substring to new string
+    assert_eq!(ab, "bcde"); // can compare equality with &str
+    //println!("zstr: {}", &a);
+    let mut u: zstr<8> = zstr::from("aλb"); //unicode support
+    assert!(u.set(1, 'μ')); // changes a character of the same character class
+    assert!(!u.set(1, 'c')); // .set returns false on failure
+    assert!(u.set(2, 'c'));
+    assert_eq!(u, "aμc");
+    assert_eq!(u.len(), 4); // length in bytes
+    assert_eq!(u.charlen(), 3); // length in chars
+    let mut ac: zstr<16> = a.resize(); // copies to larger capacity string
+    let remainder = ac.push("hijklmnopqrst"); //appends string, returns left over
+    assert_eq!(ac.len(), 15);
+    assert_eq!(remainder, "pqrst");
+    ac.truncate(10);
+    assert_eq!(&ac, "abcdefghij");
+    //println!("ac {}, remainder: {}, len {}", &ac, &remainder, &ac.len());
+    assert_eq!(ac.len(), 10);
+    ac.pop_char(); ac.pop_char();
+    assert_eq!(ac.len(), 8);    
+    let c4 = str_format!(zstr<32>, "abc {}", 123);
+    assert_eq!(c4, "abc 123");
+
+    let b = [65u8,66,67,0,0,68,0,69,0,70,0,71];
+    let bz:zstr<16> = zstr::from_raw(&b);
+    //println!("bz: {}, len {}", &bz, bz.len());
+} //ztr tests
+
 
 #[cfg(feature = "std")]
 fn maintest() {
@@ -123,30 +163,6 @@ fn maintest() {
     s[0] = b'A';   // impls IndexMut for zstr (not for fstr nor strN types)
     assert_eq!('A', s.nth_ascii(0));
 }//maintest
-
-fn ztests() {
-    let a: zstr<8> = zstr::from("abcdefg"); //creates zstr from &str
-    let ab = a.substr(1, 5); // copies, not move substring to new string
-    assert_eq!(ab, "bcde"); // can compare equality with &str
-    //println!("zstr: {}", &a);
-    let mut u: zstr<8> = zstr::from("aλb"); //unicode support
-    assert!(u.set(1, 'μ')); // changes a character of the same character class
-    assert!(!u.set(1, 'c')); // .set returns false on failure
-    assert!(u.set(2, 'c'));
-    assert_eq!(u, "aμc");
-    assert_eq!(u.len(), 4); // length in bytes
-    assert_eq!(u.charlen(), 3); // length in chars
-    let mut ac: zstr<16> = a.resize(); // copies to larger capacity string
-    let remainder = ac.push("hijklmnopqrst"); //appends string, returns left over
-    assert_eq!(ac.len(), 15);
-    assert_eq!(remainder, "pqrst");
-    ac.truncate(9);
-    assert_eq!(&ac, "abcdefghi");
-    //println!("ac {}, remainder: {}", &ac, &remainder);
-
-    let c4 = str_format!(zstr<32>, "abc {}", 123);
-    assert_eq!(c4, "abc 123");
-} //ztr tests
 
 #[cfg(feature = "std")]
 fn ftests() {
