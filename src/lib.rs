@@ -1,18 +1,24 @@
 //! Library for strings of fixed maximum lengths that can be copied and
 //! stack-allocated using const generics.
 //! 
-//! **Important Updates in Version 0.4.0:**
+//! **Important Recent Updates:**
 //!
 //! >  This crate now supports **`#![no_std]`**, although
 //! this feature is not enabled by default.  no_std is enabled with the
 //! `--no-default-features` option.
 //!
-//! > **COMPATIBILITY NOTICE**: Starting in Version 0.4.0, warnings about
+//! **COMPATIBILITY NOTICES**:
+//!
+//! >  Starting in Version 0.4.0, warnings about
 //! capacity being exceeded are only sent to stderr when using the fstr type.
 //! For other types, truncation is done silently. Consider using the
 //! `try_make` function to change this behavior.
-//! This is the only known compatibility issue with 0.3.x versions if compiled
-//! with default features.
+//!
+//! >  Starting in Version 0.4.2, the underlying representation of the zero-terminated [zstr]
+//! type no longer allows non-zero bytes after the first zero.  In particular,
+//! the [zstr::from_raw] function now enforces this rule.
+//! The modification allows for the length of a `zstr<N>` string to be found 
+//! in O(log N) time.
 //!
 //!
 //! **The structures provided by this crate are [fstr], [zstr], [Flexstr]** and **tstr**.
