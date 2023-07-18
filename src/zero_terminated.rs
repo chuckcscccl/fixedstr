@@ -289,6 +289,7 @@ impl<const N: usize> zstr<N> {
     /// a *character* position to truncate up to, not the byte position.
     /// If n is greater than the
     /// current character length of the string, this operation will have no effect.
+    /// This is not an O(1) operation.
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
         if let Some((bi, c)) = self.as_str().char_indices().nth(n) {
@@ -300,6 +301,10 @@ impl<const N: usize> zstr<N> {
     
     /// truncates string up to *byte* position n.  **Panics** if n is
     /// not on a character boundary truncate on owned Strings.
+    /// Although faster than [zstr::truncate], this function is still
+    /// not O(1) because it zeros the truncated bytes.  This is a calculated
+    /// tradeoff with a O(log N) [zstr::len] function, which is expected to
+    /// have greater impact.
     pub fn truncate_bytes(&mut self, n: usize) {
          if n<N {
            assert!(self.is_char_boundary(n));
