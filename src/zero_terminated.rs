@@ -164,7 +164,7 @@ impl<const N: usize> zstr<N> {
         &self.chrs[..self.blen()+1]
     }
 
-    /// converts zstr to &str using [std::str::from_utf8_unchecked].
+    /// converts zstr to &str using [core::str::from_utf8_unchecked].
     pub fn to_str(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.chrs[0..self.blen()]) }
     }
@@ -426,8 +426,7 @@ impl<const N: usize> core::cmp::Ord for zstr<N> {
 
 impl<const M: usize> zstr<M> {
     /// converts an zstr\<M\> to an zstr\<N\>. If the length of the string being
-    /// converted is greater than N, the extra characters are ignored and
-    /// a warning sent to stderr.
+    /// converted is greater than N, the extra characters are ignored.
     /// This operation produces a copy (non-destructive).
     /// Example:
     ///```ignore

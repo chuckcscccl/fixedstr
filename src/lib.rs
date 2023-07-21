@@ -59,13 +59,21 @@
 //!
 //! **Optional features:**
 //!
-//! - *`#![no_std]`*: this feature is enabled by giving cargo the `--no-default-features` option. Only reduced versions of [zstr] and tstr become available.
+//! - *`#![no_std]`*: this feature is enabled by the `--no-default-features`
+//! option.  
+//! Only the [zstr] and tstr types are available with this option.
 //! - *serde* : (`--features serde`); Serialization was initially contributed
 //! by [wallefan](https://github.com/wallefan) and adopted to other types.
 //! This feature can be combined with `--no-default-features` for
 //! no_std support.
-//! - *pub_tstr*: (`--features pub_tstr`); this feature will make the tstr type public 
+//! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public 
 //!
+//! For example, to enable both no_std and serde, place the following in your
+//! `Cargo.toml`:
+//! ```
+//!   [dependencies]
+//!   fixedstr = {version="0.4", features=["serde"], default-features=false}
+//! ```
 //!
 //! **Recent Updates:**
 //!
