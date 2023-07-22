@@ -34,12 +34,12 @@
 //!
 //! The four versions of strings implemented are as follows.
 //! - A **[fstr]\<N\>**
-//! stores a string of up to N bytes.  It is represented underneath using
-//! a \[u8;N\] array and a separate usize variable holding the length.
-//! - A **[zstr]\<N\>** stores a zero-terminated string, without a separate
-//! length variable, and can hold strings of up to N-1 bytes.
+//! stores a string of up to N bytes.  It is represented underneath by
+//! a `[u8;N]` array and a separate usize variable holding the length.
+//! - A **[zstr]\<N\>** is also represented by a `[u8;N]`, without a separate
+//! length field, and can hold zero-terminated strings of up to N-1 bytes.
 //! **This type supports `#![no_std]`**.
-//! - The types **[str4]**, **[str8]** through **[str256]** are aliases for internal type
+//! - The types **[str4]**, **[str8]** through **[str256]** are aliases for internal types
 //! tstr<4> through tstr<256> respectively.  These strings are stored
 //! in an array of u8 bytes with the first byte holding the length of the
 //! string.  Each tstr\<N\> can store strings of up to N-1 bytes, with
@@ -48,14 +48,15 @@
 //! and memory efficiency.  However, because Rust does not currently provide
 //! a way to specify conditions on const generics at compile time, such as
 //! `where N<=256`, the tstr type is not exported and can
-//! only be used through the aliases.  These strings implement the same
-//! functions and traits as fstr\<N\> so **the documentation for [fstr]
+//! only be used through the aliases.  These strings implement essentially
+//! the same functions and traits as fstr\<N\> so **the documentation for [fstr]
 //! (or [zstr]) also apply to the alias types**.
 //! These types **also support `#![no_std]`**.
 //! - A **[Flexstr]\<N\>** uses an internal enum that is either a tstr\<N\>
 //!   or an owned String, in case the length of the string exceeds N-1.
 //!   This type is designed for situations where strings only 
-//!   occasionally exceed the limit of N-1 bytes.
+//!   occasionally exceed the limit of N-1 bytes. This type does not implement
+//!   the `Copy` trait.
 //!
 //! **Optional features:**
 //!

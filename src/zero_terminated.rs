@@ -46,37 +46,14 @@ impl<const N: usize> zstr<N> {
     pub fn make(s: &str) -> zstr<N> {
         let mut chars = [0u8; N];
         let bytes = s.as_bytes(); // &[u8]
-        /*
-        if (bytes.len() >= N) {
-            eprintln!("!Fixedstr Warning in zstr::make: length of string literal \"{}\" exceeds the capacity of type zstr<{}>; string truncated",s,N);
-        }
-        */
         let mut i = 0;
         let limit = min(N - 1, bytes.len());
         chars[..limit].clone_from_slice(&bytes[..limit]);
-        /*
-        for i in 0..bytes.len()
-        {
-          if i<N-1 {chars[i] = bytes[i];} else {break;}
-        }
-        */
         zstr { chrs: chars }
     } //make
 
-    /*
-    /// Version of make that does not print warning to stderr.  If the
-    /// capacity limit is exceeded, the extra characters are ignored.
-    pub fn create(s: &str) -> zstr<N> {
-        let mut chars = [0u8; N];
-        let bytes = s.as_bytes(); // &[u8]
-        let mut i = 0;
-        let limit = min(N - 1, bytes.len());
-        chars[..limit].clone_from_slice(&bytes[..limit]);
-        zstr { chrs: chars }
-    } //create
-    */
     /// alias for [zstr::make]
-    pub fn create(s: &str) -> zstr<N> { Self::make(s) }    
+    pub fn create(s: &str) -> zstr<N> { Self::make(s) }
 
     /// version of make that returns the same string in an `Err(_)` if
     /// truncation is requried, or in an `Ok(_)` if no truncation is required
@@ -120,21 +97,22 @@ impl<const N: usize> zstr<N> {
        self.blen()
     }
 
+    /// Length of a `zstr<N>` string in bytes using O(n) linear search,
+    /// may be useful when the string is of length n but n is known to be
+    /// much smaller than N.  This function is unique to the zstr type and
+    /// not available for other string types in this crate.
+    pub fn linear_len(&self) -> usize {
+       let mut i = 0;
+       while self.chrs[i] != 0 {
+           i += 1;
+       }
+       return i;
+    }//linear_len
+
     /// returns maximum capacity in bytes
     pub fn capacity(&self) -> usize {
         N - 1
     }
-
-    /*
-    // returns the byte length of the string, which will be less than N
-    fn blen(&self) -> usize {
-        let mut i = 0;
-        while self.chrs[i] != 0 {
-            i += 1;
-        }
-        return i;
-    }
-    */
 
     // new blen function uses binary search to find first 0 byte.
     fn blen(&self) -> usize {
@@ -150,7 +128,7 @@ impl<const N: usize> zstr<N> {
          }
        }//while
        min
-    }//blen, O(log n)
+    }//blen, O(log N)
 
     /// converts zstr to an owned string (not available when no_std enforced)
     #[cfg(feature = "std")]
@@ -184,7 +162,6 @@ impl<const N: usize> zstr<N> {
         if let Some((bi, rc)) = self.as_str().char_indices().nth(i) {
             if clen == rc.len_utf8() {
                 self.chrs[bi..bi + clen].clone_from_slice(&cbuf[..clen]);
-                //for k in 0..clen {self.chrs[bi+k] = cbuf[k];}
                 return true;
             }
         }
@@ -313,14 +290,51 @@ impl<const N: usize> zstr<N> {
            while m<N && self.chrs[m]!=0 { self.chrs[m]=0; m+=1; }
 	 }
     }//truncate_bytes
+
+
+    /// Trims **in-place** trailing ascii whitespaces.  This function
+    /// regards all bytes as single chars.  The operation panics if
+    /// the resulting string does not end on a character boundary.
+    pub fn right_ascii_trim(&mut self) {
+      let mut n = self.blen();
+      while n>0 && (self.chrs[n-1] as char).is_ascii_whitespace() {
+        self.chrs[n-1] = 0;
+        n -= 1;
+      }
+      assert!(self.is_char_boundary(n));
+    }//right_trim
+
+    /// Reverses **in-place** a string where characters are single bytes.
+    /// The result of this operation on non single-byte chars is unpredicatable.
+    /// This function is only available for the zstr type and not for other
+    /// string types in this crate.
+    pub fn reverse_bytes(&mut self) {
+      let n = self.blen();
+      let m = n/2;
+      let mut i = 0;
+      while i<m {
+        self.chrs.swap(i,n-i-1);
+        i += 1;
+      }
+    }//reverse_bytes
+
+    /// in-place swap of bytes i and k, returns true on success and
+    /// false if indices are out of bounds.  This function is only available
+    /// for zstr strings and not for other string types in this crate.
+    pub fn swap_bytes(&mut self, i:usize, k:usize) -> bool {
+      if i!=k && i<N && k<N && self.chrs[i]!=0 && self.chrs[k]!=0 {
+        self.chrs.swap(i,k);
+        true
+      }
+      else {false}
+    }//swap_bytes
     
     /// resets string to empty string
     pub fn clear(&mut self) {
       self.chrs = [0;N];
       //self.chrs[0]=0;
     }
-    
-    
+
     /// in-place modification of ascii characters to lower-case
     pub fn make_ascii_lowercase(&mut self) {
       for b in &mut self.chrs {

@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"
@@ -21,6 +21,8 @@ pub-tstr=["pub_tstr"]
 [dependencies]
 serde={version="1", optional=true, default-features=false}
 
+[package.metadata.docs.rs]
+rustdoc-args = ["--document-private-items"]
 
 #sp-io = "23.0.0"
 

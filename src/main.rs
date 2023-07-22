@@ -83,6 +83,7 @@ fn nostdtest() {
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 }//nostdtest
 
+
 fn ztests() {
     let a: zstr<8> = zstr::from("abcdefg"); //creates zstr from &str
     let ab = a.substr(1, 5); // copies, not move substring to new string
@@ -109,8 +110,13 @@ fn ztests() {
     assert_eq!(c4, "abc 123");
 
     let b = [65u8,66,67,0,0,68,0,69,0,70,0,71];
-    let bz:zstr<16> = zstr::from_raw(&b);
-    //println!("bz: {}, len {}", &bz, bz.len());
+    let mut bz:zstr<16> = zstr::from_raw(&b);
+    bz.push("abcd   \t \n\n");
+    println!("bz: {}, len {}", &bz, bz.len());
+    bz.right_ascii_trim();
+    bz.reverse_bytes();
+    bz.make_ascii_lowercase();
+    println!("bz after trim, reverse: {}, len {}", &bz, bz.len());    
 } //ztr tests
 
 

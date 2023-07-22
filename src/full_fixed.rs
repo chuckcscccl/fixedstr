@@ -238,6 +238,19 @@ impl<const N: usize> fstr<N> {
        }
     }
 
+/// Trims **in-place** trailing ascii whitespaces.  This function
+    /// regards all bytes as single chars.  The operation panics if
+    /// the resulting string does not end on a character boundary.
+    pub fn right_ascii_trim(&mut self) {
+      let mut n = self.len;
+      while n>0 && (self.chrs[n-1] as char).is_ascii_whitespace() {
+        //self.chrs[n-1] = 0;
+        n -= 1;
+      }
+      assert!(self.is_char_boundary(n));
+      self.len = n;
+    }//right_trim
+
     /// resets string to empty string
     pub fn clear(&mut self) {
       self.len=0;

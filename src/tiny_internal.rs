@@ -30,10 +30,10 @@ use core::cmp::{min, Ordering};
 use core::ops::{Add,Range,Index,IndexMut,RangeFull,RangeFrom,RangeTo};
 use core::ops::{RangeInclusive,RangeToInclusive};
 
-/// **This structure is only exported with the `features pub_tstr` option.**
+/// **This structure is only exported with the `features pub-tstr` option.**
 /// Otherwise, it can only be referenced through the
 /// public type aliases [crate::str4] through [crate::str256].
-/// This type supports `#![no_std]` by giving cargo the
+/// This type supports `#![no_std]` with
 /// the `no-default-features` option.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct tstr<const N: usize = 256> {
@@ -253,6 +253,19 @@ impl<const N: usize> tstr<N> {
 	 self.chrs[0] = n as u8;
        }
     }
+
+/// Trims **in-place** trailing ascii whitespaces.  This function
+    /// regards all bytes as single chars.  The operation panics if
+    /// the resulting string does not end on a character boundary.
+    pub fn right_ascii_trim(&mut self) {
+      let mut n = self.chrs[0] as usize;
+      while n>0 && (self.chrs[n] as char).is_ascii_whitespace() {
+        //self.chrs[n-1] = 0;
+        n -= 1;
+      }
+      assert!(self.is_char_boundary(n));
+      self.chrs[0] = n as u8;
+    }//right_trim
 
     /// resets string to empty string
     pub fn clear(&mut self) {
