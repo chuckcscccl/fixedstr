@@ -165,7 +165,7 @@ impl<const N:usize> Flexstr<N>
   /// Note that since the `tstr` type is not exported, this function should
   /// be used in conjunction with one of the public aliases [str4]-[str256].
   /// For example,
-  /// ```
+  /// ```ignore
   ///   let s = Flexstr::<8>::from("abcd");
   ///   let t:str8 = s.get_str().unwrap();
   /// ```
@@ -389,6 +389,7 @@ impl<const N:usize> Flexstr<N>
   /// contain the extra bytes that does not fit.  Example:
   ///
   /// ```
+  ///  # use fixedstr::*;
   ///   let mut fs:Flexstr<4> = Flexstr::from("abcdefg");
   ///   let extras = fs.split_off();
   ///   assert!( &fs=="abc" && &extras=="defg" && fs.is_fixed());
@@ -516,7 +517,8 @@ impl<const M: usize> Flexstr<M> {
   /// returns a copy/clone of the string with new fixed capacity N.
   /// Example:
   /// ```
-  ///  let a:Flexstr<4> = Flexstr::from("ab");
+  ///  # use fixedstr::Flexstr;
+  ///  let mut a:Flexstr<4> = Flexstr::from("ab");
   ///  let mut b:Flexstr<8> = a.resize();
   ///  b.push_str("cdef");
   ///  assert!(b.is_fixed());

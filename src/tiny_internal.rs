@@ -627,6 +627,7 @@ impl Add for str96 {
 ////////////// core::fmt::Write trait
 /// Usage:
 /// ```
+///   # use fixedstr::*;
 ///   use core::fmt::Write;
 ///   let mut s = str16::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);

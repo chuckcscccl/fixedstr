@@ -102,7 +102,9 @@ impl<const N: usize> zstr<N> {
 
     /// Length of a `zstr<N>` string in bytes using O(n) linear search,
     /// may be useful when the string is of length n but n is known to be
-    /// much smaller than N.  This function is unique to the zstr type and
+    /// much smaller than N, or when the underlying array is corrupted by
+    /// unsafe code.
+    /// This function is unique to the zstr type and
     /// not available for other string types in this crate.
     pub fn linear_len(&self) -> usize {
        let mut i = 0;
@@ -574,6 +576,7 @@ pub type ztr64 = zstr<64>;
 ////////////// core::fmt::Write trait
 /// Usage:
 /// ```
+///  # use fixedstr::*;
 ///   use core::fmt::Write;
 ///   let mut s = zstr::<32>::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
@@ -619,6 +622,8 @@ impl<const N:usize> core::ops::IndexMut<usize> for zstr<N>
 {
   fn index_mut(&mut self, index:usize)-> &mut Self::Output
   {
+     let ln = self.blen();
+     if index >= ln {panic!("index {} out of range ({})",index,ln);}
      &mut self.chrs[index]
   }
 }//impl Index

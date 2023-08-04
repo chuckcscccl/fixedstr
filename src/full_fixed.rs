@@ -469,12 +469,13 @@ impl<const N: usize> fstr<N> {
 ////////////// core::fmt::Write trait
 /// Usage:
 /// ```
+///   use fixedstr::*;
 ///   use std::fmt::Write;
 ///   let mut s = fstr::<32>::new();
 ///   let result = write!(&mut s,"hello {}, {}, {}",1,2,3);
 ///   /* or */
-///   let s2 = str_format!(<fstr<24>,"hello {}, {}, {}",1,2,3);
-///   let s3 = try_format!(<fstr<4>,"hello {}, {}, {}",1,2,3); // returns None
+///   let s2 = str_format!(fstr<24>,"hello {}, {}, {}",1,2,3);
+///   let s3 = try_format!(fstr::<4>,"hello {}, {}, {}",1,2,3); // returns None
 /// ```
 impl<const N: usize> core::fmt::Write for fstr<N> {
     fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
