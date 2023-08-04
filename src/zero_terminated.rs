@@ -26,10 +26,13 @@ use core::cmp::{min, Ordering};
 #[cfg(feature = "std")]
 extern crate std;
 
-/// `zstr<N>`: utf8 strings of size up to N bytes. The strings are
-/// zero-terminated with the additional requirement that all bytes following
-/// the first zero are also zeros in the underlying array.
-/// This allows for an O(log N) [zstr::len] function.
+/// `zstr<N>`: utf-8 strings of size up to N bytes. The strings are
+/// zero-terminated with a single byte, with the additional requirement that
+/// all bytes following the first zero are also zeros in the underlying array.
+/// This allows for an O(log N) [zstr::len] function.  Note that
+/// [utf8 encodings](https://www.ibm.com/docs/en/db2/11.5?topic=support-unicode-character-encoding)
+/// of unicode characters allow single null bytes to be distinguished as
+/// end-of-string.
 ///
 /// This type supports `#![no_std]` by giving cargo the
 /// the `no-default-features` option.
