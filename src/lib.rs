@@ -78,6 +78,10 @@
 //!
 //! **Recent Updates:**
 //!
+//! Version 0.4.3 added the [to_fixedstr!] and [convert_to_str!] macros, which
+//! can convert any expression that implements the Display trait into a
+//! fixedstr type without necessarily creating heap-allocated strings.
+//!
 //! Version 0.4.2 improved the implementation of zstr to require all bytes
 //! following the first zero byte to also be zeros, which allows the length
 //! of the string to be found by binary search.  
@@ -319,6 +323,47 @@ macro_rules! try_format {
   };
 }
 
+/*
+//////////// to string trait
+pub trait ToTstr<const N: usize> {
+  fn to_tstr(&self) -> tstr<N>;
+}//tostring trait
+*/
+
+#[macro_export]
+/// Macro for converting any expression that implements the Display trait
+/// into the specified type, similar to `to_string` but without necessary
+/// heap allocation.  Truncation is automatic and silent. Example:
+///```
+///  # use fixedstr::*;
+///  let fs = to_fixedstr!(str8,-0132*2);
+///  assert_eq!(&fs,"-264");
+///```
+/// For version that does not truncate, use [convert_to_str!]. 
+macro_rules! to_fixedstr {
+  ($ty_size:ty, $x:expr) => {
+     {use core::fmt::Write;
+     let mut fstr0 = <$ty_size>::new();
+     let res=write!(&mut fstr0, "{}", $x);
+     fstr0}
+  };
+}
+
+#[macro_export]
+/// Version of [to_fixedstr!] that returns None instead of truncating .
+///```
+///  # use fixedstr::*;
+///  let fsopt = convert_to_str!(zstr<16>,0.013128009);
+///  assert!(matches!(fsopt.as_deref(),Some("0.013128009")))
+///```
+macro_rules! convert_to_str {
+  ($ty_size:ty, $x:expr) => {
+     {use core::fmt::Write;
+     let mut fstr0 = <$ty_size>::new();
+     let res=write!(&mut fstr0, "{}", $x);
+     if res.is_ok() {Some(fstr0)} else {None}}
+  };
+}
 
 
 ///////////////////////////  Testing ...
@@ -341,6 +386,14 @@ fn testmain() {
   poppingtest();    
 }//testmain
 
+/// test struct
+struct AB(i32,u32);
+impl core::fmt::Display for AB {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{},{}", self.0,self.1)
+    }
+}
+
 #[cfg(feature = "std")]  
 fn poppingtest() {
   extern crate std;
@@ -351,7 +404,13 @@ fn poppingtest() {
   let a = flexstr16::from("abcd");
   let c:flexstr16 = &a + "efg";
   assert_eq!(&c,"abcdefg");
-}
+
+  let mut ab = AB(-5,22+1);
+  let abfs = to_fixedstr!(zstr<16>,&ab);
+  assert_eq!(&abfs,"-5,23");
+  let abfs2 = convert_to_str!(zstr<3>,10003);
+  assert!(abfs2.is_none());
+}//poppingtest
 
 fn nostdtest() {
   let a:str8 = str8::from("abcdef"); //a str8 can hold up to 7 bytes
@@ -391,7 +450,11 @@ fn nostdtest() {
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
+
+  let fs = to_fixedstr!(str8,-0132);
+  assert_eq!(&fs,"-132");
 }//nostdtest
+
 
 
 fn ztests() {

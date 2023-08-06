@@ -635,7 +635,7 @@ impl Add for str96 {
 ///   let s2 = str_format!(str32,"abx{}{}{}",1,2,3);
 /// ```
 impl<const N: usize> core::fmt::Write for tstr<N> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result //Result<(),core::fmt::Error>
+    fn write_str(&mut self, s: &str) -> core::fmt::Result
     {
         if s.len() + self.len() > N - 1 {
             return Err(core::fmt::Error::default());
@@ -644,3 +644,45 @@ impl<const N: usize> core::fmt::Write for tstr<N> {
         Ok(())
     } //write_str
 } //core::fmt::Write trait
+
+
+/*
+impl<T:core::fmt::Display, const N:usize> ToTstr<N> for T {
+  fn to_tstr(&self) -> tstr<N> {
+    use core::fmt::Write;
+    let mut t = tstr::<N>::new();
+    //let mut ft = core::fmt::Formatter::new(&mut t);  //unstable
+    //core::fmt::Display::fmt(self,&mut ft).expect("Display implementation returned an error");
+    write!(&mut t, "{}", self).expect("Display trait implementation returned an error");
+    t
+  }
+}// generic tostr
+*/
+
+/*
+impl<const N:usize> ToTstr<N> for i64 {
+  fn to_tstr(&self) -> tstr<N> {
+    /* works but obviously not good
+    extern crate std;
+    use std::string::ToString;
+    tstr::make(&self.to_string())
+    */
+    let mut t = tstr::<N>::new();
+    let mut buf = [0u8;N];
+    let mut x = if self<&0 {t.push_char('-'); -1*self} else {*self};
+    let mut bi = 0;
+    while x>0 {
+      buf[bi] = ((x%10) + 48) as u8;
+      x /= 10;
+      bi += 1;
+    }
+    let mut ti = if self<&0 {2} else {1};
+    while bi>0 {
+      t.chrs[ti] = buf[bi-1];
+      bi -= 1;
+      ti += 1;
+    }
+    t
+  }
+}// i64 tostr
+*/
