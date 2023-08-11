@@ -14,6 +14,7 @@ use std::eprintln;
 use crate::zero_terminated::*;
 use crate::tiny_internal::*;
 use core::cmp::{min, Ordering};
+use core::ops::Add;
 
 /// A `fstr<N>` is a string of up to const N bytes, using a separate variable to store the length.
 /// This type is not as memory-efficient as the alias types str4-str256, but
@@ -490,3 +491,12 @@ impl<const N: usize> core::fmt::Write for fstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
+
+impl<const N:usize> Add<&str> for fstr<N> {
+  type Output = fstr<N>;
+  fn add(self, other:&str) -> fstr<N> {
+    let mut a2 = self;
+    a2.push(other);
+    a2
+  }
+}//Add &str

@@ -14,10 +14,7 @@ zstr and tstr types with some reduced functionality.
   let a:str8 = str8::from("abcdef"); //a str8 can hold up to 7 bytes
   let a2 = a;  // copied, not moved
   let ab = a.substr(1,5);  // copies substring to new string
-  assert_eq!(ab, "bcde");  // can compare for equality with &str
-  assert_eq!(ab.len(),4);
-  println!("str8: {}", &a);   // impls Display
-  assert_eq!(&a[..3], "abc"); // impls Index for Range types
+  assert_eq!(ab, "bcde");  // compare for equality with &str, derefs to &str
   assert!(a<ab); // and Ord, Hash, Debug, Eq, other common traits
   let astr:&str = a.to_str(); // convert to &str (zero copy)
   let aowned:String = a.to_string(); // convert to owned string
@@ -44,11 +41,11 @@ zstr and tstr types with some reduced functionality.
 
   let c1 = str8::from("abcd"); // string concatenation with + for strN types  
   let c2 = str8::from("xyz");
-  let c3 = c1 + c2;           
-  assert_eq!(c3,"abcdxyz");
+  let c3 = c1 + c2 + "123";           
+  assert_eq!(c3,"abcdxyz123");
   assert_eq!(c3.capacity(),15);  // type of c3 is str16
 
-  let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls std::fmt::Write
+  let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls core::fmt::Write
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded

@@ -714,8 +714,8 @@ fn tinytests() {
 
     let c1 = str8::from("abcdef");
     let c2 = str8::from("xyz123");
-    let c3 = c1 + c2;
-    assert_eq!(c3, "abcdefxyz123");
+    let c3 = c1 + c2 + "999";
+    assert_eq!(c3, "abcdefxyz123999");
     assert_eq!(c3.capacity(), 15);
     //println!("c3 is {}, capacity {}",&c3, &c3.capacity());
 

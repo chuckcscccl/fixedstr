@@ -22,6 +22,7 @@ use crate::tstr;
 #[cfg(feature = "std")]
 use crate::fstr;
 use core::cmp::{min, Ordering};
+use core::ops::Add;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -667,3 +668,13 @@ impl<const N:usize> core::ops::Index<RangeFull> for zstr<N> {
 }//impl Index
 
 } // special_index submodule
+
+
+impl<const N:usize> Add<&str> for zstr<N> {
+  type Output = zstr<N>;
+  fn add(self, other:&str) -> zstr<N> {
+    let mut a2 = self;
+    a2.push(other);
+    a2
+  }
+}//Add &str

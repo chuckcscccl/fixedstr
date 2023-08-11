@@ -624,6 +624,15 @@ impl Add for str96 {
     }
 } //Add
 
+impl<const N:usize> Add<&str> for tstr<N> {
+  type Output = tstr<N>;
+  fn add(self, other:&str) -> tstr<N> {
+    let mut a2 = self;
+    a2.push(other);
+    a2
+  }
+}//Add &str
+
 ////////////// core::fmt::Write trait
 /// Usage:
 /// ```
