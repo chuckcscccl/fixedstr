@@ -11,33 +11,17 @@
 #![allow(dead_code)]
 extern crate std;
 use std::string::String;
-use std::eprintln;
 use std::vec::Vec;
 use crate::fstr;
 use crate::zstr;
 use crate::tstr;
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
-use std::cmp::{min, Ordering};
-use std::ops::Add;
-use crate::flexible_string::Strunion::*;
-
+use core::cmp::{min, Ordering};
+use core::ops::Add;
+//use crate::flexible_string::Strunion::*;
+use crate::shared_structs::Strunion;
+use crate::shared_structs::Strunion::*;
 /*
-#[derive(Copy,Clone, Eq, PartialEq, Hash)]
-enum Strunion_fixed
-{
-  single(tstr<8>),
-  double(tstr<16>),
-  quad(tstr<32>),
-  octo(tstr<64>),
-  hexa(tstr<128>),
-}
-impl Default for Strunion_fixed {
-  fn default() -> Self {
-    Strunion_fixed::single(tstr::<8>::default())
-  }
-}
-*/
-
 #[derive(Eq, PartialEq, Hash)]
 enum Strunion<const N:usize>
 {
@@ -52,7 +36,7 @@ impl<const N:usize> Clone for Strunion<N> {
     }//match
   }
 }//impl Clone
-
+*/
 /// A `Flexstr<N>` is represented internally as a `tstr<N>` if the length of
 /// the string is less than N bytes, and by an owned String otherwise.
 /// The structure satisfies the following axiom:
@@ -110,6 +94,19 @@ impl<const N:usize> Flexstr<N>
      else {Flexstr{inner:owned(String::from(s))}}
   }//make
 
+  /// Creates a `Flexstr<N>` by consuming a given string.  However, if the
+  /// string has length less than N, then a fixed representation will be used.
+  pub fn from_string(s:String) -> Self {
+    if s.len()<N && N<=256 {Flexstr{inner:fixed(tstr::<N>::from(&s[..]))}}
+     else {Flexstr{inner:owned(s)}}
+  }
+
+  /// creates a `Flexstr<N>` from a given `tstr<N>`
+  pub fn from_tstr(s:tstr<N>) -> Self {
+    Flexstr{inner:fixed(s)}
+  }
+
+
   #[cfg(feature="serde")]
   /// this function is only added for uniformity in serde implementation
   pub fn try_make(s: &str) -> Result<Flexstr<N>, &str> {
@@ -134,13 +131,14 @@ impl<const N:usize> Flexstr<N>
      match &self.inner {
        fixed(s) => s.charlen(),
        owned(s) => {
-         let v: Vec<_> = s.chars().collect();
-         v.len()
+         s.chars().count()
+         //let v: Vec<_> = s.chars().collect();
+         //v.len()
        },
      }//match
   }//charlen
 
-  /// converts fstr to &str, possibly using using [std::str::from_utf8_unchecked].  Since
+  /// converts fstr to &str, possibly using using [core::str::from_utf8_unchecked].  Since
   /// Flexstr can only be built from valid utf8 sources, this function
   /// is safe.
   pub fn to_str(&self) -> &str
@@ -152,7 +150,7 @@ impl<const N:usize> Flexstr<N>
   }//to_str
 
     /// same functionality as [Flexstr::to_str], but only uses
-    ///[std::str::from_utf8] and may technically panic.
+    ///[core::str::from_utf8] and may technically panic.
     pub fn as_str(&self) -> &str //{self.to_str()}
     {
        match &self.inner {
@@ -180,7 +178,7 @@ impl<const N:usize> Flexstr<N>
   {
      if let owned(s) = &mut self.inner {
        let mut temp = fixed(tstr::new());
-       std::mem::swap(&mut self.inner, &mut temp);
+       core::mem::swap(&mut self.inner, &mut temp);
        if let owned(t) = temp {Some(t)} else {None}
      }
      else {None}
@@ -308,7 +306,7 @@ impl<const N:usize> Flexstr<N>
       },
       owned(ns) => {ns.push_str(s); false},
     }//match
-  }//push
+  }//push_str
 
   /// appends string with a single character, switching to the String
   /// representation if necessary.  Returns true if resulting string
@@ -405,6 +403,27 @@ impl<const N:usize> Flexstr<N>
     }//match
   }//split_off
 
+
+    /// in-place modification of ascii characters to lower-case
+    pub fn make_ascii_lowercase(&mut self) {
+      match &mut self.inner {
+        fixed(s) => { s.make_ascii_lowercase(); },
+        owned(s) => {
+           s.as_mut_str().make_ascii_lowercase();
+        },
+      }//match
+    }//make_ascii_lowercase
+
+    /// in-place modification of ascii characters to upper-case
+    pub fn make_ascii_uppercase(&mut self) {
+      match &mut self.inner {
+        fixed(s) => { s.make_ascii_uppercase(); },
+        owned(s) => {
+           s.as_mut_str().make_ascii_uppercase();
+        },
+      }//match
+    }
+
 } //impl<N>
 
 
@@ -412,7 +431,16 @@ impl<const N:usize> Default for Flexstr<N> {
   fn default() -> Self { Flexstr {inner:fixed(tstr::<N>::default())} }
 }
 
-impl<const N:usize> std::ops::Deref for Flexstr<N>
+/*
+impl<const N:usize> core::hash::Hash for Flexstr<N>
+{
+  fn hash<H:core::hash::Hasher>(&self, state:&mut H) {
+    self.as_str().hash(state)
+  }
+}//hash
+*/
+
+impl<const N:usize> core::ops::Deref for Flexstr<N>
 {
     type Target = str;
     fn deref(&self) -> &Self::Target {
@@ -420,36 +448,37 @@ impl<const N:usize> std::ops::Deref for Flexstr<N>
     }
 }
 
-impl<T: AsRef<str> + ?Sized, const N: usize> std::convert::From<&T> for Flexstr<N> {
+impl<T: AsRef<str> + ?Sized, const N: usize> core::convert::From<&T> for Flexstr<N> {
     fn from(s: &T) -> Self {
         Self::make(s.as_ref())
     }
 }
-impl<T: AsMut<str> + ?Sized, const N: usize> std::convert::From<&mut T> for Flexstr<N> {
+
+impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for Flexstr<N> {
     fn from(s: &mut T) -> Self {
         Self::make(s.as_mut())
     }
 }
 
-impl<const N: usize> std::cmp::PartialOrd for Flexstr<N> {
+impl<const N: usize> core::cmp::PartialOrd for Flexstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         //Some(self.chrs[0..self.len].cmp(other.chrs[0..other.len]))
         Some(self.cmp(other))
     }
 }
 
-impl<const N: usize> std::cmp::Ord for Flexstr<N> {
+impl<const N: usize> core::cmp::Ord for Flexstr<N> {
     fn cmp(&self, other: &Self) -> Ordering {
       self.to_str().cmp(other.to_str())
     }
 }
 
-impl<const N: usize> std::convert::AsRef<str> for Flexstr<N> {
+impl<const N: usize> core::convert::AsRef<str> for Flexstr<N> {
     fn as_ref(&self) -> &str {
         self.to_str()
     }
 }
-impl<const N: usize> std::convert::AsMut<str> for Flexstr<N> {
+impl<const N: usize> core::convert::AsMut<str> for Flexstr<N> {
     fn as_mut(&mut self) -> &mut str {
        match &mut self.inner {
          fixed(f) => f.as_mut(),
@@ -480,28 +509,28 @@ impl<'t, const N: usize> PartialEq<&Flexstr<N>> for &'t str {
     }
 }
 
-impl<const N: usize> std::fmt::Debug for Flexstr<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<const N: usize> core::fmt::Debug for Flexstr<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.pad(&self.to_str())
     }
 } // Debug impl
 
-impl<const N: usize> std::fmt::Display for Flexstr<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<const N: usize> core::fmt::Display for Flexstr<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", self.to_str())
     }
 }
 
-impl<const N: usize> std::fmt::Write for Flexstr<N> {
-    fn write_str(&mut self, s: &str) -> std::fmt::Result
+impl<const N: usize> core::fmt::Write for Flexstr<N> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result
     {
         self.push_str(s);
         Ok(())
     } //write_str
-} //std::fmt::Write trait
+} //core::fmt::Write trait
 
 
-impl<const N: usize> std::convert::From<String> for Flexstr<N> {
+impl<const N: usize> core::convert::From<String> for Flexstr<N> {
     /// *will consume owned string and convert it to a fixed
     /// representation if its length is less than N*
     fn from(s: String) -> Self {

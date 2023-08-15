@@ -21,7 +21,7 @@
 //! in O(log N) time.
 //!
 //!
-//! **The structures provided by this crate are [fstr], [zstr], [Flexstr]** and **tstr**.
+//! **The main structures provided by this crate are [fstr], [zstr]** and **tstr**.
 //! However, tstr is not exported by default and should be referenced through the type
 //! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
 //! with [Flexstr].  When cargo is given the `no-default-features` option,
@@ -32,7 +32,7 @@
 //! are 8 bytes, compared to 16 bytes for &str (on 64bit systems), providing more efficient
 //! ways of representing very small strings.  Unicode is supported.
 //!
-//! The four versions of strings implemented are as follows.
+//! The three principle versions of strings implemented are as follows.
 //! - A **[fstr]\<N\>**
 //! stores a string of up to N bytes.  It is represented underneath by
 //! a `[u8;N]` array and a separate usize variable holding the length.
@@ -52,22 +52,33 @@
 //! the same functions and traits as fstr\<N\> so **the documentation for [fstr]
 //! (or [zstr]) also apply to the alias types**.
 //! These types **also support `#![no_std]`**.
+//!
+//! In addition to the three "fixed" string types,  two other types are
+//! provided by default, but can be optionally excluded:
 //! - A **[Flexstr]\<N\>** uses an internal enum that is either a tstr\<N\>
 //!   or an owned String, in case the length of the string exceeds N-1.
 //!   This type is designed for situations where strings only 
 //!   occasionally exceed the limit of N-1 bytes. This type does not implement
 //!   the `Copy` trait.
+//! - A **[Sharedstr]\<N\>** is similar to a [Flexstr]\<N\> but uses a
+//!   `Rc<RefCell<..>>` underneath to allow strings to be shared as well as
+//!   mutated.  This type also does not implement `Copy` but `Clone` is done
+//!   in constant time.
 //!
 //! **Optional features:**
 //!
 //! - *`#![no_std]`*: this feature is enabled by the `--no-default-features`
-//! option.  
+//! option.
 //! Only the [zstr] and tstr types are available with this option.
 //! - *serde* : (`--features serde`); Serialization was initially contributed
 //! by [wallefan](https://github.com/wallefan) and adopted to other types.
 //! This feature can be combined with `--no-default-features` for
 //! no_std support.
-//! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public 
+//! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public
+//! - *flex-str*: this feature is available by default, requires `std` and
+//! makes available the **`Flexstr`** type.  
+//! - *shared-str*: this feature is available by default, requires
+//! `std` and makes available the **`Sharedptr`** type.
 //!
 //! For example, to enable both no_std and serde, place the following in your
 //! `Cargo.toml`:
@@ -75,8 +86,16 @@
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["serde"], default-features=false}
 //! ```
+//! and to exclude `Sharedstr` but allow all other default features, use
+//! ```ignore
+//!   [dependencies]
+//!   fixedstr = {version="0.4", features=["std","flex-str"], default-features=false}
+//! ```
 //!
 //! **Recent Updates:**
+//!
+//! Version 0.4.3 added the optional `Sharestr` type along with other, minor
+//! enhancements.
 //!
 //! Version 0.4.3 added the [to_fixedstr!] and [convert_to_str!] macros, which
 //! can convert any expression that implements the Display trait into a
@@ -179,10 +198,22 @@ mod full_fixed;
 #[cfg(feature = "std")]
 pub use full_fixed::*;
 
+#[cfg(feature = "std")]  
+mod shared_structs;
+  
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-str")]
 mod flexible_string;
 #[cfg(feature = "std")]
+#[cfg(feature = "flex-str")]
 pub use flexible_string::*;
+
+#[cfg(feature = "std")]
+#[cfg(feature = "shared-str")]
+mod shared_string;
+#[cfg(feature = "std")]
+#[cfg(feature = "shared-str")]
+pub use shared_string::*;
 
 mod zero_terminated;
 pub use zero_terminated::*;
@@ -366,7 +397,9 @@ macro_rules! convert_to_str {
 }
 
 
-///////////////////////////  Testing ...
+
+
+/////////////////////////////////////////////////////  Testing ...
 
 #[cfg(test)]
 mod tests {
@@ -383,8 +416,29 @@ fn testmain() {
   #[cfg(feature = "std")]  
   tinytests();
   #[cfg(feature = "std")]  
-  poppingtest();    
+  poppingtest();
+  #[cfg(feature = "std")]
+  #[cfg(feature = "shared-str")]  
+  strptrtests();
 }//testmain
+
+#[cfg(feature = "std")]
+#[cfg(feature = "shared-str")]
+fn strptrtests() {
+  extern crate std;
+  use std::fmt::Write;
+  use std::string::String;
+  let mut a = Sharedstr::<8>::from("abc12");
+  let mut b = a.clone();
+  let mut c = Sharedstr::<8>::from("abc");
+  c.push_str("12");
+  assert!( a == c );
+  assert!( a == "abc12");
+  b.push('3');
+  assert!( a == "abc123" );
+  assert!( "abc123" == b );  
+}//strptrtests
+
 
 /// test struct
 struct AB(i32,u32);
@@ -542,6 +596,11 @@ fn maintest() {
     let mut s = <zstr<8>>::from("abcd");
     s[0] = b'A';   // impls IndexMut for zstr (not for fstr nor strN types)
     assert_eq!('A', s.nth_ascii(0));
+
+    use std::collections::HashMap;
+    let mut hm = HashMap::new();
+    hm.insert(str8::from("abc"), 1);
+    assert!(hm.contains_key(&str8::from("abc")));
 }//maintest
 
 #[cfg(feature = "std")]

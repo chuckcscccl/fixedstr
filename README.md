@@ -9,6 +9,8 @@ this feature is not enabled by default.**  Giving cargo the
 zstr and tstr types with some reduced functionality.
 <br>
 
+Recent enhancements include additional, optional string types.
+
 #### Examples
 ```
   let a:str8 = str8::from("abcdef"); //a str8 can hold up to 7 bytes
@@ -49,8 +51,6 @@ zstr and tstr types with some reduced functionality.
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
-  let c6 = to_fixedstr!(str8,-0122);  // convert expression to fixed string
-  assert_eq!(&c6,"-122");
 ```
 
 Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.

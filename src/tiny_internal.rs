@@ -272,16 +272,20 @@ impl<const N: usize> tstr<N> {
       self.chrs[0]=0;
     }
 
-    /// in-place modification of ascii characters to lower-case
+    /// in-place modification of ascii characters to lower-case. Panics if
+    /// the string is not ascii.
     pub fn make_ascii_lowercase(&mut self) {
+      assert!(self.is_ascii());
       let end = (self.chrs[0] as usize)+1;
       for b in &mut self.chrs[1..end] {
         if *b>=65 && *b<=90 { *b |= 32; }
       }
     }//make_ascii_lowercase
 
-    /// in-place modification of ascii characters to upper-case
+    /// in-place modification of ascii characters to upper-case.  Panics if
+    /// the string is not ascii.
     pub fn make_ascii_uppercase(&mut self) {
+      assert!(self.is_ascii());    
       let end = (self.chrs[0] as usize)+1;    
       for b in &mut self.chrs[1..end] {
         if *b>=97 && *b<=122 { *b -= 32; }
