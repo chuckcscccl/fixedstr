@@ -8,7 +8,7 @@
 //!
 //!Type zstr\<N\> can store strings consisting of up to N-1 bytes
 //! whereas fstr\<N\> can store strings consisting of up to N bytes.
-//! Also, it is assumed that the zstr may carray non-textual data and therefore
+//! Also, itztr is assumed that the zstr may carray non-textual data and therefore
 //! implements some of the traits differently.
 
 #![allow(unused_variables)]
@@ -178,6 +178,8 @@ impl<const N: usize> zstr<N> {
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
     pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
+        self.push_str(s)
+        /*
         if s.len() < 1 {
             return s;
         }
@@ -189,12 +191,6 @@ impl<const N: usize> zstr<N> {
             c.encode_utf8(&mut buf);
             if i <= N - clen - 1 {
                 self.chrs[i..i + clen].clone_from_slice(&buf[..clen]);
-                /*
-                for k in 0..clen
-                {
-                  self.chrs[i+k] = buf[k];
-                }
-                */
                 i += clen;
             } else {
                 self.chrs[i] = 0;
@@ -206,12 +202,23 @@ impl<const N: usize> zstr<N> {
             self.chrs[i] = 0;
         } // zero-terminate
         &s[sci..]
+        */
     } //push
 
     /// alias for [zstr::push]
-    pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
-      self.push(s)
-    }
+    pub fn push_str<'t>(&mut self, src: &'t str) -> &'t str {
+      let srclen = src.len();
+      let slen = self.blen();
+      let bytes = &src.as_bytes();
+      let length = core::cmp::min(slen+srclen , N-1);
+      let remain = if N-1>=(slen+srclen) {0} else {(srclen+slen)-N+1};
+      let mut i = 0;
+      while i<srclen && i+slen+1<N {
+        self.chrs[slen+i] = bytes[i];
+        i += 1;
+      }//while
+      &src[srclen-remain..]
+    }//push_str
 
     /// pushes a single character to the end of the string, returning
     /// true on success.
@@ -577,6 +584,7 @@ pub type ztr8 = zstr<8>;
 pub type ztr16 = zstr<16>;
 pub type ztr32 = zstr<32>;
 pub type ztr64 = zstr<64>;
+pub type ztr128 = zstr<128>;
 
 ////////////// core::fmt::Write trait
 /// Usage:

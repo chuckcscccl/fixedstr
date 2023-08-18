@@ -9,9 +9,9 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-extern crate std;
-use std::string::String;
-use std::vec::Vec;
+extern crate alloc;
+use alloc::string::String;
+use alloc::vec::Vec;
 use crate::fstr;
 use crate::zstr;
 use crate::tstr;

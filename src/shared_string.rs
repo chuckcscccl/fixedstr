@@ -6,8 +6,8 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-extern crate std;
-use std::string::String;
+//extern crate std;
+//use std::string::String;
 use crate::fstr;
 use crate::zstr;
 use crate::tstr;
@@ -19,7 +19,9 @@ use crate::shared_structs::Strunion::*;
 
 ////////////////////////////////////////////////////////////////////////
 ///////////// RC experiments
-use std::rc::Rc;
+extern crate alloc;
+use alloc::rc::Rc;
+use alloc::string::String;
 use core::cell::RefCell;
 
 /// This type uses [Rc] and [RefCell] underneath to allow pointers to a [crate::Flexstr]
@@ -404,6 +406,12 @@ impl<const N:usize> Sharedstr<N>
   /// creates a new, non-shared copy of the string
   pub fn deep_clone(&self) -> Self {
     Sharedstr::from(self.as_str())
+  }
+
+  /// returns the number of shared references to this string (strong `Rc`
+  /// pointers)
+  pub fn ptr_count(&self) -> usize {
+    Rc::strong_count(&self.inner)
   }
 
 

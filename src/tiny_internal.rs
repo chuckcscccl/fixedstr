@@ -100,6 +100,7 @@ impl<const N: usize> tstr<N> {
 
     /// length of the string in bytes (consistent with [str::len]). This
     /// is a constant-time operation.
+    #[inline]
     pub fn len(&self) -> usize {
         self.chrs[0] as usize
     }
@@ -158,6 +159,7 @@ impl<const N: usize> tstr<N> {
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
     pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
+        /*
         if s.len() < 1 {
             return s;
         }
@@ -180,12 +182,26 @@ impl<const N: usize> tstr<N> {
             self.chrs[0] = i as u8;
         } // set length
         &s[sci..]
+        */
+        self.push_str(s)
     } //push
 
     /// alias for [Self::push]
-    pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
-      self.push(s)
-    }
+    pub fn push_str<'t>(&mut self, src: &'t str) -> &'t str {
+      //self.push(s)
+      let srclen = src.len();
+      let slen = self.len();
+      let bytes = &src.as_bytes();
+      let length = core::cmp::min(slen+srclen , N-1);
+      let remain = if N-1>=(slen+srclen) {0} else {(srclen+slen)-N+1};
+      let mut i = 0;
+      while i<srclen && i+slen+1<N {
+        self.chrs[slen+i+1] = bytes[i];
+        i += 1;
+      }//while
+      self.chrs[0] += i as u8;      
+      &src[srclen-remain..]
+    }//push_str
 
     /// pushes a single character to the end of the string, returning
     /// true on success.

@@ -24,7 +24,7 @@
 //! **The main structures provided by this crate are [fstr], [zstr]** and **tstr**.
 //! However, tstr is not exported by default and should be referenced through the type
 //! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
-//! with [Flexstr].  When cargo is given the `no-default-features` option,
+//! with [Flexstr] and [Sharedstr].  When cargo is given the `no-default-features` option,
 //! which enables `#![no_std]` support, only [zstr] and the alias types for
 //! tstr are enabled. 
 //!
@@ -80,8 +80,13 @@
 //! - *shared-str*: this feature is available by default, requires
 //! `std` and makes available the **`Sharedptr`** type.
 //!
-//! For example, to enable both no_std and serde, place the following in your
-//! `Cargo.toml`:
+//! For example, for the smallest possible build, supporting `no-std`, place
+//! the following in your `Cargo.toml`:
+//! ```ignore
+//!   [dependencies]
+//!   fixedstr = {version="0.4", default-features=false}
+//! ```
+//! To enable both no_std and serde, do the following instead:
 //! ```ignore
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["serde"], default-features=false}
@@ -96,10 +101,6 @@
 //!
 //! Version 0.4.3 added the optional `Sharestr` type along with other, minor
 //! enhancements.
-//!
-//! Version 0.4.3 added the [to_fixedstr!] and [convert_to_str!] macros, which
-//! can convert any expression that implements the Display trait into a
-//! fixedstr type without necessarily creating heap-allocated strings.
 //!
 //! Version 0.4.2 improved the implementation of zstr to require all bytes
 //! following the first zero byte to also be zeros, which allows the length
@@ -223,6 +224,12 @@ use tiny_internal::*;
 #[cfg(feature = "pub_tstr")]
 pub use tiny_internal::*;
 
+
+// experimental
+mod circular_string;
+
+
+
 #[cfg(feature="serde")]
 mod serde_support {
     use serde::{Serialize, Deserialize, Serializer, Deserializer, de::Visitor};
@@ -297,7 +304,7 @@ pub type str128 = tstr<128>;
 /// terms of speed and memory efficiency.  Consult documentation for [fstr]
 /// or [zstr] for the same functions and traits.
 ///<br>
-/// In addition, the str4-str128 types implement [core::ops::Add].
+/// In addition, the str4-str128 types implement [core::ops::Add] in a way that
 /// two str8 strings will always concatenate to str16, and similarly for
 /// all other strN types up to str128.
 ///```
@@ -486,7 +493,7 @@ fn nostdtest() {
   assert_eq!(u.len(),4);  // length in bytes
   assert_eq!(u.charlen(),3);  // length in chars
   let mut ac:str16 = a.reallocate().unwrap(); //copies to larger capacity type
-  let remainder = ac.push("ghijklmnopq"); //append up to capacity, returns remainder
+  let remainder = ac.push_str("ghijklmnopq"); //append up to capacity, returns remainder
   assert_eq!(ac.len(),15);
   assert_eq!(remainder, "pq");
   ac.truncate(9);  // keep first 9 chars
@@ -533,8 +540,12 @@ fn ztests() {
     assert_eq!(ac.len(), 10);
     ac.pop_char(); ac.pop_char();
     assert_eq!(ac.len(), 8);    
-    let c4 = str_format!(zstr<32>, "abc {}", 123);
+    let mut c4 = str_format!(zstr<16>, "abc {}", 123);
     assert_eq!(c4, "abc 123");
+    let rem = c4.push_str("123456789abcdef");
+    assert_eq!(c4,"abc 12312345678");
+    assert_eq!(rem,"9abcdef");
+    
 
     let b = [65u8,66,67,0,0,68,0,69,0,70,0,71];
     let mut bz:zstr<16> = zstr::from_raw(&b);
@@ -693,6 +704,9 @@ fn flextest() {
     let mut fs:Flexstr<4> = Flexstr::from("abcdefg");
     let extras = fs.split_off();
     assert!( &fs=="abc" && &extras=="defg" && fs.is_fixed());
+
+    let fss = fs.to_string();
+    assert!(&fss=="abc");
 }//flextest
 
 #[cfg(feature = "std")]
