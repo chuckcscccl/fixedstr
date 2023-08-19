@@ -23,9 +23,9 @@ impl<const N:usize> cstr<N>
    /// N is greater than 65536
    pub fn make(src:&str) -> cstr<N> {
      if N > 65536 { panic!("cstr strings are limited to a maximum capacity of 65536");}
-     let mut m = cstr::new();
+     let mut m = cstr::<N>::new();
      let length = core::cmp::min(N,src.len());
-     m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
+     m.chrs[..length].copy_from_slice(&src.as_bytes()[..length]);
      m.len = length as u16;
      m
    }//make
@@ -99,7 +99,7 @@ impl<const N:usize> cstr<N>
        i += 1;
      }//while
      self.len += i as u16;
-     &src[slen-remain..]
+     &src[srclen-remain..]
    }//push_str
 
    /// pushes string to the **front** of the string, returns remainder.
@@ -120,6 +120,50 @@ impl<const N:usize> cstr<N>
      self.len += i as u16;     
      &src[..remain]
    }//push_front
+
+    /// pushes a single character to the end of the string, returning
+    /// true on success.
+    pub fn push_char(&mut self, c:char) -> bool {
+       let clen = c.len_utf8();
+       if self.len as usize + clen > N {return false;}
+       let mut buf = [0u8;4]; // char buffer
+       let bstr = c.encode_utf8(&mut buf);
+       self.push_str(bstr);
+       true
+/*
+       let clen = c.len_utf8();
+       let slen = self.len;
+       if slen+clen >= N {return false;}
+       let mut buf = [0u8;4]; // char buffer
+       c.encode_utf8(&mut buf);
+       for i in 0..clen {
+         self.chrs[slen+i] = buf[i];
+       }
+       self.len = slen+clen
+       true
+*/
+    }// push_char
+
+    /// remove and return last character in string, if it exists
+    pub fn pop_char(&mut self) -> Option<char> {
+       if self.len()==0 {return None;}
+       let (l,r) = self.to_strs();
+       let right = if r.len()>0 {r} else {l};
+       let (ci,lastchar) = right.char_indices().last().unwrap();
+       self.len = if r.len()>0 {(l.len() + ci) as u16} else {ci as u16};
+       Some(lastchar)
+    }//pop
+
+    /// remove and return first character in string, if it exists
+    pub fn pop_char_front(&mut self) -> Option<char> {
+       if self.len()==0 {return None;}
+       let (left,r) = self.to_strs();
+       let firstchar = left.chars().next().unwrap();
+       let clen = firstchar.len_utf8() as u16;
+       self.front = (self.front+clen) % (N as u16) ;
+       self.len -= clen;
+       Some(firstchar)
+    }//pop
 
 
    // convenience

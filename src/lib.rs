@@ -443,7 +443,16 @@ fn strptrtests() {
   assert!( a == "abc12");
   b.push('3');
   assert!( a == "abc123" );
-  assert!( "abc123" == b );  
+  assert!( "abc123" == b );
+
+  use crate::circular_string::*;
+  let mut cb = cstr::<16>::make(&b);
+  cb.push_str("xyz");
+  cb.push_front("987");
+  assert_eq!(cb.pop_char().unwrap(), 'z');
+  assert_eq!(cb.pop_char_front().unwrap(), '9');
+  assert_eq!(cb.len(),10);
+  //assert!( cb == "987abc123xyz");
 }//strptrtests
 
 
@@ -612,6 +621,12 @@ fn maintest() {
     let mut hm = HashMap::new();
     hm.insert(str8::from("abc"), 1);
     assert!(hm.contains_key(&str8::from("abc")));
+
+    let mut a:fstr<8> = fstr::from("abcdef");
+    let rem = a.push("g");
+    assert!(rem=="" && &a=="abcdefg");
+
+    ftests();
 }//maintest
 
 #[cfg(feature = "std")]
@@ -642,6 +657,9 @@ fn ftests() {
     ac.truncate(10); // shortens string in place
     assert_eq!(&ac, "abcdefghij");
     println!("ac {}, remainder: {}", &ac, &remainder);
+
+    assert_eq!(ac.pop_char().unwrap(), 'j');
+    assert_eq!(ac,"abcdefghi");    
 } //ftr tests
 
 

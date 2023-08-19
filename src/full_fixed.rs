@@ -86,6 +86,7 @@ impl<const N: usize> fstr<N> {
     /// length of the string in bytes, which will be up to the maximum size N.
     /// This is a constant-time operation. Note that this value is consistent
     /// with [str::len]
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
@@ -142,6 +143,8 @@ impl<const N: usize> fstr<N> {
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
     pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
+        self.push_str(s)
+        /*
         if s.len() < 1 {
             return s;
         }
@@ -168,11 +171,23 @@ impl<const N: usize> fstr<N> {
         }
         self.len = i;
         &s[sci..]
+        */
     } //push
 
     /// alias for [fstr::push]
-    pub fn push_str<'t>(&mut self, s: &'t str) -> &'t str {
-      self.push(s)
+    pub fn push_str<'t>(&mut self, src: &'t str) -> &'t str {
+      let srclen = src.len();
+      let slen = self.len();
+      let bytes = &src.as_bytes();
+      let length = core::cmp::min(slen+srclen , N);
+      let remain = if N>=(slen+srclen) {0} else {(srclen+slen)-N};
+      let mut i = 0;
+      while i<srclen && i+slen<N {
+        self.chrs[slen+i] = bytes[i];
+        i += 1;
+      }//while
+      self.len += i;      
+      &src[srclen-remain..]
     }
 
     /// pushes a single character to the end of the string, returning
