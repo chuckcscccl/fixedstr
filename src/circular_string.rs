@@ -9,6 +9,8 @@
 
 //! fixed strings with circular-queue backing
 
+//extern crate std;
+
 #[derive(Debug,Copy,Clone)]
 pub struct cstr<const N : usize=32>
 {
@@ -163,7 +165,134 @@ impl<const N:usize> cstr<N>
        self.front = (self.front+clen) % (N as u16) ;
        self.len -= clen;
        Some(firstchar)
-    }//pop
+    }//pop_char_front
+
+
+    /// right-truncates string up to *byte* position n.  **Panics** if n is
+    /// not on a character boundary, similar to [String::truncate].  No effect
+    /// if n is greater than or equal to the length of the string.
+    pub fn truncate_bytes(&mut self, n: usize) {
+       if (n<self.len as usize) {
+         let (a,b) = self.to_strs();
+         if n<a.len() {
+           assert!(a.is_char_boundary(n));
+         }
+         else {
+           assert!(b.is_char_boundary(n-a.len()));         
+         }
+	 self.len = n as u16;
+       }
+    }
+
+    /// left-truncates string up to *byte* position n.  **Panics** if n is
+    /// not on a character boundary, similar to [String::truncate].  No effect
+    ///if n is greater than the length of the string.
+    pub fn truncate_left(&mut self, n: usize) {
+       if (n>0 && n<=self.len as usize) {
+         let (a,b) = self.to_strs();
+         if n<a.len() {
+           assert!(a.is_char_boundary(n));
+         }
+         else {
+           assert!(b.is_char_boundary(n-a.len()));         
+         }
+         self.front = ((self.front as usize + n)%N) as u16;
+	 self.len -= n as u16;
+       }
+    }//truncate_left
+
+    /// finds the position of first character that satisfies given predicate
+    pub fn find<P>(&self, predicate: P) -> Option<usize>
+         where P : Fn(char) -> bool
+    {
+        let (a,b) = self.to_strs();
+        if let Some(pos) = a.find(|x:char|predicate(x)) {
+            Some(pos)
+        }
+        else if let Some(pos) = b.find(|x:char|predicate(x)) {
+            Some(a.len() + pos)
+        }
+        else { None }
+    }//find
+
+    /// finds position of first matching substring
+    pub fn find_substr(&self, s:&str) -> Option<usize> {
+        let (a,b) = self.to_strs();
+        if let Some(pos) = a.find(s) {
+            Some(pos)
+        }
+        else if let Some(pos) = b.find(s) {
+            Some(a.len() + pos)
+        }
+        else { None }      
+    }//find_substr
+    
+    /// finds the position of last character that satisfies given predicate
+    pub fn rfind<P>(&self, predicate: P) -> Option<usize>
+         where P : Fn(char) -> bool
+    {
+        let (a,b) = self.to_strs();
+        if let Some(pos) = b.find(|x:char|predicate(x)) {
+            Some(a.len()+pos)
+        }
+        else if let Some(pos) = a.find(|x:char|predicate(x)) {
+            Some(pos)
+        }
+        else { None }
+    }//find
+
+    /// finds position of last matching substring
+    pub fn rfind_substr(&self, s:&str) -> Option<usize> {
+        let (a,b) = self.to_strs();
+        if let Some(pos) = b.find(s) {
+            Some(a.len()+pos)
+        }
+        else if let Some(pos) = a.find(s) {
+            Some(pos)
+        }
+        else { None }      
+    }//find_substr
+
+    // **in-place** trimming of white spaces at the front of the string
+    pub fn trim_left(&mut self) {
+      let (a,b) = self.to_strs();
+      let offset;
+      if let Some(i) = a.find(|c:char|!c.is_whitespace()) {
+         offset = i;
+      }
+      else if let Some(k) = b.find(|c:char|!c.is_whitespace()) {
+         offset = a.len() + k;
+      }
+      else {
+         offset = a.len() + b.len();
+      }
+      self.front = ((self.front as usize + offset)%N) as u16;
+      self.len -= offset as u16;
+    }//trim_left
+
+    // **in-place** trimming of white spaces at the end of the string
+    pub fn trim_right(&mut self) {
+      let (a,b) = self.to_strs();
+      let offset;
+      if b.len()==0 {
+        if let Some(k) = a.rfind(|c:char|!c.is_whitespace()) {
+         offset = a.len() - k;
+        }
+        else {
+          offset = a.len();
+        }
+      }//contiguous
+      else if let Some(i) = b.rfind(|c:char|!c.is_whitespace()) {
+         offset = b.len() - i;
+      }
+      else if let Some(k) = a.rfind(|c:char|!c.is_whitespace()) {
+         offset = b.len() + (a.len() - k);
+      }
+      else {
+         offset = a.len() + b.len();
+      }
+      self.len -= offset as u16;
+    }//trim_right
 
 
    // convenience
@@ -177,17 +306,7 @@ impl<const N:usize> cstr<N>
      (self.front as usize +i)%N
    } // index of ith vale
 
-/*
-   #[inline(always)]
-   fn right_of(&self, i:usize) -> usize {
-     (i+1) % N
-   }
-
-   #[inline(always)]
-   fn left_of(&self, i:usize) -> usize {
-     (i + N - 1) % N
-   }
-*/
+///////// doesn't work on non-ascii strings, because of char boundaries
 
    /// length of string in bytes
    #[inline(always)]
@@ -229,3 +348,6 @@ impl<const N :usize> Default for cstr<N> {
   }
 }//impl default
 
+
+
+/////////// need Eq, Ord, etc.  and special iterator implementation
