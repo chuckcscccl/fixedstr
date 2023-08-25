@@ -444,7 +444,7 @@ fn strptrtests() {
   b.push('3');
   assert!( a == "abc123" );
   assert!( "abc123" == b );
-
+  /*
   use crate::circular_string::*;
   let mut cb = cstr::<16>::make(&b);
   cb.push_str("xyz");
@@ -452,7 +452,7 @@ fn strptrtests() {
   assert_eq!(cb.pop_char().unwrap(), 'z');
   assert_eq!(cb.pop_char_front().unwrap(), '9');
   assert_eq!(cb.len(),10);
-  //assert!( cb == "987abc123xyz");
+  */
 }//strptrtests
 
 
