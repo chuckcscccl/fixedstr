@@ -62,8 +62,8 @@
 //!   the `Copy` trait.
 //! - A **[Sharedstr]\<N\>** is similar to a [Flexstr]\<N\> but uses a
 //!   `Rc<RefCell<..>>` underneath to allow strings to be shared as well as
-//!   mutated.  This type also does not implement `Copy` but `Clone` is done
-//!   in constant time.
+//!   mutated.  This type does not implement `Copy` but `Clone` is done
+//!   in constant time.  This type also does **not support serde**.
 //!
 //! **Optional features:**
 //!
@@ -226,7 +226,7 @@ pub use tiny_internal::*;
 
 
 // experimental
-mod circular_string;
+//mod circular_string;
 
 
 
