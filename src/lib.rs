@@ -96,6 +96,8 @@
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["std","flex-str"], default-features=false}
 //! ```
+//! The particular arrangement of optional features allows for compatibility
+//! with previous builds.
 //!
 //! **Recent Updates:**
 //!
@@ -226,7 +228,8 @@ pub use tiny_internal::*;
 
 
 // experimental
-//mod circular_string;
+mod circular_string;
+pub use circular_string::*;
 
 
 
@@ -444,15 +447,6 @@ fn strptrtests() {
   b.push('3');
   assert!( a == "abc123" );
   assert!( "abc123" == b );
-  /*
-  use crate::circular_string::*;
-  let mut cb = cstr::<16>::make(&b);
-  cb.push_str("xyz");
-  cb.push_front("987");
-  assert_eq!(cb.pop_char().unwrap(), 'z');
-  assert_eq!(cb.pop_char_front().unwrap(), '9');
-  assert_eq!(cb.len(),10);
-  */
 }//strptrtests
 
 
@@ -523,6 +517,31 @@ fn nostdtest() {
 
   let fs = to_fixedstr!(str8,-0132);
   assert_eq!(&fs,"-132");
+
+
+
+  //cstr tests
+  use crate::circular_string::*;
+  let mut cb = cstr::<16>::make("abc123");
+  assert!(cb.is_contiguous());  
+  cb.push_str("xyz");
+  cb.push_front("9876");
+  assert_eq!(cb.pop_char().unwrap(), 'z');
+  assert_eq!(cb.pop_char_front().unwrap(), '9');
+  cb.push_str_front("000");
+  assert_eq!(cb.len(),14);
+  assert!(&cb == "000876abc123xy");
+  cb.truncate_left(10);
+  assert_eq!(&cb,"23xy");
+  cb.push_str("ijklmno  ");
+  cb.push_char_front(' ');
+  assert!(&cb == " 23xyijklmno  ");
+  assert!(!cb.is_contiguous());
+//  cb.trim_left();
+//  assert!(&cb == "23xyijklmno ");
+//  cb.trim_right();
+  cb.trim_whitespaces();
+  assert!(&cb == "23xyijklmno");  
 }//nostdtest
 
 
