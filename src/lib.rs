@@ -273,8 +273,9 @@ mod serde_support {
     #[cfg(feature="circular-str")]
     impl<const N: usize> Serialize for cstr<N> {
        fn serialize<S: Serializer>(&self, serializer:S) -> Result<S::Ok, S::Error> {
-                    let s = self.to_string();
-                    serializer.serialize_str(&s[..])
+                    let s = self.to_contiguous(); //self.to_string();
+                    let (a,_) = s.to_strs();
+                    serializer.serialize_str(a)
        }
     }//serialize
     

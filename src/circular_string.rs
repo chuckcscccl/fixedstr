@@ -413,6 +413,21 @@ impl<const N:usize> cstr<N>
      self.chars()
    }
 
+   /// returns a copy of the same string that is contiguous underneath
+   pub fn to_contiguous(&self) -> cstr<N> {
+     let mut c = *self;
+     if !c.is_contiguous() {c.reset();}
+     c
+   }
+
+   /// returns a single str slice if the cstr is contiguous underneath,
+   /// otherwise panics.
+   pub fn force_str(&self) -> &str {
+     let (a,b) = self.to_strs();
+     if b.len()>0 {panic!("cstr cannot be transformed into a single str slice without calling reset()");}
+     a
+   }
+
    /// converts cstr to an owned string
    pub fn to_string(&self) -> String {
      let (a,b) = self.to_strs();
