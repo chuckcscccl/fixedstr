@@ -9,7 +9,11 @@
 //! fixed strings with circular-queue backing
 
 use core::cmp::{min, Ordering, PartialOrd};
+extern crate alloc;
+use alloc::string::String;
 
+//#[cfg(feature="serde")]
+//use serde::{Deserialize, Serialize};
 
 /// A *circular string* is represented underneath by fixed-size u8
 /// array arranged as a circular
@@ -17,7 +21,8 @@ use core::cmp::{min, Ordering, PartialOrd};
 /// of the string.
 /// This type currently **only supports single-byte chars** including ascii strings.
 /// Each `cstr<N>` can hold up to N bytes and the maximum N is 65536.
-#[derive(Debug,Copy,Clone,Ord)]
+/// The Serialization (serde) and no-std options are both supported.
+#[derive(Copy,Clone)]
 pub struct cstr<const N : usize=32>
 {
   chrs: [u8;N],
@@ -49,15 +54,15 @@ impl<const N:usize> cstr<N>
      m
    }//from_ascii
 
-   /// version of make that does not truncate.  Also checks if N is
-   /// not greater than 65536 without panic.
-   pub fn try_make(src:&str) -> Option<cstr<N>> {
+   /// version of make that does not truncate: returns original str slice
+   /// as error.  Also checks if N is no greater than 65536 without panic.
+   pub fn try_make(src:&str) -> Result<cstr<N>, &str> {
      let length = src.len();
-     if length>N || N>65536 {return None;}
+     if length>N || N>65536 {return Err(src);}
      let mut m = cstr::new();
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
      m.len = length as u16;
-     Some(m)
+     Ok(m)
    }//try_make
 
    /// version of `try_make` that also checks if the input string is ascii.
@@ -408,8 +413,34 @@ impl<const N:usize> cstr<N>
      self.chars()
    }
 
-}//main impl
+   /// converts cstr to an owned string
+   pub fn to_string(&self) -> String {
+     let (a,b) = self.to_strs();
+     let mut s = String::from(a);
+     if b.len()>0 {s.push_str(b);}
+     s
+   }//to_string
 
+
+  /*
+   /// returns an str slice representation by possibly calling
+   /// [Self::reset] first, which is expensive.
+   pub fn force_str(&mut self) -> &str {
+     if !self.is_contiguous() {self.reset();}
+     let(a,_) = self.to_strs();
+     a
+   }
+
+   #[cfg(feature="serde")]
+   /// for serde only, panics if underlying representation is not contiguous
+   pub fn as_str(&self) -> &str {
+     let(a,b) = self.to_strs();
+     if b.len()>0 {panic!("serialization of cstr is only allowed after reset()");}
+     a
+   }
+   */
+}//main impl
+///////////////////////////////////////////////////////////////
 
 impl<const N :usize> Default for cstr<N> {
   fn default() -> Self {
@@ -421,18 +452,18 @@ impl<const N :usize> Default for cstr<N> {
   }
 }//impl default
 
+impl<const N: usize> core::fmt::Debug for cstr<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let (a,b) = self.to_strs();
+        f.pad(a)?;
+        f.pad(b)
+    }
+} // Debug impl
 
 /////////// need Eq, Ord, etc.  and special iterator implementation
-
 impl<const N: usize> PartialEq<&str> for cstr<N> {
     fn eq(&self, other: &&str) -> bool {
-        /*
-        let (a,b) = self.to_strs();
-        let (alen, blen) = (a.len(), b.len());
-        alen+blen==other.len() &&
-          &a[..alen] == &other[..alen]  &&  b == &other[alen..]
-        */
-        self == other
+        &self == other
     }//eq
 }
 
@@ -445,7 +476,37 @@ impl<const N: usize> PartialEq<&str> for &cstr<N> {
     } //eq
 }
 
-/////// chars interator
+/*
+impl<T:AsRef<str>, const N: usize> PartialEq<&T> for &cstr<N> {
+    fn eq(&self, other: &&T) -> bool {
+        let (a,b) = self.to_strs();
+        let (alen, blen) = (a.len(), b.len());
+        let oref = other.as_ref();
+        alen+blen==oref.len() &&
+          a == &oref[..alen]  &&  (blen==0 || b == &oref[alen..]) 
+    } //eq
+}
+*/
+
+impl<const N: usize> PartialEq<cstr<N>> for &str {
+    fn eq(&self, other: &cstr<N>) -> bool {
+        let (a,b) = other.to_strs();
+        let (alen, blen) = (a.len(), b.len());
+        alen+blen==self.len() &&
+          a == &self[..alen]  &&  (blen==0 || b == &self[alen..]) 
+    } //eq
+}
+
+impl<const N: usize> PartialEq<&cstr<N>> for &str {
+    fn eq(&self, other: &&cstr<N>) -> bool {
+        let (a,b) = other.to_strs();
+        let (alen, blen) = (a.len(), b.len());
+        alen+blen==self.len() &&
+          a == &self[..alen]  &&  (blen==0 || b == &self[alen..]) 
+    } //eq
+}
+
+/// character interator, returned by [cstr::chars]
 pub struct CircCharIter<'a> {
   first : &'a [u8],
   second: &'a [u8],
@@ -482,8 +543,48 @@ impl<const N: usize> PartialEq for cstr<N> {
 }// PartialEq
 impl<const N:usize> Eq for cstr<N> {}
 
+impl<const N: usize> Ord for cstr<N> {
+  fn cmp(&self, other:&Self) -> Ordering {
+       let mut schars = self.chars();
+       let mut ochars = other.chars();
+       let mut answer = Ordering::Equal;
+       loop {
+         match (schars.next(), ochars.next()) {
+           (Some(x), Some(y)) if x.cmp(&y)==Ordering::Equal => {},
+           (Some(x), Some(y)) => { answer = x.cmp(&y); break; },
+           (None,None) => {break;}
+           (None,_) => { answer = Ordering::Less; break; },
+           (_,None) => { answer = Ordering::Greater; break; },
+         }//match
+       }//loop
+       answer  
+  }//cmp
+}//Ord
+
 impl<const N: usize> PartialOrd for cstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+       Some(self.cmp(other))
+       /*
+       let mut schars = self.chars();
+       let mut ochars = other.chars();
+       let mut answer = Ordering::Equal;
+       loop {
+         match (schars.next(), ochars.next()) {
+           (Some(x), Some(y)) if x.cmp(&y)==Ordering::Equal => {},
+           (Some(x), Some(y)) => { answer = x.cmp(&y); break; },
+           (None,None) => {break;}
+           (None,_) => { answer = Ordering::Less; break; },
+           (_,None) => { answer = Ordering::Greater; break; },
+         }//match
+       }//loop
+       Some(answer)
+       */
+    }//partial_cmp
+}// PartialOrd
+
+
+impl<const N: usize> PartialOrd<&str> for cstr<N> {
+    fn partial_cmp(&self, other: &&str) -> Option<Ordering> {
        let mut schars = self.chars();
        let mut ochars = other.chars();
        let mut answer = Ordering::Equal;
@@ -500,8 +601,38 @@ impl<const N: usize> PartialOrd for cstr<N> {
     }//partial_cmp
 }// PartialOrd
 
+impl<const N: usize> PartialOrd<&str> for &cstr<N> {
+    fn partial_cmp(&self, other: &&str) -> Option<Ordering> {
+       let mut schars = self.chars();
+       let mut ochars = other.chars();
+       let mut answer = Ordering::Equal;
+       loop {
+         match (schars.next(), ochars.next()) {
+           (Some(x), Some(y)) if x.cmp(&y)==Ordering::Equal => {},
+           (Some(x), Some(y)) => { answer = x.cmp(&y); break; },
+           (None,None) => {break;}
+           (None,_) => { answer = Ordering::Less; break; },
+           (_,None) => { answer = Ordering::Greater; break; },
+         }//match
+       }//loop
+       Some(answer)
+    }//partial_cmp
+}// PartialOrd
+
+
 impl<const N:usize> core::hash::Hash for cstr<N> {
   fn hash<H:core::hash::Hasher>(&self, state:&mut H) {
     for c in self.chars() { c.hash(state); }
   }
 }//hash
+
+impl<T: AsRef<str> + ?Sized, const N: usize> core::convert::From<&T> for cstr<N> {
+    fn from(s: &T) -> cstr<N> {
+        cstr::make(s.as_ref())
+    }
+}
+impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for cstr<N> {
+    fn from(s: &mut T) -> cstr<N> {
+        cstr::make(s.as_mut())
+    }
+}

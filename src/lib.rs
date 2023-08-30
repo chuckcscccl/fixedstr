@@ -228,7 +228,9 @@ pub use tiny_internal::*;
 
 
 // experimental
+#[cfg(feature = "circular-str")]
 mod circular_string;
+#[cfg(feature = "circular-str")]
 pub use circular_string::*;
 
 
@@ -267,7 +269,34 @@ mod serde_support {
     generate_impl!(fstr, FstrVisitor);
     #[cfg(feature="std")]    
     generate_impl!(Flexstr, FlexstrVisitor);
-}
+
+    #[cfg(feature="circular-str")]
+    impl<const N: usize> Serialize for cstr<N> {
+       fn serialize<S: Serializer>(&self, serializer:S) -> Result<S::Ok, S::Error> {
+                    let s = self.to_string();
+                    serializer.serialize_str(&s[..])
+       }
+    }//serialize
+    
+    #[cfg(feature="circular-str")]
+    struct CstrVisitor<const N: usize>;
+            impl<'de, const N: usize> Visitor<'de> for CstrVisitor<N> {
+                type Value = cstr<N>;
+                fn expecting(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    f.write_str("a string")
+                }
+                fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                    cstr::try_make(s).map_err(|_| E::custom("string too long"))
+                }
+            }
+
+            #[cfg(feature="circular-str")]
+            impl<'de, const N: usize> Deserialize<'de> for cstr<N> {
+                fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                    deserializer.deserialize_str(CstrVisitor)
+                }
+            }
+}//serde
 
 
 
@@ -521,6 +550,8 @@ fn nostdtest() {
 
 
   //cstr tests
+ #[cfg(feature = "circular-str")]
+ {
   use crate::circular_string::*;
   let mut cb = cstr::<16>::make("abc123");
   assert!(cb.is_contiguous());  
@@ -541,7 +572,9 @@ fn nostdtest() {
 //  assert!(&cb == "23xyijklmno ");
 //  cb.trim_right();
   cb.trim_whitespaces();
-  assert!(&cb == "23xyijklmno");  
+  assert!("23xyijklmno" == &cb);
+  assert!(&cb < "4abc");
+ }
 }//nostdtest
 
 
