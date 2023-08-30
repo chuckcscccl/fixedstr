@@ -103,7 +103,7 @@ impl<const N:usize> cstr<N>
    /// (without wraparound).
    #[inline(always)]
    pub fn is_contiguous(&self) -> bool {
-     (self.front as usize + self.len as usize) < N
+     (self.front as usize + self.len as usize) <= N
    }
 
    /// resets the internal representation of the cstr so that it is
