@@ -120,6 +120,11 @@ impl<const N:usize> cstr<N>
      self.front = 0;
    }//reset
 
+   /// guarantees a contiguous underlying representation of the string
+   pub fn make_contiguous(&mut self) {
+     if !self.is_contiguous() { self.reset();}
+   }
+   
    /// pushes given string to the end of the string, returns remainder
    pub fn push_str<'t>(&mut self, src:&'t str) -> &'t str {
      let srclen = src.len();
