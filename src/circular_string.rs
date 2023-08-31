@@ -312,7 +312,7 @@ impl<const N:usize> cstr<N>
         else { None }      
     }//find_substr
 
-    // **in-place** trimming of white spaces at the front of the string
+    /// **in-place** trimming of white spaces at the front of the string
     pub fn trim_left(&mut self) {
       let (a,b) = self.to_strs();
       let offset;
@@ -329,7 +329,7 @@ impl<const N:usize> cstr<N>
       self.len -= offset as u16;
     }//trim_left
 
-    // **in-place** trimming of white spaces at the end of the string
+    /// **in-place** trimming of white spaces at the end of the string
     pub fn trim_right(&mut self) {
       let (a,b) = self.to_strs();
       let offset;
