@@ -425,7 +425,7 @@ impl<const N:usize> cstr<N>
    pub fn chars<'a>(&'a self) -> CircCharIter<'a> {
      let contig = self.is_contiguous();
      CircCharIter {
-       first : if contig { &self.chrs[self.front as usize .. self.endi()] }
+       first : if contig { &self.chrs[self.front as usize .. (self.front+self.len) as usize] }
                else { &self.chrs[self.front as usize ..] },
        second: if contig { &[] }
                else { &self.chrs[..self.endi()] },
