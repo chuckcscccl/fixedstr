@@ -260,6 +260,9 @@ impl<const N:usize> cstr<N>
        }
     }//truncate_left
 
+    /// alias for `truncate_left`
+    pub fn truncate_front(&mut self, n:usize) { self.truncate_left(n); }
+
     /// finds the position of first character that satisfies given predicate
     pub fn find<P>(&self, predicate: P) -> Option<usize>
          where P : Fn(char) -> bool
@@ -274,18 +277,6 @@ impl<const N:usize> cstr<N>
         else { None }
     }//find
 
-    /// finds position of first matching substring
-    pub fn find_substr(&self, s:&str) -> Option<usize> {
-        let (a,b) = self.to_strs();
-        if let Some(pos) = a.find(s) {
-            Some(pos)
-        }
-        else if let Some(pos) = b.find(s) {
-            Some(a.len() + pos)
-        }
-        else { None }      
-    }//find_substr
-    
     /// finds the position of last character that satisfies given predicate
     pub fn rfind<P>(&self, predicate: P) -> Option<usize>
          where P : Fn(char) -> bool
@@ -300,13 +291,41 @@ impl<const N:usize> cstr<N>
         else { None }
     }//find
 
+    /// finds position of first matching substring
+    pub fn find_substr(&self, s:&str) -> Option<usize> {
+        let (a,b) = self.to_strs();
+        if let Some(pos) = a.find(s) {
+            return Some(pos);
+        }
+	if s.len()>1 { //check middle
+	  for i in 0..s.len()-1 {
+	    let mid = s.len()-i-1;
+	    if a.ends_with(&s[..mid]) && b.starts_with(&s[mid..]) {
+	      return Some(a.len()-mid);
+	    }
+	  }// for each intermediate position
+	}
+        if let Some(pos) = b.find(s) {
+          return Some(a.len() + pos);
+        }
+	else {None}
+    }//find_substr
+
     /// finds position of last matching substring
     pub fn rfind_substr(&self, s:&str) -> Option<usize> {
         let (a,b) = self.to_strs();
         if let Some(pos) = b.find(s) {
-            Some(a.len()+pos)
+            return Some(a.len()+pos);
         }
-        else if let Some(pos) = a.find(s) {
+	if s.len()>1 { // check middle
+	  for i in 0..s.len()-1 {
+	    let mid = s.len()-i-1;
+	    if b.starts_with(&s[mid..]) && a.ends_with(&s[..mid]) {
+	       return Some(a.len()-mid);
+	    }
+	  }//for
+	}
+        if let Some(pos) = a.find(s) {
             Some(pos)
         }
         else { None }      
@@ -390,7 +409,8 @@ impl<const N:usize> cstr<N>
      let answer;
      if self.len()==0 {answer = ("","");}
      else if self.is_contiguous() {
-       answer = (core::str::from_utf8(&self.chrs[self.front as usize .. self.endi()]).unwrap(),
+       let front = self.front as usize;
+       answer = (core::str::from_utf8(&self.chrs[front .. front+(self.len as usize)]).unwrap(),
         "")
      }
      else {

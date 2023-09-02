@@ -575,7 +575,20 @@ fn nostdtest() {
   cb.trim_whitespaces();
   assert!("23xyijklmno" == &cb);
   assert!(&cb < "4abc");
- }
+  
+  let mut a = cstr::<8>::make("12345678");
+  assert_eq!(a.len(),8);
+  a.truncate_front(4);
+  assert_eq!(a.len(),4);
+  assert!(a.is_contiguous());
+  assert!(&a == "5678");
+  a.push_str("abc");
+  assert!(&a == "5678abc");
+  let mut findopt = a.find_substr("8abc");
+  assert_eq!(findopt.unwrap(),3);
+  findopt = a.rfind_substr("678abc");
+  assert_eq!(findopt.unwrap(),1);  
+ }//cstr
 }//nostdtest
 
 
