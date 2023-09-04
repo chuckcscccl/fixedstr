@@ -11,6 +11,7 @@
 use core::cmp::{min, Ordering, PartialOrd};
 extern crate alloc;
 use alloc::string::String;
+use core::ops::Add;
 
 //#[cfg(feature="serde")]
 //use serde::{Deserialize, Serialize};
@@ -35,7 +36,7 @@ impl<const N:usize> cstr<N>
    /// create `cstr` from `&str` with silent truncation; panics if
    /// N is greater than 65536
    pub fn make(src:&str) -> cstr<N> {
-     if N > 65536 { panic!("cstr strings are limited to a maximum capacity of 65536");}
+     if N<1 || N > 65536 { panic!("cstr strings are limited to a capacity between 1 and 65536");}
      let mut m = cstr::<N>::new();
      let length = core::cmp::min(N,src.len());
      m.chrs[..length].copy_from_slice(&src.as_bytes()[..length]);
@@ -45,7 +46,7 @@ impl<const N:usize> cstr<N>
 
    /// version of make that also panics if the input string is not ascii.
    pub fn from_ascii(src:&str) -> cstr<N> {
-     if N > 65536 { panic!("cstr strings are limited to a maximum capacity of 65536");}
+     if N<1 ||  N > 65536 { panic!("cstr strings are limited to a maximum capacity of 65536");}
      if !src.is_ascii() { panic!("cstr string is not ascii");}
      let mut m = cstr::<N>::new();
      let length = core::cmp::min(N,src.len());
@@ -58,7 +59,7 @@ impl<const N:usize> cstr<N>
    /// as error.  Also checks if N is no greater than 65536 without panic.
    pub fn try_make(src:&str) -> Result<cstr<N>, &str> {
      let length = src.len();
-     if length>N || N>65536 {return Err(src);}
+     if length>N || N>65536 || N<1 {return Err(src);}
      let mut m = cstr::new();
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
      m.len = length as u16;
@@ -68,7 +69,7 @@ impl<const N:usize> cstr<N>
    /// version of `try_make` that also checks if the input string is ascii.
    pub fn try_make_ascii(src:&str) -> Option<cstr<N>> {
      let length = src.len();
-     if length>N || N>65536 || !src.is_ascii() {return None;}
+     if length>N || N>65536 || N<1 || !src.is_ascii() {return None;}
      let mut m = cstr::new();
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
      m.len = length as u16;
@@ -79,7 +80,7 @@ impl<const N:usize> cstr<N>
    /// `cstr` and the remainder `&str` that was truncated; panics if
    /// N is greater than 65536 (but does not check for ascii strings)
    pub fn make_remainder(src:&str) -> (cstr<N>,&str) {
-     if N > 65536 { panic!("cstr strings are limited to a maximum capacity of 65536");}   
+     if N > 65536 || N<1 { panic!("cstr strings are limited to a capacity between 1 and 65536");}   
      let mut m = cstr::new();
      let length = core::cmp::min(N,src.len());
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
@@ -91,7 +92,7 @@ impl<const N:usize> cstr<N>
    // N is not greater than 65536 without panic
    pub fn from_pair(left:&str, right:&str) -> Option<cstr<N>> {
      let (llen,rlen) = (left.len(), right.len());
-     if llen+rlen > N || N > 65536 { return None; }
+     if llen+rlen > N || N > 65536 || N<1 { return None; }
      let mut m = cstr::new();
      m.len = (llen+rlen) as u16;
      m.chrs[..llen].copy_from_slice(&left.as_bytes()[..llen]);
@@ -120,11 +121,53 @@ impl<const N:usize> cstr<N>
      self.front = 0;
    }//reset
 
+   /// clears string to empty string
+   pub fn clear(&mut self) {
+     self.len=0;
+   }
+   
+   /// resets string to empty string and clears underlying buffer to contain
+   /// all zeros.
+   pub fn zero(&mut self) {
+     self.chrs = [0;N];
+     self.front = 0;
+     self.len = 0;
+   }
+
    /// guarantees a contiguous underlying representation of the string
    pub fn make_contiguous(&mut self) {
      if !self.is_contiguous() { self.reset();}
    }
-   
+
+    /// returns the nth char of the fstr.  Since only single-byte characters
+    /// are currently supported by the cstr type, this function is the same
+    /// as [Self::nth_bytechar] except that n is checked against the length of the
+    /// string.
+    pub fn nth(&self, n: usize) -> Option<char> {
+        if n<self.len as usize {
+          Some(self.chrs[self.index(n)] as char)
+        }
+        else {None}
+    }
+
+
+    /// returns the nth byte of the string as a char, does not check n
+    /// against length of array
+    #[inline]
+    pub fn nth_bytechar(&self, n: usize) -> char {
+        self.chrs[self.index(n)] as char
+    }
+
+    /// sets the nth byte of the string to the supplied character.
+    /// the character must fit in a single byte.  Returns true on success.
+    pub fn set(&mut self, n:usize, c:char) -> bool {
+      if c.len_utf8()>1 || n>= self.len as usize { false }
+      else {
+        self.chrs[self.index(n)] = c as u8;
+        true
+      }
+    }//set
+
    /// pushes given string to the end of the string, returns remainder
    pub fn push_str<'t>(&mut self, src:&'t str) -> &'t str {
      let srclen = src.len();
@@ -153,7 +196,8 @@ impl<const N:usize> cstr<N>
      let remain = if N>=(slen+srclen) {0} else {(srclen+slen)-N};
      let mut i = 0;
      while i<srclen && i+slen<N {
-       self.front = (self.front + (N as u16) -1) % (N as u16);
+       //self.front =(self.front + (N as u16) -1) % (N as u16);
+       self.front = fastmod(self.front as usize+N-1,N) as u16;
        self.chrs[self.front as usize] = bytes[srclen-1-i];
        i += 1;
      }//while
@@ -184,7 +228,7 @@ impl<const N:usize> cstr<N>
     pub fn push_char_front(&mut self, c:char) -> bool {
        let clen = c.len_utf8();
        if clen>1 || self.len as usize + clen > N {return false;}
-       let newfront = ((self.front as usize) + N - 1) % N;
+       let newfront = fastmod(self.front as usize+N-1,N);
        self.chrs[newfront] = c as u8;
        self.front = newfront as u16;
        self.len += 1;
@@ -194,7 +238,7 @@ impl<const N:usize> cstr<N>
     /// remove and return last character in string, if it exists
     pub fn pop_char(&mut self) -> Option<char> {
        if self.len()==0 {return None;}
-       let lasti = ((self.front+self.len-1) as usize) % N;
+       let lasti = fastmod((self.front+self.len-1) as usize,N);
        let firstchar = self.chrs[lasti] as char;
        self.len-=1;
        Some(firstchar)
@@ -211,36 +255,23 @@ impl<const N:usize> cstr<N>
     pub fn pop_char_front(&mut self) -> Option<char> {
        if self.len()==0 {return None;}
        let firstchar = self.chrs[self.front as usize] as char;
-       self.front = (self.front+1)%(N as u16);
+       self.front = self.index16(1);
        self.len -= 1;
        Some(firstchar)
-       /*
-       let (left,r) = self.to_strs();
-       let firstchar = left.chars().next().unwrap();
-       let clen = firstchar.len_utf8() as u16;
-       self.front = (self.front+clen) % (N as u16) ;
-       self.len -= clen;
-       Some(firstchar)
-       */
     }//pop_char_front
 
 
-    /// right-truncates string up to byte position n.  No effect
-    /// if n is greater than or equal to the length of the string.
-    pub fn truncate_bytes(&mut self, n: usize) {
+    /// alias for [Self::truncate]
+    pub fn truncate_right(&mut self, n: usize) {
        if (n<self.len as usize) {
-         /*
-         let (a,b) = self.to_strs();
-         if n<a.len() {
-           assert!(a.is_char_boundary(n));
-         }
-         else {
-           assert!(b.is_char_boundary(n-a.len()));         
-         }
-         */
 	 self.len = n as u16;
        }
     }
+
+    /// right-truncates string up to byte position n.  No effect
+    /// if n is greater than or equal to the length of the string.
+    #[inline]
+    pub fn truncate(&mut self, n: usize) { self.truncate_right(n); }
 
     /// left-truncates string up to byte position n.  No effect
     ///if n is greater than the length of the string.
@@ -255,7 +286,7 @@ impl<const N:usize> cstr<N>
            assert!(b.is_char_boundary(n-a.len()));         
          }
          */
-         self.front = ((self.front as usize + n)%N) as u16;
+         self.front = self.index16(n as u16);
 	 self.len -= n as u16;
        }
     }//truncate_left
@@ -336,16 +367,16 @@ impl<const N:usize> cstr<N>
       let (a,b) = self.to_strs();
       let offset;
       if let Some(i) = a.find(|c:char|!c.is_whitespace()) {
-         offset = i;
+         offset = i as u16;
       }
       else if let Some(k) = b.find(|c:char|!c.is_whitespace()) {
-         offset = a.len() + k;
+         offset = (a.len() + k) as u16;
       }
       else {
-         offset = a.len() + b.len();
+         offset = (a.len() + b.len()) as u16;
       }
-      self.front = ((self.front as usize + offset)%N) as u16;
-      self.len -= offset as u16;
+      self.front = self.index16(offset); //((self.front as usize + offset)%N) as u16;
+      self.len -= offset;
     }//trim_left
 
     /// **in-place** trimming of white spaces at the end of the string
@@ -382,16 +413,17 @@ impl<const N:usize> cstr<N>
    // convenience
    #[inline(always)]
    fn endi(&self) -> usize {  // index of last value plus 1
-     (self.front as usize + self.len as usize )%N
+     fastmod(self.front as usize + self.len as usize,N)
+     //(self.front as usize + self.len as usize )%N
    }// last
 
+   /*
    #[inline(always)]
-   fn index(&self, i:usize) -> usize {
+   fn index_of(&self, i:usize) -> usize {
      (self.front as usize +i)%N
    } // index of ith vale
-
-///////// doesn't work on non-ascii strings, because of char boundaries
-
+   */
+   
    /// length of string in bytes
    #[inline(always)]
    pub fn len(&self) -> usize  { self.len as usize }
@@ -462,6 +494,34 @@ impl<const N:usize> cstr<N>
    }//to_string
 
 
+    /// returns a copy of the portion of the string.  Will return empty
+    /// string if indices are invalid. The returned string will be contiguous.
+    pub fn substr(&self, start: usize, end: usize) -> cstr<N> {
+      let mut s = cstr::<N>::default();
+      if (end<=start || start as u16 > self.len-1 || end>self.len as usize)   {return s;}
+      for i in start .. end {
+       s.chrs[i-start] = self.chrs[self.index(i)];
+      }
+      s.len = (end-start) as u16;
+      s
+    }//substr
+
+    /// in-place modification of ascii characters to lower-case.
+    pub fn make_ascii_lowercase(&mut self) {
+      for i in 0..self.len as usize {
+        let b = &mut self.chrs[self.index(i)];
+        if *b>=65 && *b<=90 { *b |= 32; }
+      }
+    }//make_ascii_lowercase
+
+    /// in-place modification of ascii characters to upper-case.
+    pub fn make_ascii_uppercase(&mut self) {
+      for i in 0..self.len as usize {
+        let b = &mut self.chrs[self.index(i)];
+        if *b>=97 && *b<=122 { *b -= 32; } 
+      }      
+    }//make_ascii_uppercase
+    
   /*
    /// returns an str slice representation by possibly calling
    /// [Self::reset] first, which is expensive.
@@ -479,8 +539,49 @@ impl<const N:usize> cstr<N>
      a
    }
    */
+   
+   #[inline]
+   fn index(&self,i:usize) -> usize {
+     fastmod(self.front as usize + i,N)
+   }
+
+   #[inline]
+   fn index16(&self, i:u16) -> u16 {
+     let n = N as u16;
+     let mask = n-1;
+     if n&mask==0 { (self.front+i) & mask } else {(self.front+i) % n }
+   }
 }//main impl
 ///////////////////////////////////////////////////////////////
+
+
+impl<const M: usize> cstr<M> {
+    /// converts an `cstr<M>` to an `cstr<N>`. If the length of the string being
+    /// converted is greater than N, the extra characters are ignored.
+    /// This operation produces a new string that is contiguous underneath.
+    pub fn resize<const N: usize>(&self) -> cstr<N> {
+        let slen = self.len();
+        let length = if (slen < N) { slen } else { N };
+        let mut s = cstr::<N>::default();
+        let (a,b) = self.to_strs();
+        s.chrs[..a.len()].copy_from_slice(a.as_bytes());
+        if b.len()>0 {
+          s.chrs[a.len()..].copy_from_slice(b.as_bytes());
+        }
+        s.len = self.len;
+        s
+    } //resize
+
+    /// version of resize that does not allow string truncation due to length
+    pub fn reallocate<const N: usize>(&self) -> Option<cstr<N>> {
+        if self.len() < N {
+            Some(self.resize())
+        } else {
+            None
+        }
+    }
+} //impl cstr<M>
+
 
 impl<const N :usize> Default for cstr<N> {
   fn default() -> Self {
@@ -499,6 +600,13 @@ impl<const N: usize> core::fmt::Debug for cstr<N> {
         f.pad(b)
     }
 } // Debug impl
+
+impl<const N: usize> core::fmt::Display for cstr<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let (a,b) = self.to_strs();
+        write!(f, "{}{}", a,b)
+    }
+}
 
 /////////// need Eq, Ord, etc.  and special iterator implementation
 impl<const N: usize> PartialEq<&str> for cstr<N> {
@@ -676,3 +784,31 @@ impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for cst
         cstr::make(s.as_mut())
     }
 }
+
+impl<const N: usize> core::fmt::Write for cstr<N> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result
+    {
+        if s.len() + self.len() > N {
+            return Err(core::fmt::Error::default());
+        }
+        self.push_str(s);
+        Ok(())
+    } //write_str
+} //core::fmt::Write trait
+
+impl<const N:usize> Add<&str> for cstr<N> {
+  type Output = cstr<N>;
+  fn add(self, other:&str) -> cstr<N> {
+    let mut a2 = self;
+    a2.push_str(other);
+    a2
+  }
+}//Add &str
+
+
+////////// fast x % n for n that are powers of 2
+#[inline]
+fn fastmod(x:usize, n:usize) -> usize {
+  let mask = n-1;
+  if n&mask==0 { x & mask } else {x % n}
+}//fastmod

@@ -555,7 +555,7 @@ fn nostdtest() {
  {
   use crate::circular_string::*;
   let mut cb = cstr::<16>::make("abc123");
-  assert!(cb.is_contiguous());  
+  assert!(cb.is_contiguous());
   cb.push_str("xyz");
   cb.push_front("9876");
   assert_eq!(cb.pop_char().unwrap(), 'z');
