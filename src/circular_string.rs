@@ -21,7 +21,7 @@ use core::ops::Add;
 /// queue, allowing for efficient operations such as push, trim *in front*
 /// of the string.
 /// This type currently **only supports single-byte chars** including ascii strings.
-/// Each `cstr<N>` can hold up to N bytes and the maximum N is 65536.
+/// Each `cstr<N>` can hold up to N bytes and the maximum N is 65535.
 /// The Serialization (serde) and no-std options are both supported.
 #[derive(Copy,Clone)]
 pub struct cstr<const N : usize=32>
@@ -34,9 +34,9 @@ pub struct cstr<const N : usize=32>
 impl<const N:usize> cstr<N>
 {
    /// create `cstr` from `&str` with silent truncation; panics if
-   /// N is greater than 65536
+   /// N is greater than 65535
    pub fn make(src:&str) -> cstr<N> {
-     if N<1 || N > 65536 { panic!("cstr strings are limited to a capacity between 1 and 65536");}
+     if N<1 || N > 65535 { panic!("cstr strings are limited to a capacity between 1 and 65535");}
      let mut m = cstr::<N>::new();
      let length = core::cmp::min(N,src.len());
      m.chrs[..length].copy_from_slice(&src.as_bytes()[..length]);
@@ -46,7 +46,7 @@ impl<const N:usize> cstr<N>
 
    /// version of make that also panics if the input string is not ascii.
    pub fn from_ascii(src:&str) -> cstr<N> {
-     if N<1 ||  N > 65536 { panic!("cstr strings are limited to a maximum capacity of 65536");}
+     if N<1 ||  N > 65535 { panic!("cstr strings are limited to a maximum capacity of 65535");}
      if !src.is_ascii() { panic!("cstr string is not ascii");}
      let mut m = cstr::<N>::new();
      let length = core::cmp::min(N,src.len());
@@ -56,10 +56,10 @@ impl<const N:usize> cstr<N>
    }//from_ascii
 
    /// version of make that does not truncate: returns original str slice
-   /// as error.  Also checks if N is no greater than 65536 without panic.
+   /// as error.  Also checks if N is no greater than 65535 without panic.
    pub fn try_make(src:&str) -> Result<cstr<N>, &str> {
      let length = src.len();
-     if length>N || N>65536 || N<1 {return Err(src);}
+     if length>N || N>65535 || N<1 {return Err(src);}
      let mut m = cstr::new();
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
      m.len = length as u16;
@@ -69,7 +69,7 @@ impl<const N:usize> cstr<N>
    /// version of `try_make` that also checks if the input string is ascii.
    pub fn try_make_ascii(src:&str) -> Option<cstr<N>> {
      let length = src.len();
-     if length>N || N>65536 || N<1 || !src.is_ascii() {return None;}
+     if length>N || N>65535 || N<1 || !src.is_ascii() {return None;}
      let mut m = cstr::new();
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
      m.len = length as u16;
@@ -78,9 +78,9 @@ impl<const N:usize> cstr<N>
 
    /// version of make that returns a pair consisting of the made
    /// `cstr` and the remainder `&str` that was truncated; panics if
-   /// N is greater than 65536 (but does not check for ascii strings)
+   /// N is greater than 65535 (but does not check for ascii strings)
    pub fn make_remainder(src:&str) -> (cstr<N>,&str) {
-     if N > 65536 || N<1 { panic!("cstr strings are limited to a capacity between 1 and 65536");}   
+     if N > 65535 || N<1 { panic!("cstr strings are limited to a capacity between 1 and 65535");}   
      let mut m = cstr::new();
      let length = core::cmp::min(N,src.len());
      m.chrs[..].copy_from_slice(&src.as_bytes()[..length]);
@@ -89,10 +89,10 @@ impl<const N:usize> cstr<N>
    }//try_make
 
    // make from a pair of str slices, does not truncate, and checks that
-   // N is not greater than 65536 without panic
+   // N is not greater than 65535 without panic
    pub fn from_pair(left:&str, right:&str) -> Option<cstr<N>> {
      let (llen,rlen) = (left.len(), right.len());
-     if llen+rlen > N || N > 65536 || N<1 { return None; }
+     if llen+rlen > N || N > 65535 || N<1 { return None; }
      let mut m = cstr::new();
      m.len = (llen+rlen) as u16;
      m.chrs[..llen].copy_from_slice(&left.as_bytes()[..llen]);
@@ -770,7 +770,10 @@ impl<const N: usize> PartialOrd<&str> for &cstr<N> {
 
 impl<const N:usize> core::hash::Hash for cstr<N> {
   fn hash<H:core::hash::Hasher>(&self, state:&mut H) {
-    for c in self.chars() { c.hash(state); }
+    for i in (self.len as usize..0).rev() {
+      self.nth_bytechar(i-1).hash(state);
+    }
+    //for c in self.chars() { c.hash(state); }
   }
 }//hash
 

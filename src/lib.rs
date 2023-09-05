@@ -21,7 +21,7 @@
 //! in O(log N) time.
 //!
 //!
-//! **The main structures provided by this crate are [fstr], [zstr]** and **tstr**.
+//! **The main structures provided by this crate are [fstr], [zstr], [cstr]** and **tstr**.
 //! However, tstr is not exported by default and should be referenced through the type
 //! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
 //! with [Flexstr] and [Sharedstr].  When cargo is given the `no-default-features` option,
@@ -52,8 +52,18 @@
 //! the same functions and traits as fstr\<N\> so **the documentation for [fstr]
 //! (or [zstr]) also apply to the alias types**.
 //! These types **also support `#![no_std]`**.
+//! - The type [cstr], introduced in Version 0.4.4, uses a fixed u8 array
+//! that is arranged as a circular queue (aka ring buffer).  This allows
+//! efficient implementations of pushing/triming characters *in front* of
+//! the string without additional memory allocation.  The downside of these
+//! strings is that the underlying strings can be non-contiguous as it allows
+//! wrap-around.  As a result, there is no efficient way to implement `Deref<str>`.  
+//! Additionally, **only single-byte characters** are currently supported.
+//! There is, however, an iterator over all characters and most common traits
+//! are implemented.  This type is available be default but can be optionally
+//! excluded during builds.  Serde and no-std are also supported.
 //!
-//! In addition to the three "fixed" string types,  two other types are
+//! In addition to these "fixed" string types,  two other types are
 //! provided by default, but can be optionally excluded:
 //! - A **[Flexstr]\<N\>** uses an internal enum that is either a tstr\<N\>
 //!   or an owned String, in case the length of the string exceeds N-1.
@@ -79,6 +89,8 @@
 //! makes available the **`Flexstr`** type.  
 //! - *shared-str*: this feature is available by default, requires
 //! `std` and makes available the **`Sharedptr`** type.
+//! - *circular-str*: this feature is available by default and makes available
+//! the **`cstr`** type.
 //!
 //! For example, for the smallest possible build, supporting `no-std`, place
 //! the following in your `Cargo.toml`:
