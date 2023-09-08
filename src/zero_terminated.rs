@@ -559,7 +559,7 @@ impl<const N: usize> zstr<N> {
     } //substr
 }
 
-/// type aliases for convenience
+/// [zstr] type aliases for convenience
 pub type ztr8 = zstr<8>;
 pub type ztr16 = zstr<16>;
 pub type ztr32 = zstr<32>;

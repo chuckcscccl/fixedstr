@@ -13,6 +13,8 @@ extern crate alloc;
 use alloc::string::String;
 use core::ops::Add;
 
+/// **This type is only available with the `circular-str` option.**
+///
 /// A *circular string* is represented underneath by a fixed-size u8
 /// array arranged as a circular queue. The string can wrap around
 /// either end and thus becomes internally non-contiguous.
@@ -28,9 +30,8 @@ use core::ops::Add;
 /// The Serialization (serde) and no-std options are both supported.
 ///
 /// Each `cstr<N>` can hold up to N bytes and the maximum N is 65535.
-/// However, **values of N that are exact powers of 2 are preferred**
-/// as they will speed up the `mod` operation used to wrap around the
-/// array and compute the index of bytes.
+/// Values of N that are exact powers of 2 are recommended to speed up
+/// the `%` operation for computing indices in a ciruclar queue.
 
 #[derive(Copy,Clone)]
 pub struct cstr<const N : usize=32>
@@ -206,7 +207,7 @@ impl<const N:usize> cstr<N>
      let mut i = 0;
      while i<srclen && i+slen<N {
        //self.front =(self.front + (N as u16) -1) % (N as u16);
-       self.front = fastmod(self.front as usize+N-1,N) as u16;
+       self.front = ((self.front as usize+N-1) % N) as u16;
        self.chrs[self.front as usize] = bytes[srclen-1-i];
        i += 1;
      }//while
@@ -237,7 +238,7 @@ impl<const N:usize> cstr<N>
     pub fn push_char_front(&mut self, c:char) -> bool {
        let clen = c.len_utf8();
        if clen>1 || self.len as usize + clen > N {return false;}
-       let newfront = fastmod(self.front as usize+N-1,N);
+       let newfront = (self.front as usize+N-1) % N;
        self.chrs[newfront] = c as u8;
        self.front = newfront as u16;
        self.len += 1;
@@ -247,7 +248,7 @@ impl<const N:usize> cstr<N>
     /// remove and return last character in string, if it exists
     pub fn pop_char(&mut self) -> Option<char> {
        if self.len()==0 {return None;}
-       let lasti = fastmod((self.front+self.len-1) as usize,N);
+       let lasti = ((self.front+self.len-1) as usize)% N;
        let firstchar = self.chrs[lasti] as char;
        self.len-=1;
        Some(firstchar)
@@ -422,16 +423,14 @@ impl<const N:usize> cstr<N>
    // convenience
    #[inline(always)]
    fn endi(&self) -> usize {  // index of last value plus 1
-     fastmod(self.front as usize + self.len as usize,N)
-     //(self.front as usize + self.len as usize )%N
+     //fastmod(self.front as usize + self.len as usize,N)
+     (self.front as usize + self.len as usize )%N
    }// last
 
-   /*
    #[inline(always)]
-   fn index_of(&self, i:usize) -> usize {
+   fn index(&self, i:usize) -> usize {
      (self.front as usize +i)%N
    } // index of ith vale
-   */
    
    /// length of string in bytes
    #[inline(always)]
@@ -547,18 +546,19 @@ impl<const N:usize> cstr<N>
      if b.len()>0 {panic!("serialization of cstr is only allowed after reset()");}
      a
    }
-   */
    
    #[inline]
-   fn index(&self,i:usize) -> usize {
+   fn index_of(&self,i:usize) -> usize {
      fastmod(self.front as usize + i,N)
    }
+   */
 
-   #[inline]
+   #[inline(always)]
    fn index16(&self, i:u16) -> u16 {
-     let n = N as u16;
-     let mask = n-1;
-     if n&mask==0 { (self.front+i) & mask } else {(self.front+i) % n }
+     (self.front+i) % (N as u16)
+     //let n = N as u16;
+     //let mask = n-1;
+     //if n&mask==0 { (self.front+i) & mask } else {(self.front+i) % n }
    }
 }//main impl
 ///////////////////////////////////////////////////////////////
@@ -839,10 +839,24 @@ impl<const N:usize> Add for cstr<N> {
   }
 }//Add &str
 
-
+/*
 ////////// fast x % n for n that are powers of 2
-#[inline]
+#[inline(always)]
 fn fastmod(x:usize, n:usize) -> usize {
-  let mask = n-1;
-  if n&mask==0 { x & mask } else {x % n}
+    x % n
+//  let mask = n-1;
+//  if n&mask==0 { x & mask } else {x % n}
 }//fastmod
+*/
+
+////// aliases
+/// Convenient aliases for [cstr] using exact powers of 2
+pub type cstr1k = cstr<1024>;
+pub type cstr8 = cstr<8>;
+pub type cstr16 = cstr<16>;
+pub type cstr32 = cstr<32>;
+pub type cstr64 = cstr<64>;
+pub type cstr128 = cstr<128>;
+pub type cstr256 = cstr<256>;
+pub type cstr512 = cstr<512>;
+

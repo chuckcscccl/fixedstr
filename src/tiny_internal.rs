@@ -32,9 +32,8 @@ use core::ops::{RangeInclusive,RangeToInclusive};
 
 /// **This structure is only exported with the `features pub-tstr` option.**
 /// Otherwise, it can only be referenced through the
-/// public type aliases [crate::str4] through [crate::str256].
-/// This type supports `#![no_std]` with
-/// the `no-default-features` option.
+/// public type aliases [str4] through [str256].
+/// This type supports `#![no_std]`
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct tstr<const N: usize = 256> {
     chrs: [u8; N],

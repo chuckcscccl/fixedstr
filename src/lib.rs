@@ -21,7 +21,7 @@
 //! in O(log N) time.
 //!
 //!
-//! **The main structures provided by this crate are [fstr], [zstr], [cstr]** and **tstr**.
+//! **The main structures provided by this crate are [fstr], [zstr], [cstr]** and **[tstr]**.
 //! However, tstr is not exported by default and should be referenced through the type
 //! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
 //! with [Flexstr] and [Sharedstr].  When cargo is given the `no-default-features` option,
@@ -32,7 +32,7 @@
 //! are 8 bytes, compared to 16 bytes for &str (on 64bit systems), providing more efficient
 //! ways of representing very small strings.  Unicode is supported.
 //!
-//! The three principle versions of strings implemented are as follows.
+//! The principle versions of strings implemented are as follows.
 //! - A **[fstr]\<N\>**
 //! stores a string of up to N bytes.  It is represented underneath by
 //! a `[u8;N]` array and a separate usize variable holding the length.
@@ -47,12 +47,12 @@
 //! combines the best of fstr and zstr in terms of speed
 //! and memory efficiency.  However, because Rust does not currently provide
 //! a way to specify conditions on const generics at compile time, such as
-//! `where N<=256`, the tstr type is not exported and can
-//! only be used through the aliases.  These strings implement essentially
-//! the same functions and traits as fstr\<N\> so **the documentation for [fstr]
-//! (or [zstr]) also apply to the alias types**.
+//! `where N<=256`, the tstr type is not exported by default and can
+//! only be used through the aliases.  The `pub-tstr` option makes the
+//! `tstr` type public but is not recommended.
 //! These types **also support `#![no_std]`**.
-//! - The type **[cstr]**, introduced in Version 0.4.4, uses a fixed u8 array
+//! - The type **[cstr]**, introduced in Version 0.4.4 and **only available
+//! with the `circular-str` option**, uses a fixed u8 array
 //! that is arranged as a circular queue (aka ring buffer).  This allows
 //! efficient implementations of pushing/triming characters *in front* of
 //! the string without additional memory allocation.  The downside of these
@@ -60,8 +60,7 @@
 //! wrap-around.  As a result, there is no efficient way to implement `Deref<str>`.  
 //! Additionally, **only single-byte characters** are currently supported.
 //! There is, however, an iterator over all characters and most common traits
-//! are implemented.  This type is available be default but can be optionally
-//! excluded during builds.  **Serde and no-std are also supported.**
+//! are implemented.  **Serde and no-std are supported.**
 //!
 //! In addition to these "fixed" string types,  two other types are
 //! provided by default, but can be optionally excluded:
@@ -73,15 +72,17 @@
 //! - A **[Sharedstr]\<N\>** is similar to a [Flexstr]\<N\> but uses a
 //!   `Rc<RefCell<..>>` underneath to allow strings to be shared as well as
 //!   mutated.  This type does not implement `Copy` but `Clone` is done
-//!   in constant time.  This type also does **not support serde**.
+//!   in constant time.  This type ** does not support serde**.
 //!
-//! **Optional features:**
+//! **Optional Features.**  The arrangement of features and their default
+//! availability support compatibility with previous builds.
 //!
 //! - *`#![no_std]`*: this feature is enabled by the `--no-default-features`
 //! option.
 //! Only the [zstr] and tstr types are available with this option.
 //! - *serde* : (`--features serde`); Serialization was initially contributed
-//! by [wallefan](https://github.com/wallefan) and adopted to other types.
+//! by [wallefan](https://github.com/wallefan) and adopted to other types
+//! (except `Sharedstr`).
 //! This feature can be combined with `--no-default-features` for
 //! no_std support.
 //! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public
@@ -89,11 +90,11 @@
 //! makes available the **`Flexstr`** type.  
 //! - *shared-str*: this feature is available by default, requires
 //! `std` and makes available the **`Sharedptr`** type.
-//! - *circular-str*: this feature is available by default and makes available
-//! the **`cstr`** type.
+//! - *circular-str*: this feature makes available the **`cstr`** type. It
+//! is compatible with serde and no-std
 //!
 //! For example, for the smallest possible build, supporting `no-std` and
-//! just `zstr` and `tstr`, place the following in your `Cargo.toml`:
+//! just `zstr` and the aliases for `tstr`, place the following in your `Cargo.toml`:
 //! ```ignore
 //!   [dependencies]
 //!   fixedstr = {version="0.4", default-features=false}
@@ -103,13 +104,11 @@
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["serde"], default-features=false}
 //! ```
-//! and to exclude `Sharedstr` but allow all other features except serde:
+//! and to exclude `Sharedstr` but include all other string types
 //! ```ignore
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["std","flex-str","circular-str"], default-features=false}
 //! ```
-//! This arrangement of optional features allows for compatibility
-//! with previous builds.
 //!
 //! **Recent Updates:**
 //!
