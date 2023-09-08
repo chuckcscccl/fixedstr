@@ -97,6 +97,7 @@ impl<const N: usize> zstr<N> {
     /// Length of the string in bytes (consistent with [str::len]).
     /// This function uses binary search to find the first zero-byte
     /// and runs in O(log N) time for each `zstr<N>`.
+    #[inline(always)]
     pub fn len(&self) -> usize {
        self.blen()
     }
@@ -116,6 +117,7 @@ impl<const N: usize> zstr<N> {
     }//linear_len
 
     /// returns maximum capacity in bytes
+    #[inline(always)]
     pub fn capacity(&self) -> usize {
         N - 1
     }
@@ -144,6 +146,7 @@ impl<const N: usize> zstr<N> {
     }
 
     /// returns slice of u8 array underneath the zstr, including terminating 0
+    #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         &self.chrs[..self.blen()+1]
     }
@@ -177,32 +180,9 @@ impl<const N: usize> zstr<N> {
     /// returns the portion of the push string that was NOT pushed due to
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
+    #[inline]
     pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
         self.push_str(s)
-        /*
-        if s.len() < 1 {
-            return s;
-        }
-        let mut buf = [0u8; 4];
-        let mut i = self.blen();
-        let mut sci = 0; // indexes characters in s
-        for c in s.chars() {
-            let clen = c.len_utf8();
-            c.encode_utf8(&mut buf);
-            if i <= N - clen - 1 {
-                self.chrs[i..i + clen].clone_from_slice(&buf[..clen]);
-                i += clen;
-            } else {
-                self.chrs[i] = 0;
-                return &s[sci..];
-            }
-            sci += clen;
-        }
-        if i < N {
-            self.chrs[i] = 0;
-        } // zero-terminate
-        &s[sci..]
-        */
     } //push
 
     /// alias for [zstr::push]

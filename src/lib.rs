@@ -52,7 +52,7 @@
 //! the same functions and traits as fstr\<N\> so **the documentation for [fstr]
 //! (or [zstr]) also apply to the alias types**.
 //! These types **also support `#![no_std]`**.
-//! - The type [cstr], introduced in Version 0.4.4, uses a fixed u8 array
+//! - The type **[cstr]**, introduced in Version 0.4.4, uses a fixed u8 array
 //! that is arranged as a circular queue (aka ring buffer).  This allows
 //! efficient implementations of pushing/triming characters *in front* of
 //! the string without additional memory allocation.  The downside of these
@@ -61,7 +61,7 @@
 //! Additionally, **only single-byte characters** are currently supported.
 //! There is, however, an iterator over all characters and most common traits
 //! are implemented.  This type is available be default but can be optionally
-//! excluded during builds.  Serde and no-std are also supported.
+//! excluded during builds.  **Serde and no-std are also supported.**
 //!
 //! In addition to these "fixed" string types,  two other types are
 //! provided by default, but can be optionally excluded:
@@ -92,8 +92,8 @@
 //! - *circular-str*: this feature is available by default and makes available
 //! the **`cstr`** type.
 //!
-//! For example, for the smallest possible build, supporting `no-std`, place
-//! the following in your `Cargo.toml`:
+//! For example, for the smallest possible build, supporting `no-std` and
+//! just `zstr` and `tstr`, place the following in your `Cargo.toml`:
 //! ```ignore
 //!   [dependencies]
 //!   fixedstr = {version="0.4", default-features=false}
@@ -103,15 +103,17 @@
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["serde"], default-features=false}
 //! ```
-//! and to exclude `Sharedstr` but allow all other default features, use
+//! and to exclude `Sharedstr` but allow all other features except serde:
 //! ```ignore
 //!   [dependencies]
-//!   fixedstr = {version="0.4", features=["std","flex-str"], default-features=false}
+//!   fixedstr = {version="0.4", features=["std","flex-str","circular-str"], default-features=false}
 //! ```
-//! The particular arrangement of optional features allows for compatibility
+//! This arrangement of optional features allows for compatibility
 //! with previous builds.
 //!
 //! **Recent Updates:**
+//!
+//! Version 0.4.4 added the optional `cstr` type.
 //!
 //! Version 0.4.3 added the optional `Sharestr` type along with other, minor
 //! enhancements.
@@ -599,7 +601,17 @@ fn nostdtest() {
   let mut findopt = a.find_substr("8abc");
   assert_eq!(findopt.unwrap(),3);
   findopt = a.rfind_substr("678abc");
-  assert_eq!(findopt.unwrap(),1);  
+  assert_eq!(findopt.unwrap(),1);
+  let mut rem = a.push_str("123456");
+  assert_eq!(rem,"23456");
+  a.truncate_left(4);
+  assert_eq!(&a,"abc1");
+  rem = a.push_front("qrstuvw");
+  assert_eq!(&a,"tuvwabc1");
+  assert_eq!(rem,"qrs");
+  rem = a.push_str("");
+  assert_eq!(&a,"tuvwabc1");
+  assert_eq!(rem,"");  
  }//cstr
 }//nostdtest
 

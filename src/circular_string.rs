@@ -13,16 +13,25 @@ extern crate alloc;
 use alloc::string::String;
 use core::ops::Add;
 
-//#[cfg(feature="serde")]
-//use serde::{Deserialize, Serialize};
-
-/// A *circular string* is represented underneath by fixed-size u8
-/// array arranged as a circular
-/// queue, allowing for efficient operations such as push, trim *in front*
-/// of the string.
-/// This type currently **only supports single-byte chars** including ascii strings.
-/// Each `cstr<N>` can hold up to N bytes and the maximum N is 65535.
+/// A *circular string* is represented underneath by a fixed-size u8
+/// array arranged as a circular queue. The string can wrap around
+/// either end and thus becomes internally non-contiguous.
+/// This allows for efficient implementations of operations such as
+/// push, trim *in front* of the string.  However, `Deref<str>` is not
+/// implemented as it cannot be done efficiently.  Instead, the
+/// [cstr::to_strs] function returns a pair of string slices, the second
+/// of which is non-empty if the string is not contiguous.  Additionally,
+/// only single-byte characters are currently allowed, although this might
+/// change in future by using a "ghost vector" at the end of the string.
+/// An iterator [cstr::chars] is provided over all single-byte chars, which
+/// also forms the foundation of other traits such as Eq, Ord, Hash, etc.
 /// The Serialization (serde) and no-std options are both supported.
+///
+/// Each `cstr<N>` can hold up to N bytes and the maximum N is 65535.
+/// However, **values of N that are exact powers of 2 are preferred**
+/// as they will speed up the `mod` operation used to wrap around the
+/// array and compute the index of bytes.
+
 #[derive(Copy,Clone)]
 pub struct cstr<const N : usize=32>
 {
@@ -804,6 +813,28 @@ impl<const N:usize> Add<&str> for cstr<N> {
   fn add(self, other:&str) -> cstr<N> {
     let mut a2 = self;
     a2.push_str(other);
+    a2
+  }
+}//Add &str
+
+impl<const N:usize> Add for &cstr<N> {
+  type Output = cstr<N>;
+  fn add(self, other:&cstr<N>) -> cstr<N> {
+    let mut a2 = *self;
+    let (l,r) = other.to_strs();
+    a2.push_str(l);
+    if r.len()>0 { a2.push_str(r); }
+    a2
+  }
+}//Add &str
+
+impl<const N:usize> Add for cstr<N> {
+  type Output = cstr<N>;
+  fn add(self, other:cstr<N>) -> cstr<N> {
+    let mut a2 = self;
+    let (l,r) = other.to_strs();
+    a2.push_str(l);
+    if r.len()>0 { a2.push_str(r); }
     a2
   }
 }//Add &str
