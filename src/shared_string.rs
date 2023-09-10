@@ -623,6 +623,16 @@ impl<const N:usize> Add<&str> for &Sharedstr<N> {
   }
 }//Add, Rhs = &str
 
+impl<const N:usize> Add<&Sharedstr<N>> for &str {
+  type Output = Sharedstr<N>;
+  fn add(self, other:&Sharedstr<N>) -> Sharedstr<N> {
+    let mut a2 = Sharedstr::from(self);
+    a2.push_str(other);
+    a2
+  }
+}//Add &str on left
+
+
 /// convenient type aliases for [Sharedstr]
 pub type sharedstr8 = Sharedstr<8>;
 pub type sharedstr16 = Sharedstr<16>;

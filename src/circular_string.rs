@@ -32,7 +32,30 @@ use core::ops::Add;
 /// Each `cstr<N>` can hold up to N bytes and the maximum N is 65535.
 /// Values of N that are exact powers of 2 are recommended to speed up
 /// the `%` operation for computing indices in a ciruclar queue.
-
+///
+/// Examples:
+/// ```
+///  # use fixedstr::*;
+///  let mut cb = cstr::<16>::make("abc123");
+///  cb.push_str("xyz");
+///  cb.push_front("9876");
+///  assert_eq!(cb.pop_char().unwrap(), 'z');
+///  assert_eq!(cb.pop_char_front().unwrap(), '9');
+///  cb.push_str_front("000");
+///  assert_eq!(cb.len(),14);
+///  assert!(&cb == "000876abc123xy");
+///  cb.truncate_left(10);
+///  assert_eq!(&cb,"23xy");
+///  cb.push_str("ijklmno  ");
+///  cb.push_char_front(' ');
+///  assert!(!cb.is_contiguous());
+///  cb.trim_whitespaces();
+///  assert!("23xyijklmno" == &cb);
+///  assert!(&cb < "4abc");   // Ord trait
+///  let mut a = cstr8::from("abc");
+///  let ba:cstr8 = "123" + a; // concat &str on the left efficiently
+///  assert_eq!(ba,"123abc");
+/// ```
 #[derive(Copy,Clone)]
 pub struct cstr<const N : usize=32>
 {
@@ -98,8 +121,9 @@ impl<const N:usize> cstr<N>
      (m,&src[length..])
    }//try_make
 
-   // make from a pair of str slices, does not truncate, and checks that
-   // N is not greater than 65535 without panic
+   /// make from a pair of str slices, does not truncate, and checks that
+   /// N is not greater than 65535 without panic.  The returned cstr will
+   /// be contiguous.
    pub fn from_pair(left:&str, right:&str) -> Option<cstr<N>> {
      let (llen,rlen) = (left.len(), right.len());
      if llen+rlen > N || N > 65535 || N<1 { return None; }
@@ -119,7 +143,7 @@ impl<const N:usize> cstr<N>
 
    /// resets the internal representation of the cstr so that it is
    /// represented contiguously, without wraparound. **Calling this function
-   /// has non-constant time cost both in terms of speed and memory** as
+   /// has O(n) cost both in terms of speed and memory** as
    /// it requires a secondary buffer as well as copying.**
    pub fn reset(&mut self) {
      if self.front==0 {return;}
@@ -144,7 +168,8 @@ impl<const N:usize> cstr<N>
      self.len = 0;
    }
 
-   /// guarantees a contiguous underlying representation of the string
+   /// guarantees a contiguous underlying representation of the string.
+   /// This is an O(n) operation.
    pub fn make_contiguous(&mut self) {
      if !self.is_contiguous() { self.reset();}
    }
@@ -478,7 +503,8 @@ impl<const N:usize> cstr<N>
      self.chars()
    }
 
-   /// returns a copy of the same string that is contiguous underneath
+   /// returns a copy of the same string that is contiguous underneath.
+   /// This may call [cstr::reset], which is an O(n) operation.
    pub fn to_contiguous(&self) -> cstr<N> {
      let mut c = *self;
      if !c.is_contiguous() {c.reset();}
@@ -816,6 +842,23 @@ impl<const N:usize> Add<&str> for cstr<N> {
     a2
   }
 }//Add &str
+
+impl<const N:usize> Add<&cstr<N>> for &str {
+  type Output = cstr<N>;
+  fn add(self, other:&cstr<N>) -> cstr<N> {
+    let mut a2 = *other;
+    a2.push_front(self);
+    a2
+  }
+}//Add &str on left
+
+impl<const N:usize> Add<cstr<N>> for &str {
+  type Output = cstr<N>;
+  fn add(self, mut other:cstr<N>) -> cstr<N> {
+    other.push_front(self);
+    other
+  }
+}//Add &str on left
 
 impl<const N:usize> Add for &cstr<N> {
   type Output = cstr<N>;

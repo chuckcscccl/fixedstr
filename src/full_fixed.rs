@@ -519,3 +519,12 @@ impl<const N:usize> Add<&str> for fstr<N> {
     a2
   }
 }//Add &str
+
+impl<const N:usize> Add<&fstr<N>> for &str {
+  type Output = fstr<N>;
+  fn add(self, other:&fstr<N>) -> fstr<N> {
+    let mut a2 = fstr::from(self);
+    a2.push(other);
+    a2
+  }
+}//Add &str on left

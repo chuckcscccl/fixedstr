@@ -74,8 +74,9 @@
 //!   mutated.  This type does not implement `Copy` but `Clone` is done
 //!   in constant time.  This type ** does not support serde**.
 //!
-//! **Optional Features.**  The arrangement of features and their default
-//! availability support compatibility with previous builds.
+//! **OPTIONAL FEATURES.**  The arrangement of features and their default
+//! availability support compatibility with previous builds.  This may
+//! change when version 0.5 is released.
 //!
 //! - *`#![no_std]`*: this feature is enabled by the `--no-default-features`
 //! option.
@@ -239,8 +240,6 @@ use tiny_internal::*;
 #[cfg(feature = "pub_tstr")]
 pub use tiny_internal::*;
 
-
-// experimental
 #[cfg(feature = "circular-str")]
 mod circular_string;
 #[cfg(feature = "circular-str")]
@@ -610,7 +609,10 @@ fn nostdtest() {
   assert_eq!(rem,"qrs");
   rem = a.push_str("");
   assert_eq!(&a,"tuvwabc1");
-  assert_eq!(rem,"");  
+  assert_eq!(rem,"");
+  a.truncate(5);
+  let ba = "123" + a;
+  assert_eq!(ba,"123tuvwa");  
  }//cstr
 }//nostdtest
 

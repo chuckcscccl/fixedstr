@@ -17,6 +17,7 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
+extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -115,11 +116,12 @@ impl<const N: usize> tstr<N> {
         N - 1
     }
 
-    /// converts tstr to an owned string (not available when no_std enforced)
-    #[cfg(feature = "std")]    
-    pub fn to_string(&self) -> std::string::String {
-        let vs: std::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
-        std::string::String::from_utf8(vs).expect("Invalid utf8 string")
+    /// converts tstr to an owned string
+    #[cfg(feature = "std")]
+    pub fn to_string(&self) -> alloc::string::String {
+        //let vs: alloc::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
+        //alloc::string::String::from_utf8(vs).expect("Invalid utf8 string")
+	alloc::string::String::from(self.as_str())
     }
 
     /// returns copy of u8 array underneath the tstr
@@ -651,6 +653,15 @@ impl<const N:usize> Add<&str> for tstr<N> {
     a2
   }
 }//Add &str
+
+impl<const N:usize> Add<&tstr<N>> for &str {
+  type Output = tstr<N>;
+  fn add(self, other:&tstr<N>) -> tstr<N> {
+    let mut a2 = tstr::from(self);
+    a2.push(other);
+    a2
+  }
+}//Add &str on left
 
 ////////////// core::fmt::Write trait
 /// Usage:

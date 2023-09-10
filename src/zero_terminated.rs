@@ -23,6 +23,7 @@ use crate::tstr;
 use crate::fstr;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
+extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -138,11 +139,10 @@ impl<const N: usize> zstr<N> {
        min
     }//blen, O(log N)
 
-    /// converts zstr to an owned string (not available when no_std enforced)
+    /// converts zstr to an owned string
     #[cfg(feature = "std")]
-    pub fn to_string(&self) -> std::string::String {
-        let vs: std::vec::Vec<_> = self.chrs[0..self.blen()].iter().map(|x| *x).collect();
-        std::string::String::from_utf8(vs).expect("Invalid utf8 string")
+    pub fn to_string(&self) -> alloc::string::String {
+        alloc::string::String::from(self.as_str())
     }
 
     /// returns slice of u8 array underneath the zstr, including terminating 0
@@ -226,7 +226,8 @@ impl<const N: usize> zstr<N> {
     }//pop
 
     /// returns the number of characters in the string regardless of
-    /// character class
+    /// character class.  For strings with only single-byte chars,
+    /// call [Self::len] instead.
     pub fn charlen(&self) -> usize {
         self.as_str().chars().count()
     }
@@ -670,3 +671,12 @@ impl<const N:usize> Add<&str> for zstr<N> {
     a2
   }
 }//Add &str
+
+impl<const N:usize> Add<&zstr<N>> for &str {
+  type Output = zstr<N>;
+  fn add(self, other:&zstr<N>) -> zstr<N> {
+    let mut a2 = zstr::from(self);
+    a2.push(other);
+    a2
+  }
+} //Add &str on left
