@@ -663,6 +663,15 @@ impl<const N:usize> Add<&tstr<N>> for &str {
   }
 }//Add &str on left
 
+impl<const N:usize> Add<tstr<N>> for &str {
+  type Output = tstr<N>;
+  fn add(self, other:tstr<N>) -> tstr<N> {
+    let mut a2 = tstr::from(self);
+    a2.push(&other);
+    a2
+  }
+}//Add &str on left
+
 ////////////// core::fmt::Write trait
 /// Usage:
 /// ```

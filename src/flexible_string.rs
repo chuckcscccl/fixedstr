@@ -621,6 +621,15 @@ impl<const N:usize> Add<&Flexstr<N>> for &str {
   }
 }//Add &str on left
 
+impl<const N:usize> Add<Flexstr<N>> for &str {
+  type Output = Flexstr<N>;
+  fn add(self, other:Flexstr<N>) -> Flexstr<N> {
+    let mut a2 = Flexstr::from(self);
+    a2.push_str(&other);
+    a2
+  }
+}//Add &str on left
+
 
 /// convenient type aliases for [Flexstr]
 pub type flexstr8 = Flexstr<8>;

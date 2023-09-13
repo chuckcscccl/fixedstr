@@ -680,3 +680,13 @@ impl<const N:usize> Add<&zstr<N>> for &str {
     a2
   }
 } //Add &str on left
+
+impl<const N:usize> Add<zstr<N>> for &str {
+  type Output = zstr<N>;
+  fn add(self, other:zstr<N>) -> zstr<N> {
+    let mut a2 = zstr::from(self);
+    a2.push(&other);
+    a2
+  }
+} //Add &str on left
+

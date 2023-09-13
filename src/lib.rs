@@ -22,7 +22,7 @@
 //!
 //!
 //! **The main structures provided by this crate are [fstr], [zstr], [cstr]** and **[tstr]**.
-//! However, tstr is not exported by default and should be referenced through the type
+//! However, tstr is not publicly exported by default and should be referenced through the type
 //! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
 //! with [Flexstr] and [Sharedstr].  When cargo is given the `no-default-features` option,
 //! which enables `#![no_std]` support, only [zstr] and the alias types for
@@ -47,7 +47,7 @@
 //! combines the best of fstr and zstr in terms of speed
 //! and memory efficiency.  However, because Rust does not currently provide
 //! a way to specify conditions on const generics at compile time, such as
-//! `where N<=256`, the tstr type is not exported by default and can
+//! `where N<=256`, the tstr type is not public by default and can
 //! only be used through the aliases.  The `pub-tstr` option makes the
 //! `tstr` type public but is not recommended.
 //! These types **also support `#![no_std]`**.
@@ -293,7 +293,8 @@ mod serde_support {
     
     #[cfg(feature="circular-str")]
     struct CstrVisitor<const N: usize>;
-            impl<'de, const N: usize> Visitor<'de> for CstrVisitor<N> {
+    #[cfg(feature="circular-str")]
+    impl<'de, const N: usize> Visitor<'de> for CstrVisitor<N> {
                 type Value = cstr<N>;
                 fn expecting(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                     f.write_str("a string")
@@ -303,8 +304,8 @@ mod serde_support {
                 }
             }
 
-            #[cfg(feature="circular-str")]
-            impl<'de, const N: usize> Deserialize<'de> for cstr<N> {
+    #[cfg(feature="circular-str")]
+    impl<'de, const N: usize> Deserialize<'de> for cstr<N> {
                 fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
                     deserializer.deserialize_str(CstrVisitor)
                 }
@@ -523,11 +524,12 @@ fn nostdtest() {
   let a2 = a;  // copied, not moved
   let ab = a.substr(1,5);  // copies substring to new string
   assert_eq!(ab, "bcde");  // compare for equality with &str
-  assert_eq!(&a[..3], "abc"); // impls Index for Range types
+  assert_eq!(&a[..3], "abc"); // impls Deref<str>
   assert!(a<ab); // and Ord, Hash, Eq, Debug, Display, other common traits
   let astr:&str = a.to_str(); // convert to &str
   let azstr:zstr<16> = zstr::from(a); // so is zstr
-  let a32:str32 = a.resize(); // same kind of string but with 31-byte capacity  
+  let mut a32:str32 = a.resize(); // same kind of string but with 31-byte capacity
+  a32 = "abc" + a32;
   let mut u = str8::from("aλb"); //unicode support
   assert_eq!(u.nth(1), Some('λ'));  // get nth character
   assert_eq!(u.nth_bytechar(3), 'b');  // get nth byte as ascii character
@@ -548,9 +550,11 @@ fn nostdtest() {
 
   let c1 = str8::from("abcd"); // string concatenation with + for strN types  
   let c2 = str8::from("xyz");
-  let c3 = c1 + c2;           
+  let mut c3 = c1 + c2;           
   assert_eq!(c3,"abcdxyz");
   assert_eq!(c3.capacity(),15);  // type of c3 is str16
+  c3 = "00" + c3 + ".";         // cat with &str on left or right
+  assert_eq!(c3,"00abcdxyz.");  
 
   let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls std::fmt::Write
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded

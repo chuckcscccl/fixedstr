@@ -43,9 +43,11 @@ Recent enhancements include additional, optional string types.
 
   let c1 = str8::from("abcd"); // string concatenation with + for strN types  
   let c2 = str8::from("xyz");
-  let c3 = c1 + c2 + "123";           
+  let mut c3 = c1 + c2 + "123";           
   assert_eq!(c3,"abcdxyz123");
-  assert_eq!(c3.capacity(),15);  // type of c3 is str16
+  assert_eq!(c3.capacity(),15);  // type of c3 is resized to str16
+  c3 = "00" + c3;                // concat &str left or right
+  assert_eq!(c3,"00abcdxyz123");
 
   let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls core::fmt::Write
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
