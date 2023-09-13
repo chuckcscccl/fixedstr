@@ -1,6 +1,6 @@
 //! This module implements [zstr], which are zero-terminated strings of
 //! fixed maximum lengths.  Each `zstr<N>` is represented underneath with
-//! an u8-array of size N.  Compared to [crate::fstr], these strings 
+//! an u8-array of size N.  Compared to [crate::fstr], these strings
 //! are more memory efficient but with some of the operations taking slightly
 //! longer.  However, *all* bytes of the array following the string
 //! are set to zero.  This allows the first zero-byte of the array to
@@ -18,9 +18,9 @@
 #![allow(unused_assignments)]
 #![allow(unused_mut)]
 #![allow(dead_code)]
-use crate::tstr;
 #[cfg(feature = "std")]
 use crate::fstr;
+use crate::tstr;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
 extern crate alloc;
@@ -58,7 +58,9 @@ impl<const N: usize> zstr<N> {
     } //make
 
     /// alias for [zstr::make]
-    pub fn create(s: &str) -> zstr<N> { Self::make(s) }
+    pub fn create(s: &str) -> zstr<N> {
+        Self::make(s)
+    }
 
     /// version of make that returns the same string in an `Err(_)` if
     /// truncation is requried, or in an `Ok(_)` if no truncation is required
@@ -75,32 +77,28 @@ impl<const N: usize> zstr<N> {
         zstr::make("")
     }
 
-
-  /// creates a new `zstr<N>` with given `&[u8]` slice.  If the length of the 
-  /// slice exceeds N-1, the extra bytes are ignored.  All bytes of the slice
-  /// following the first zero-byte are also ignored.
-  /// **This operation does not check if the u8 slice is an utf8 source.**
-  /// This function is unique to zstr and not available for the
-  /// other string types in this crate.
-  pub fn from_raw(s:&[u8]) -> zstr<N>
-  {
-     let mut z = zstr {
-       chrs: [0;N],
-     };
-     let mut i = 0;
-     while i<N-1 && i<s.len() && s[i]!=0 {
-       z.chrs[i] = s[i];
-       i+=1;
-     }
-     z
-  }//from_raw
+    /// creates a new `zstr<N>` with given `&[u8]` slice.  If the length of the
+    /// slice exceeds N-1, the extra bytes are ignored.  All bytes of the slice
+    /// following the first zero-byte are also ignored.
+    /// **This operation does not check if the u8 slice is an utf8 source.**
+    /// This function is unique to zstr and not available for the
+    /// other string types in this crate.
+    pub fn from_raw(s: &[u8]) -> zstr<N> {
+        let mut z = zstr { chrs: [0; N] };
+        let mut i = 0;
+        while i < N - 1 && i < s.len() && s[i] != 0 {
+            z.chrs[i] = s[i];
+            i += 1;
+        }
+        z
+    } //from_raw
 
     /// Length of the string in bytes (consistent with [str::len]).
     /// This function uses binary search to find the first zero-byte
     /// and runs in O(log N) time for each `zstr<N>`.
     #[inline(always)]
     pub fn len(&self) -> usize {
-       self.blen()
+        self.blen()
     }
 
     /// Length of a `zstr<N>` string in bytes using O(n) linear search,
@@ -110,12 +108,12 @@ impl<const N: usize> zstr<N> {
     /// This function is unique to the zstr type and
     /// not available for other string types in this crate.
     pub fn linear_len(&self) -> usize {
-       let mut i = 0;
-       while self.chrs[i] != 0 {
-           i += 1;
-       }
-       return i;
-    }//linear_len
+        let mut i = 0;
+        while self.chrs[i] != 0 {
+            i += 1;
+        }
+        return i;
+    } //linear_len
 
     /// returns maximum capacity in bytes
     #[inline(always)]
@@ -125,19 +123,20 @@ impl<const N: usize> zstr<N> {
 
     // new blen function uses binary search to find first 0 byte.
     fn blen(&self) -> usize {
-       let (mut min, mut max) = (0,N);
-       let mut mid = 0;
-       while min<max {
-         mid = (min+max)/2;
-         if self.chrs[mid]==0 { // go left
-           max = mid;
-         }
-         else { // go right
-           min = mid+1;
-         }
-       }//while
-       min
-    }//blen, O(log N)
+        let (mut min, mut max) = (0, N);
+        let mut mid = 0;
+        while min < max {
+            mid = (min + max) / 2;
+            if self.chrs[mid] == 0 {
+                // go left
+                max = mid;
+            } else {
+                // go right
+                min = mid + 1;
+            }
+        } //while
+        min
+    } //blen, O(log N)
 
     /// converts zstr to an owned string
     #[cfg(feature = "std")]
@@ -148,7 +147,7 @@ impl<const N: usize> zstr<N> {
     /// returns slice of u8 array underneath the zstr, including terminating 0
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        &self.chrs[..self.blen()+1]
+        &self.chrs[..self.blen() + 1]
     }
 
     /// converts zstr to &str using [core::str::from_utf8_unchecked].
@@ -187,43 +186,54 @@ impl<const N: usize> zstr<N> {
 
     /// alias for [zstr::push]
     pub fn push_str<'t>(&mut self, src: &'t str) -> &'t str {
-      let srclen = src.len();
-      let slen = self.blen();
-      let bytes = &src.as_bytes();
-      let length = core::cmp::min(slen+srclen , N-1);
-      let remain = if N-1>=(slen+srclen) {0} else {(srclen+slen)-N+1};
-      let mut i = 0;
-      while i<srclen && i+slen+1<N {
-        self.chrs[slen+i] = bytes[i];
-        i += 1;
-      }//while
-      &src[srclen-remain..]
-    }//push_str
+        let srclen = src.len();
+        let slen = self.blen();
+        let bytes = &src.as_bytes();
+        let length = core::cmp::min(slen + srclen, N - 1);
+        let remain = if N - 1 >= (slen + srclen) {
+            0
+        } else {
+            (srclen + slen) - N + 1
+        };
+        let mut i = 0;
+        while i < srclen && i + slen + 1 < N {
+            self.chrs[slen + i] = bytes[i];
+            i += 1;
+        } //while
+        &src[srclen - remain..]
+    } //push_str
 
     /// pushes a single character to the end of the string, returning
     /// true on success.
-    pub fn push_char(&mut self, c:char) -> bool {
-       let clen = c.len_utf8();
-       let slen = self.len();
-       if slen+clen >= N {return false;}
-       let mut buf = [0u8;4]; // char buffer
-       c.encode_utf8(&mut buf);
-       for i in 0..clen {
-         self.chrs[slen+i] = buf[i];
-       }
-       self.chrs[slen+clen] = 0;
-       true
-    }// push_char
+    pub fn push_char(&mut self, c: char) -> bool {
+        let clen = c.len_utf8();
+        let slen = self.len();
+        if slen + clen >= N {
+            return false;
+        }
+        let mut buf = [0u8; 4]; // char buffer
+        c.encode_utf8(&mut buf);
+        for i in 0..clen {
+            self.chrs[slen + i] = buf[i];
+        }
+        self.chrs[slen + clen] = 0;
+        true
+    } // push_char
 
     /// remove and return last character in string, if it exists
     pub fn pop_char(&mut self) -> Option<char> {
-       if self.chrs[0]==0 {return None;} // length zero
-       let (ci,lastchar) = self.char_indices().last().unwrap();
-       //self.chrs[ci]=0;
-       let mut cm = ci;
-       while cm<N && self.chrs[cm]!=0 {self.chrs[cm]=0; cm+=1;}
-       Some(lastchar)
-    }//pop
+        if self.chrs[0] == 0 {
+            return None;
+        } // length zero
+        let (ci, lastchar) = self.char_indices().last().unwrap();
+        //self.chrs[ci]=0;
+        let mut cm = ci;
+        while cm < N && self.chrs[cm] != 0 {
+            self.chrs[cm] = 0;
+            cm += 1;
+        }
+        Some(lastchar)
+    } //pop
 
     /// returns the number of characters in the string regardless of
     /// character class.  For strings with only single-byte chars,
@@ -265,11 +275,14 @@ impl<const N: usize> zstr<N> {
     {
         if let Some((bi, c)) = self.as_str().char_indices().nth(n) {
             let mut bm = bi;
-            while bm<N && self.chrs[bm]!=0 { self.chrs[bm]=0; bm+=1;}
+            while bm < N && self.chrs[bm] != 0 {
+                self.chrs[bm] = 0;
+                bm += 1;
+            }
             //self.chrs[bi] = 0;
         }
     }
-    
+
     /// truncates string up to *byte* position n.  **Panics** if n is
     /// not on a character boundary truncate on owned Strings.
     /// Although faster than [zstr::truncate], this function is still
@@ -277,108 +290,112 @@ impl<const N: usize> zstr<N> {
     /// tradeoff with a O(log N) [zstr::len] function, which is expected to
     /// have greater impact.
     pub fn truncate_bytes(&mut self, n: usize) {
-         if n<N {
-           assert!(self.is_char_boundary(n));
-    	   //self.chrs[n] = 0;
-           let mut m = n;
-           while m<N && self.chrs[m]!=0 { self.chrs[m]=0; m+=1; }
-	 }
-    }//truncate_bytes
-
+        if n < N {
+            assert!(self.is_char_boundary(n));
+            //self.chrs[n] = 0;
+            let mut m = n;
+            while m < N && self.chrs[m] != 0 {
+                self.chrs[m] = 0;
+                m += 1;
+            }
+        }
+    } //truncate_bytes
 
     /// Trims **in-place** trailing ascii whitespaces.  This function
     /// regards all bytes as single chars.  The operation panics if
     /// the resulting string does not end on a character boundary.
     pub fn right_ascii_trim(&mut self) {
-      let mut n = self.blen();
-      while n>0 && (self.chrs[n-1] as char).is_ascii_whitespace() {
-        self.chrs[n-1] = 0;
-        n -= 1;
-      }
-      assert!(self.is_char_boundary(n));
-    }//right_trim
+        let mut n = self.blen();
+        while n > 0 && (self.chrs[n - 1] as char).is_ascii_whitespace() {
+            self.chrs[n - 1] = 0;
+            n -= 1;
+        }
+        assert!(self.is_char_boundary(n));
+    } //right_trim
 
     /// Reverses **in-place** a string where characters are single bytes.
     /// The result of this operation on non single-byte chars is unpredicatable.
     /// This function is only available for the zstr type and not for other
     /// string types in this crate.
     pub fn reverse_bytes(&mut self) {
-      let n = self.blen();
-      let m = n/2;
-      let mut i = 0;
-      while i<m {
-        self.chrs.swap(i,n-i-1);
-        i += 1;
-      }
-    }//reverse_bytes
+        let n = self.blen();
+        let m = n / 2;
+        let mut i = 0;
+        while i < m {
+            self.chrs.swap(i, n - i - 1);
+            i += 1;
+        }
+    } //reverse_bytes
 
     /// in-place swap of bytes i and k, returns true on success and
     /// false if indices are out of bounds.  This function is only available
     /// for zstr strings and not for other string types in this crate.
-    pub fn swap_bytes(&mut self, i:usize, k:usize) -> bool {
-      if i!=k && i<N && k<N && self.chrs[i]!=0 && self.chrs[k]!=0 {
-        self.chrs.swap(i,k);
-        true
-      }
-      else {false}
-    }//swap_bytes
-    
+    pub fn swap_bytes(&mut self, i: usize, k: usize) -> bool {
+        if i != k && i < N && k < N && self.chrs[i] != 0 && self.chrs[k] != 0 {
+            self.chrs.swap(i, k);
+            true
+        } else {
+            false
+        }
+    } //swap_bytes
+
     /// resets string to empty string
     pub fn clear(&mut self) {
-      self.chrs = [0;N];
-      //self.chrs[0]=0;
+        self.chrs = [0; N];
+        //self.chrs[0]=0;
     }
 
     /// in-place modification of ascii characters to lower-case, panics
     /// if the string is not ascii.
     pub fn make_ascii_lowercase(&mut self) {
-      assert!(self.is_ascii());        
-      for b in &mut self.chrs {
-        if *b==0 {break;}
-        else if *b>=65 && *b<=90 { *b += 32; }
-      }
-    }//make_ascii_lowercase
+        assert!(self.is_ascii());
+        for b in &mut self.chrs {
+            if *b == 0 {
+                break;
+            } else if *b >= 65 && *b <= 90 {
+                *b += 32;
+            }
+        }
+    } //make_ascii_lowercase
 
     /// in-place modification of ascii characters to upper-case, panics if
     /// the string is not ascii.
     pub fn make_ascii_uppercase(&mut self) {
-      assert!(self.is_ascii());        
-      for b in &mut self.chrs {
-        if *b==0 {break;}
-        else if *b>=97 && *b<=122 { *b -= 32; }
-      }      
+        assert!(self.is_ascii());
+        for b in &mut self.chrs {
+            if *b == 0 {
+                break;
+            } else if *b >= 97 && *b <= 122 {
+                *b -= 32;
+            }
+        }
     }
 
     /// Constructs a clone of this fstr but with only upper-case ascii
     /// characters.  This contrasts with [str::to_ascii_uppercase],
-    /// which creates an owned String. 
-    pub fn to_ascii_upper(&self) -> Self
-    {
-      let mut cp = self.clone();
-      cp.make_ascii_uppercase();
-      cp
+    /// which creates an owned String.
+    pub fn to_ascii_upper(&self) -> Self {
+        let mut cp = self.clone();
+        cp.make_ascii_uppercase();
+        cp
     }
 
     /// Constructs a clone of this fstr but with only lower-case ascii
     /// characters.  This contrasts with [str::to_ascii_lowercase],
     /// which creates an owned String.
-    pub fn to_ascii_lower(&self) -> Self
-    {
-      let mut cp = *self;
-      cp.make_ascii_lowercase();
-      cp
+    pub fn to_ascii_lower(&self) -> Self {
+        let mut cp = *self;
+        cp.make_ascii_lowercase();
+        cp
     }
-
 } //impl zstr<N>
 
-impl<const N:usize> core::ops::Deref for zstr<N>
-{
+impl<const N: usize> core::ops::Deref for zstr<N> {
     type Target = str;
     fn deref(&self) -> &Self::Target {
-      self.to_str()
+        self.to_str()
     }
 }
-
 
 impl<const N: usize> core::convert::AsRef<str> for zstr<N> {
     fn as_ref(&self) -> &str {
@@ -421,7 +438,6 @@ impl<const N: usize, const M: usize> core::convert::From<tstr<M>> for zstr<N> {
         zstr::<N>::make(s.to_str())
     }
 }
-
 
 impl<const N: usize> core::cmp::PartialOrd for zstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -588,105 +604,95 @@ impl<const N: usize> core::fmt::Write for zstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-
-
-
-
 #[cfg(feature = "std")]
 mod special_index {
-extern crate std;
-use std::ops::{Range,RangeFull,RangeFrom,RangeTo};
-use std::ops::{RangeInclusive,RangeToInclusive};
-use super::*;
+    extern crate std;
+    use super::*;
+    use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+    use std::ops::{RangeInclusive, RangeToInclusive};
 
-//use core::ops::{Range,RangeFull,RangeFrom,RangeTo};
-//use core::ops::{RangeInclusive,RangeToInclusive};
-///The implementation of `Index<usize>` for types `zstr<N>` is different
-///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
-///byte.  The type returned by this trait is &u8, not &str.
-impl<const N:usize> core::ops::Index<usize> for zstr<N>
-{
-  type Output = u8;
-  fn index(&self, index:usize)-> &Self::Output
-  {
-     &self.chrs[index]
-  }
-}//impl Index
-impl<const N:usize> core::ops::IndexMut<usize> for zstr<N>
-{
-  fn index_mut(&mut self, index:usize)-> &mut Self::Output
-  {
-     let ln = self.blen();
-     if index >= ln {panic!("index {} out of range ({})",index,ln);}
-     &mut self.chrs[index]
-  }
-}//impl Index
+    //use core::ops::{Range,RangeFull,RangeFrom,RangeTo};
+    //use core::ops::{RangeInclusive,RangeToInclusive};
+    ///The implementation of `Index<usize>` for types `zstr<N>` is different
+    ///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
+    ///byte.  The type returned by this trait is &u8, not &str.
+    impl<const N: usize> core::ops::Index<usize> for zstr<N> {
+        type Output = u8;
+        fn index(&self, index: usize) -> &Self::Output {
+            &self.chrs[index]
+        }
+    } //impl Index
+    impl<const N: usize> core::ops::IndexMut<usize> for zstr<N> {
+        fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+            let ln = self.blen();
+            if index >= ln {
+                panic!("index {} out of range ({})", index, ln);
+            }
+            &mut self.chrs[index]
+        }
+    } //impl Index
 
-
-impl<const N:usize> core::ops::Index<Range<usize>> for zstr<N> {
-  type Output = str;
-  fn index(&self, index:Range<usize>)-> &Self::Output  {
-     &self.as_str()[index]
-  }
-}//impl Index
-impl<const N:usize> core::ops::Index<RangeTo<usize>> for zstr<N> {
-  type Output = str;
-  fn index(&self, index:RangeTo<usize>)-> &Self::Output  {
-     &self.as_str()[index]
-  }
-}//impl Index
-impl<const N:usize> core::ops::Index<RangeFrom<usize>> for zstr<N> {
-  type Output = str;
-  fn index(&self, index:RangeFrom<usize>)-> &Self::Output  {
-     &self.as_str()[index]
-  }
-}//impl Index
-impl<const N:usize> core::ops::Index<RangeInclusive<usize>> for zstr<N> {
-  type Output = str;
-  fn index(&self, index:RangeInclusive<usize>)-> &Self::Output  {
-     &self.as_str()[index]
-  }
-}//impl Index
-impl<const N:usize> core::ops::Index<RangeToInclusive<usize>> for zstr<N> {
-  type Output = str;
-  fn index(&self, index:RangeToInclusive<usize>)-> &Self::Output  {
-     &self.as_str()[index]
-  }
-}//impl Index
-impl<const N:usize> core::ops::Index<RangeFull> for zstr<N> {
-  type Output = str;
-  fn index(&self, index:RangeFull)-> &Self::Output  {
-     &self.as_str()[index]
-  }
-}//impl Index
-
+    impl<const N: usize> core::ops::Index<Range<usize>> for zstr<N> {
+        type Output = str;
+        fn index(&self, index: Range<usize>) -> &Self::Output {
+            &self.as_str()[index]
+        }
+    } //impl Index
+    impl<const N: usize> core::ops::Index<RangeTo<usize>> for zstr<N> {
+        type Output = str;
+        fn index(&self, index: RangeTo<usize>) -> &Self::Output {
+            &self.as_str()[index]
+        }
+    } //impl Index
+    impl<const N: usize> core::ops::Index<RangeFrom<usize>> for zstr<N> {
+        type Output = str;
+        fn index(&self, index: RangeFrom<usize>) -> &Self::Output {
+            &self.as_str()[index]
+        }
+    } //impl Index
+    impl<const N: usize> core::ops::Index<RangeInclusive<usize>> for zstr<N> {
+        type Output = str;
+        fn index(&self, index: RangeInclusive<usize>) -> &Self::Output {
+            &self.as_str()[index]
+        }
+    } //impl Index
+    impl<const N: usize> core::ops::Index<RangeToInclusive<usize>> for zstr<N> {
+        type Output = str;
+        fn index(&self, index: RangeToInclusive<usize>) -> &Self::Output {
+            &self.as_str()[index]
+        }
+    } //impl Index
+    impl<const N: usize> core::ops::Index<RangeFull> for zstr<N> {
+        type Output = str;
+        fn index(&self, index: RangeFull) -> &Self::Output {
+            &self.as_str()[index]
+        }
+    } //impl Index
 } // special_index submodule
 
+impl<const N: usize> Add<&str> for zstr<N> {
+    type Output = zstr<N>;
+    fn add(self, other: &str) -> zstr<N> {
+        let mut a2 = self;
+        a2.push(other);
+        a2
+    }
+} //Add &str
 
-impl<const N:usize> Add<&str> for zstr<N> {
-  type Output = zstr<N>;
-  fn add(self, other:&str) -> zstr<N> {
-    let mut a2 = self;
-    a2.push(other);
-    a2
-  }
-}//Add &str
-
-impl<const N:usize> Add<&zstr<N>> for &str {
-  type Output = zstr<N>;
-  fn add(self, other:&zstr<N>) -> zstr<N> {
-    let mut a2 = zstr::from(self);
-    a2.push(other);
-    a2
-  }
+impl<const N: usize> Add<&zstr<N>> for &str {
+    type Output = zstr<N>;
+    fn add(self, other: &zstr<N>) -> zstr<N> {
+        let mut a2 = zstr::from(self);
+        a2.push(other);
+        a2
+    }
 } //Add &str on left
 
-impl<const N:usize> Add<zstr<N>> for &str {
-  type Output = zstr<N>;
-  fn add(self, other:zstr<N>) -> zstr<N> {
-    let mut a2 = zstr::from(self);
-    a2.push(&other);
-    a2
-  }
+impl<const N: usize> Add<zstr<N>> for &str {
+    type Output = zstr<N>;
+    fn add(self, other: zstr<N>) -> zstr<N> {
+        let mut a2 = zstr::from(self);
+        a2.push(&other);
+        a2
+    }
 } //Add &str on left
-

@@ -24,7 +24,7 @@ use core::ops::Add;
 /// [cstr::to_strs] function returns a pair of string slices, the second
 /// of which is non-empty if the string is not contiguous.  Additionally,
 /// only single-byte characters are currently allowed, although this might
-/// change in future by using a "ghost vector" at the end of the string.
+/// change in the future by using a "ghost vector" at the end of the array.
 /// An iterator [cstr::chars] is provided over all single-byte chars, which
 /// also forms the foundation of other traits such as Eq, Ord, Hash, etc.
 /// The Serialization (serde) and no-std options are both supported.
@@ -805,8 +805,8 @@ impl<const N: usize> PartialOrd<&str> for &cstr<N> {
 
 impl<const N:usize> core::hash::Hash for cstr<N> {
   fn hash<H:core::hash::Hasher>(&self, state:&mut H) {
-    for i in (self.len as usize..0).rev() {
-      self.nth_bytechar(i-1).hash(state);
+    for i in (0..self.len as usize).rev() {
+      self.nth_bytechar(i).hash(state);
     }
     //for c in self.chars() { c.hash(state); }
   }

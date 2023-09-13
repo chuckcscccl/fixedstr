@@ -28,8 +28,8 @@ use crate::fstr;
 use crate::zstr;
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
 use core::cmp::{min, Ordering};
-use core::ops::{Add,Range,Index,IndexMut,RangeFull,RangeFrom,RangeTo};
-use core::ops::{RangeInclusive,RangeToInclusive};
+use core::ops::{Add, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
+use core::ops::{RangeInclusive, RangeToInclusive};
 
 /// **This structure is only exported with the `features pub-tstr` option.**
 /// Otherwise, it can only be referenced through the
@@ -121,7 +121,7 @@ impl<const N: usize> tstr<N> {
     pub fn to_string(&self) -> alloc::string::String {
         //let vs: alloc::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
         //alloc::string::String::from_utf8(vs).expect("Invalid utf8 string")
-	alloc::string::String::from(self.as_str())
+        alloc::string::String::from(self.as_str())
     }
 
     /// returns copy of u8 array underneath the tstr
@@ -161,72 +161,79 @@ impl<const N: usize> tstr<N> {
     /// if "" is returned then all characters were pushed successfully.
     pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
         /*
-        if s.len() < 1 {
-            return s;
-        }
-        let mut buf = [0u8; 4];
-        let mut i = self.len();
-	let mut sci = 0; // length in bytes
-        for c in s.chars() {
-            let clen = c.len_utf8();
-            c.encode_utf8(&mut buf);
-            if i+clen+1 <= N {
-                self.chrs[i+1 .. i+clen+1].copy_from_slice(&buf[..clen]);
-                i += clen;
-            } else {
-                self.chrs[0] = i as u8;
-                return &s[sci..];
+            if s.len() < 1 {
+                return s;
             }
-	    sci += clen;
-        }
-        if i < N {
-            self.chrs[0] = i as u8;
-        } // set length
-        &s[sci..]
-        */
+            let mut buf = [0u8; 4];
+            let mut i = self.len();
+        let mut sci = 0; // length in bytes
+            for c in s.chars() {
+                let clen = c.len_utf8();
+                c.encode_utf8(&mut buf);
+                if i+clen+1 <= N {
+                    self.chrs[i+1 .. i+clen+1].copy_from_slice(&buf[..clen]);
+                    i += clen;
+                } else {
+                    self.chrs[0] = i as u8;
+                    return &s[sci..];
+                }
+            sci += clen;
+            }
+            if i < N {
+                self.chrs[0] = i as u8;
+            } // set length
+            &s[sci..]
+            */
         self.push_str(s)
     } //push
 
     /// alias for [Self::push]
     pub fn push_str<'t>(&mut self, src: &'t str) -> &'t str {
-      //self.push(s)
-      let srclen = src.len();
-      let slen = self.len();
-      let bytes = &src.as_bytes();
-      let length = core::cmp::min(slen+srclen , N-1);
-      let remain = if N-1>=(slen+srclen) {0} else {(srclen+slen)-N+1};
-      let mut i = 0;
-      while i<srclen && i+slen+1<N {
-        self.chrs[slen+i+1] = bytes[i];
-        i += 1;
-      }//while
-      self.chrs[0] += i as u8;      
-      &src[srclen-remain..]
-    }//push_str
+        //self.push(s)
+        let srclen = src.len();
+        let slen = self.len();
+        let bytes = &src.as_bytes();
+        let length = core::cmp::min(slen + srclen, N - 1);
+        let remain = if N - 1 >= (slen + srclen) {
+            0
+        } else {
+            (srclen + slen) - N + 1
+        };
+        let mut i = 0;
+        while i < srclen && i + slen + 1 < N {
+            self.chrs[slen + i + 1] = bytes[i];
+            i += 1;
+        } //while
+        self.chrs[0] += i as u8;
+        &src[srclen - remain..]
+    } //push_str
 
     /// pushes a single character to the end of the string, returning
     /// true on success.
-    pub fn push_char(&mut self, c:char) -> bool {
-       let clen = c.len_utf8();
-       let slen = self.len();
-       if slen+clen >= N {return false;}
-       let mut buf = [0u8;4]; // char buffer
-       c.encode_utf8(&mut buf);
-       for i in 0..clen {
-         self.chrs[slen+i+1] = buf[i];
-       }
-       self.chrs[0] = (slen+clen) as u8;
-       true
-    }// push_char
+    pub fn push_char(&mut self, c: char) -> bool {
+        let clen = c.len_utf8();
+        let slen = self.len();
+        if slen + clen >= N {
+            return false;
+        }
+        let mut buf = [0u8; 4]; // char buffer
+        c.encode_utf8(&mut buf);
+        for i in 0..clen {
+            self.chrs[slen + i + 1] = buf[i];
+        }
+        self.chrs[0] = (slen + clen) as u8;
+        true
+    } // push_char
 
     /// remove and return last character in string, if it exists
     pub fn pop_char(&mut self) -> Option<char> {
-       if self.len()==0 {return None;}
-       let (ci,lastchar) = self.char_indices().last().unwrap();
-       self.chrs[0]=ci as u8;
-       Some(lastchar)
-    }//pop
-
+        if self.len() == 0 {
+            return None;
+        }
+        let (ci, lastchar) = self.char_indices().last().unwrap();
+        self.chrs[0] = ci as u8;
+        Some(lastchar)
+    } //pop
 
     /// returns the nth char of the tstr
     pub fn nth(&self, n: usize) -> Option<char> {
@@ -261,81 +268,81 @@ impl<const N: usize> tstr<N> {
             self.chrs[0] = bi as u8;
         }
     }
-    
+
     /// truncates string up to *byte* position n.  **Panics** if n is
     /// not on a character boundary, similar to truncate on owned Strings.
     pub fn truncate_bytes(&mut self, n: usize) {
-       if (n<self.chrs[0] as usize) {
-         assert!(self.is_char_boundary(n));
-	 self.chrs[0] = n as u8;
-       }
+        if (n < self.chrs[0] as usize) {
+            assert!(self.is_char_boundary(n));
+            self.chrs[0] = n as u8;
+        }
     }
 
-/// Trims **in-place** trailing ascii whitespaces.  This function
+    /// Trims **in-place** trailing ascii whitespaces.  This function
     /// regards all bytes as single chars.  The operation panics if
     /// the resulting string does not end on a character boundary.
     pub fn right_ascii_trim(&mut self) {
-      let mut n = self.chrs[0] as usize;
-      while n>0 && (self.chrs[n] as char).is_ascii_whitespace() {
-        //self.chrs[n-1] = 0;
-        n -= 1;
-      }
-      assert!(self.is_char_boundary(n));
-      self.chrs[0] = n as u8;
-    }//right_trim
+        let mut n = self.chrs[0] as usize;
+        while n > 0 && (self.chrs[n] as char).is_ascii_whitespace() {
+            //self.chrs[n-1] = 0;
+            n -= 1;
+        }
+        assert!(self.is_char_boundary(n));
+        self.chrs[0] = n as u8;
+    } //right_trim
 
     /// resets string to empty string
     pub fn clear(&mut self) {
-      self.chrs[0]=0;
+        self.chrs[0] = 0;
     }
 
     /// in-place modification of ascii characters to lower-case. Panics if
     /// the string is not ascii.
     pub fn make_ascii_lowercase(&mut self) {
-      assert!(self.is_ascii());
-      let end = (self.chrs[0] as usize)+1;
-      for b in &mut self.chrs[1..end] {
-        if *b>=65 && *b<=90 { *b |= 32; }
-      }
-    }//make_ascii_lowercase
+        assert!(self.is_ascii());
+        let end = (self.chrs[0] as usize) + 1;
+        for b in &mut self.chrs[1..end] {
+            if *b >= 65 && *b <= 90 {
+                *b |= 32;
+            }
+        }
+    } //make_ascii_lowercase
 
     /// in-place modification of ascii characters to upper-case.  Panics if
     /// the string is not ascii.
     pub fn make_ascii_uppercase(&mut self) {
-      assert!(self.is_ascii());    
-      let end = (self.chrs[0] as usize)+1;    
-      for b in &mut self.chrs[1..end] {
-        if *b>=97 && *b<=122 { *b -= 32; }
-      }      
+        assert!(self.is_ascii());
+        let end = (self.chrs[0] as usize) + 1;
+        for b in &mut self.chrs[1..end] {
+            if *b >= 97 && *b <= 122 {
+                *b -= 32;
+            }
+        }
     }
 
     /// Constructs a clone of this fstr but with only upper-case ascii
     /// characters.  This contrasts with [str::to_ascii_uppercase],
-    /// which creates an owned String. 
-    pub fn to_ascii_upper(&self) -> Self
-    {
-      let mut cp = self.clone();
-      cp.make_ascii_uppercase();
-      cp
+    /// which creates an owned String.
+    pub fn to_ascii_upper(&self) -> Self {
+        let mut cp = self.clone();
+        cp.make_ascii_uppercase();
+        cp
     }
 
     /// Constructs a clone of this fstr but with only lower-case ascii
     /// characters.  This contrasts with [str::to_ascii_lowercase],
     /// which creates an owned String.
-    pub fn to_ascii_lower(&self) -> Self
-    {
-      let mut cp = *self;
-      cp.make_ascii_lowercase();
-      cp
+    pub fn to_ascii_lower(&self) -> Self {
+        let mut cp = *self;
+        cp.make_ascii_lowercase();
+        cp
     }
-
 } //impl tstr<N>
 
-impl<const N:usize> core::ops::Deref for tstr<N>
-{
+impl<const N: usize> core::ops::Deref for tstr<N> {
     type Target = str;
     fn deref(&self) -> &Self::Target {
-      self.to_str()
+        self.to_str()
     }
 }
 
@@ -645,32 +652,32 @@ impl Add for str96 {
     }
 } //Add
 
-impl<const N:usize> Add<&str> for tstr<N> {
-  type Output = tstr<N>;
-  fn add(self, other:&str) -> tstr<N> {
-    let mut a2 = self;
-    a2.push(other);
-    a2
-  }
-}//Add &str
+impl<const N: usize> Add<&str> for tstr<N> {
+    type Output = tstr<N>;
+    fn add(self, other: &str) -> tstr<N> {
+        let mut a2 = self;
+        a2.push(other);
+        a2
+    }
+} //Add &str
 
-impl<const N:usize> Add<&tstr<N>> for &str {
-  type Output = tstr<N>;
-  fn add(self, other:&tstr<N>) -> tstr<N> {
-    let mut a2 = tstr::from(self);
-    a2.push(other);
-    a2
-  }
-}//Add &str on left
+impl<const N: usize> Add<&tstr<N>> for &str {
+    type Output = tstr<N>;
+    fn add(self, other: &tstr<N>) -> tstr<N> {
+        let mut a2 = tstr::from(self);
+        a2.push(other);
+        a2
+    }
+} //Add &str on left
 
-impl<const N:usize> Add<tstr<N>> for &str {
-  type Output = tstr<N>;
-  fn add(self, other:tstr<N>) -> tstr<N> {
-    let mut a2 = tstr::from(self);
-    a2.push(&other);
-    a2
-  }
-}//Add &str on left
+impl<const N: usize> Add<tstr<N>> for &str {
+    type Output = tstr<N>;
+    fn add(self, other: tstr<N>) -> tstr<N> {
+        let mut a2 = tstr::from(self);
+        a2.push(&other);
+        a2
+    }
+} //Add &str on left
 
 ////////////// core::fmt::Write trait
 /// Usage:
@@ -683,8 +690,7 @@ impl<const N:usize> Add<tstr<N>> for &str {
 ///   let s2 = str_format!(str32,"abx{}{}{}",1,2,3);
 /// ```
 impl<const N: usize> core::fmt::Write for tstr<N> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result
-    {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
         if s.len() + self.len() > N - 1 {
             return Err(core::fmt::Error::default());
         }
@@ -692,7 +698,6 @@ impl<const N: usize> core::fmt::Write for tstr<N> {
         Ok(())
     } //write_str
 } //core::fmt::Write trait
-
 
 /*
 impl<T:core::fmt::Display, const N:usize> ToTstr<N> for T {

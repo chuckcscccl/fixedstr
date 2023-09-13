@@ -9,12 +9,12 @@
 
 #[cfg(feature = "std")]
 extern crate std;
-use std::string::String;
-use std::eprintln;
-use crate::zero_terminated::*;
 use crate::tiny_internal::*;
+use crate::zero_terminated::*;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
+use std::eprintln;
+use std::string::String;
 
 /// A `fstr<N>` is a string of up to const N bytes, using a separate variable to store the length.
 /// This type is not as memory-efficient as the alias types str4-str256, but
@@ -176,38 +176,46 @@ impl<const N: usize> fstr<N> {
 
     /// alias for [fstr::push]
     pub fn push_str<'t>(&mut self, src: &'t str) -> &'t str {
-      let srclen = src.len();
-      let slen = self.len();
-      let bytes = &src.as_bytes();
-      let length = core::cmp::min(slen+srclen , N);
-      let remain = if N>=(slen+srclen) {0} else {(srclen+slen)-N};
-      let mut i = 0;
-      while i<srclen && i+slen<N {
-        self.chrs[slen+i] = bytes[i];
-        i += 1;
-      }//while
-      self.len += i;      
-      &src[srclen-remain..]
+        let srclen = src.len();
+        let slen = self.len();
+        let bytes = &src.as_bytes();
+        let length = core::cmp::min(slen + srclen, N);
+        let remain = if N >= (slen + srclen) {
+            0
+        } else {
+            (srclen + slen) - N
+        };
+        let mut i = 0;
+        while i < srclen && i + slen < N {
+            self.chrs[slen + i] = bytes[i];
+            i += 1;
+        } //while
+        self.len += i;
+        &src[srclen - remain..]
     }
 
     /// pushes a single character to the end of the string, returning
     /// true on success.
-    pub fn push_char(&mut self, c:char) -> bool {
-       let clen = c.len_utf8();
-       if self.len+clen > N {return false;}
-       let mut buf = [0u8;4]; // char buffer
-       let bstr = c.encode_utf8(&mut buf);
-       self.push(bstr);
-       true
-    }// push_char
+    pub fn push_char(&mut self, c: char) -> bool {
+        let clen = c.len_utf8();
+        if self.len + clen > N {
+            return false;
+        }
+        let mut buf = [0u8; 4]; // char buffer
+        let bstr = c.encode_utf8(&mut buf);
+        self.push(bstr);
+        true
+    } // push_char
 
     /// remove and return last character in string, if it exists
     pub fn pop_char(&mut self) -> Option<char> {
-       if self.len()==0 {return None;}
-       let (ci,lastchar) = self.char_indices().last().unwrap();
-       self.len = ci;
-       Some(lastchar)
-    }//pop
+        if self.len() == 0 {
+            return None;
+        }
+        let (ci, lastchar) = self.char_indices().last().unwrap();
+        self.len = ci;
+        Some(lastchar)
+    } //pop
 
     /// returns the number of characters in the string regardless of
     /// character class
@@ -248,76 +256,75 @@ impl<const N: usize> fstr<N> {
     /// truncates string up to *byte* position n.  **Panics** if n is
     /// not on a character boundary, similar to [String::truncate]
     pub fn truncate_bytes(&mut self, n: usize) {
-       if (n<self.len) {
-         assert!(self.is_char_boundary(n));
-	 self.len = n
-       }
+        if (n < self.len) {
+            assert!(self.is_char_boundary(n));
+            self.len = n
+        }
     }
 
-/// Trims **in-place** trailing ascii whitespaces.  This function
+    /// Trims **in-place** trailing ascii whitespaces.  This function
     /// regards all bytes as single chars.  The operation panics if
     /// the resulting string does not end on a character boundary.
     pub fn right_ascii_trim(&mut self) {
-      let mut n = self.len;
-      while n>0 && (self.chrs[n-1] as char).is_ascii_whitespace() {
-        //self.chrs[n-1] = 0;
-        n -= 1;
-      }
-      assert!(self.is_char_boundary(n));
-      self.len = n;
-    }//right_trim
+        let mut n = self.len;
+        while n > 0 && (self.chrs[n - 1] as char).is_ascii_whitespace() {
+            //self.chrs[n-1] = 0;
+            n -= 1;
+        }
+        assert!(self.is_char_boundary(n));
+        self.len = n;
+    } //right_trim
 
     /// resets string to empty string
     pub fn clear(&mut self) {
-      self.len=0;
+        self.len = 0;
     }
 
     /// in-place modification of ascii characters to lower-case, panics if
     /// the string is not ascii.
     pub fn make_ascii_lowercase(&mut self) {
-      assert!(self.is_ascii());
-      for b in &mut self.chrs[..self.len] {
-        if *b>=65 && *b<=90 { *b |= 32; }
-      }
-    }//make_ascii_lowercase
+        assert!(self.is_ascii());
+        for b in &mut self.chrs[..self.len] {
+            if *b >= 65 && *b <= 90 {
+                *b |= 32;
+            }
+        }
+    } //make_ascii_lowercase
 
     /// in-place modification of ascii characters to upper-case, panics if
     /// the string is not ascii.
     pub fn make_ascii_uppercase(&mut self) {
-      assert!(self.is_ascii());    
-      for b in &mut self.chrs[..self.len] {
-        if *b>=97 && *b<=122 { *b -= 32; }
-      }      
+        assert!(self.is_ascii());
+        for b in &mut self.chrs[..self.len] {
+            if *b >= 97 && *b <= 122 {
+                *b -= 32;
+            }
+        }
     }
 
     /// Constructs a clone of this fstr but with only upper-case ascii
     /// characters.  This contrasts with [str::to_ascii_uppercase],
-    /// which creates an owned String. 
-    pub fn to_ascii_upper(&self) -> Self
-    {
-      let mut cp = self.clone();
-      cp.make_ascii_uppercase();
-      cp
+    /// which creates an owned String.
+    pub fn to_ascii_upper(&self) -> Self {
+        let mut cp = self.clone();
+        cp.make_ascii_uppercase();
+        cp
     }
 
     /// Constructs a clone of this fstr but with only lower-case ascii
     /// characters.  This contrasts with [str::to_ascii_lowercase],
     /// which creates an owned String.
-    pub fn to_ascii_lower(&self) -> Self
-    {
-      let mut cp = *self;
-      cp.make_ascii_lowercase();
-      cp
+    pub fn to_ascii_lower(&self) -> Self {
+        let mut cp = *self;
+        cp.make_ascii_lowercase();
+        cp
     }
-
 } //impl fstr<N>
 
-
-impl<const N:usize> std::ops::Deref for fstr<N>
-{
+impl<const N: usize> std::ops::Deref for fstr<N> {
     type Target = str;
     fn deref(&self) -> &Self::Target {
-      self.to_str()
+        self.to_str()
     }
 }
 
@@ -394,7 +401,6 @@ impl<const M: usize> fstr<M> {
     }
 } //impl fstr<M>
 
-
 impl<const N: usize> std::convert::AsRef<str> for fstr<N> {
     fn as_ref(&self) -> &str {
         self.to_str()
@@ -446,8 +452,6 @@ impl<const N: usize> std::fmt::Debug for fstr<N> {
         f.pad(&self.to_str())
     }
 } // Debug impl
-
-
 
 impl<const N: usize> fstr<N> {
     /// returns a copy of the portion of the string, string could be truncated
@@ -510,30 +514,29 @@ impl<const N: usize> core::fmt::Write for fstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
+impl<const N: usize> Add<&str> for fstr<N> {
+    type Output = fstr<N>;
+    fn add(self, other: &str) -> fstr<N> {
+        let mut a2 = self;
+        a2.push(other);
+        a2
+    }
+} //Add &str
 
-impl<const N:usize> Add<&str> for fstr<N> {
-  type Output = fstr<N>;
-  fn add(self, other:&str) -> fstr<N> {
-    let mut a2 = self;
-    a2.push(other);
-    a2
-  }
-}//Add &str
+impl<const N: usize> Add<&fstr<N>> for &str {
+    type Output = fstr<N>;
+    fn add(self, other: &fstr<N>) -> fstr<N> {
+        let mut a2 = fstr::from(self);
+        a2.push(other);
+        a2
+    }
+} //Add &str on left
 
-impl<const N:usize> Add<&fstr<N>> for &str {
-  type Output = fstr<N>;
-  fn add(self, other:&fstr<N>) -> fstr<N> {
-    let mut a2 = fstr::from(self);
-    a2.push(other);
-    a2
-  }
-}//Add &str on left
-
-impl<const N:usize> Add<fstr<N>> for &str {
-  type Output = fstr<N>;
-  fn add(self, other:fstr<N>) -> fstr<N> {
-    let mut a2 = fstr::from(self);
-    a2.push(&other);
-    a2
-  }
-}//Add &str on left
+impl<const N: usize> Add<fstr<N>> for &str {
+    type Output = fstr<N>;
+    fn add(self, other: fstr<N>) -> fstr<N> {
+        let mut a2 = fstr::from(self);
+        a2.push(&other);
+        a2
+    }
+} //Add &str on left
