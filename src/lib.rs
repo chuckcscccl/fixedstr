@@ -113,6 +113,9 @@
 //!
 //! **Recent Updates:**
 //!
+//! Versions 0.4.5 and 0.4.6 provided bug fixes, especially concerning the
+//! Hash trait for cstr. Expanded abilities to concatenate strings.
+//!
 //! Version 0.4.4 added the optional `cstr` type.
 //!
 //! Version 0.4.3 added the optional `Sharestr` type along with other, minor
@@ -342,8 +345,7 @@ pub type str128 = tstr<128>;
 /// The first byte of the array always holds the length of the string.
 /// Each such type can hold a string of up to N-1 bytes, with max size=255.
 /// These types represent the best combination of [fstr] and [zstr] in
-/// terms of speed and memory efficiency.  Consult documentation for [fstr]
-/// or [zstr] for the same functions and traits.
+/// terms of speed and memory efficiency.
 ///<br>
 /// In addition, the str4-str128 types implement [core::ops::Add] in a way that
 /// two str8 strings will always concatenate to str16, and similarly for
@@ -612,14 +614,14 @@ mod tests {
             assert_eq!(ba, "123tuvwa");
 
             #[cfg(feature = "std")]
-	    {
-              let bb = cstr::<8>::from("qgg");
-  	      extern crate std;
-	      use std::collections::HashSet;
-	      let mut hh = HashSet::new();
-	      hh.insert(bb);
-	      assert!(hh.get(&bb).is_some());
-	    }
+            {
+                let bb = cstr::<8>::from("qgg");
+                extern crate std;
+                use std::collections::HashSet;
+                let mut hh = HashSet::new();
+                hh.insert(bb);
+                assert!(hh.get(&bb).is_some());
+            }
         } //cstr tests
     } //nostdtest
 

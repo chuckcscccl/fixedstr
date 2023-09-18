@@ -31,10 +31,24 @@ use core::cmp::{min, Ordering};
 use core::ops::{Add, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 use core::ops::{RangeInclusive, RangeToInclusive};
 
-/// **This structure is only exported with the `features pub-tstr` option.**
+/// **This structure is only made public with the `features pub-tstr` option.**
 /// Otherwise, it can only be referenced through the
 /// public type aliases [str4] through [str256].
 /// This type supports `#![no_std]`
+///
+/// A feature unique to the tstr type aliases is the ability to concatenate
+/// strings by generating higher-capacity types. Concatenating two strN
+/// strings will always generate a strM with M=2*N, for str4 - str128.
+/// ```
+///   # use fixedstr::*;
+///   let a = str8::from("aaaaaa");
+///   let b = str8::from("bbbbbb");
+///   let c = a + b;  // type of c will be str16
+///   assert_eq!(c,"aaaaaabbbbbb");
+///   assert_eq!(c.capacity(), 15);
+/// ```
+/// In contrast, concatenating other string types such as zstr will always
+/// produce strings of the same type and capacity.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct tstr<const N: usize = 256> {
     chrs: [u8; N],
