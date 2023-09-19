@@ -139,7 +139,7 @@ impl<const N: usize> zstr<N> {
     } //blen, O(log N)
 
     /// converts zstr to an owned string
-    #[cfg(feature = "std")]
+    // #[cfg(feature = "std")]
     pub fn to_string(&self) -> alloc::string::String {
         alloc::string::String::from(self.as_str())
     }
