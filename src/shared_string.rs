@@ -8,11 +8,14 @@
 #![allow(dead_code)]
 //extern crate std;
 //use std::string::String;
-use crate::fstr;
 use crate::shared_structs::Strunion;
 use crate::shared_structs::Strunion::*;
 use crate::tstr;
 use crate::zstr;
+
+#[cfg(feature = "std")]
+use crate::fstr;
+
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
 use core::cmp::{min, Ordering};
 use core::ops::Add;

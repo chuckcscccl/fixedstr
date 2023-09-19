@@ -131,7 +131,7 @@ impl<const N: usize> tstr<N> {
     }
 
     /// converts tstr to an owned string
-    #[cfg(feature = "std")]
+    // #[cfg(feature = "std")]
     pub fn to_string(&self) -> alloc::string::String {
         //let vs: alloc::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
         //alloc::string::String::from_utf8(vs).expect("Invalid utf8 string")

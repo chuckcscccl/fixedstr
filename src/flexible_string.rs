@@ -10,9 +10,12 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 extern crate alloc;
-use crate::fstr;
 use crate::tstr;
 use crate::zstr;
+
+#[cfg(feature = "std")]
+use crate::fstr;
+
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
 use alloc::string::String;
 use alloc::vec::Vec;

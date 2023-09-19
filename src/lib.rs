@@ -5,7 +5,9 @@
 //!
 //! >  This crate now supports **`#![no_std]`**, although
 //! this feature is not enabled by default.  no_std is enabled with the
-//! `--no-default-features` option.
+//! `--no-default-features` option.  As of Version 0.4.6, the `Flexstr`
+//! and `Sharedstr` types also support no_std.  The `std` feature
+//! only enables the `fstr` type, which prints warnings to stderr.
 //!
 //! **COMPATIBILITY NOTICES**:
 //!
@@ -68,11 +70,11 @@
 //!   or an owned String, in case the length of the string exceeds N-1.
 //!   This type is designed for situations where strings only
 //!   occasionally exceed the limit of N-1 bytes. This type does not implement
-//!   the `Copy` trait.
+//!   the `Copy` trait.  Serde and no_std are supported.
 //! - A **[Sharedstr]\<N\>** is similar to a [Flexstr]\<N\> but uses a
 //!   `Rc<RefCell<..>>` underneath to allow strings to be shared as well as
 //!   mutated.  This type does not implement `Copy` but `Clone` is done
-//!   in constant time.  This type ** does not support serde**.
+//!   in constant time.  no_std is supported but **not serde**.
 //!
 //! **OPTIONAL FEATURES.**  The arrangement of features and their default
 //! availability support compatibility with previous builds.  This may
@@ -114,7 +116,8 @@
 //! **Recent Updates:**
 //!
 //! Versions 0.4.5 and 0.4.6 provided bug fixes, especially concerning the
-//! Hash trait for cstr. Expanded abilities to concatenate strings.
+//! Hash trait for cstr, expanded abilities to concatenate strings. All
+//! string types except for `fstr` now support no_std.
 //!
 //! Version 0.4.4 added the optional `cstr` type.
 //!
@@ -217,20 +220,20 @@ mod full_fixed;
 #[cfg(feature = "std")]
 pub use full_fixed::*;
 
-#[cfg(feature = "std")]
+//#[cfg(feature = "std")]
 mod shared_structs;
 
-#[cfg(feature = "std")]
+// #[cfg(feature = "std")]
 #[cfg(feature = "flex-str")]
 mod flexible_string;
-#[cfg(feature = "std")]
+// #[cfg(feature = "std")]
 #[cfg(feature = "flex-str")]
 pub use flexible_string::*;
 
-#[cfg(feature = "std")]
+// #[cfg(feature = "std")]
 #[cfg(feature = "shared-str")]
 mod shared_string;
-#[cfg(feature = "std")]
+// #[cfg(feature = "std")]
 #[cfg(feature = "shared-str")]
 pub use shared_string::*;
 
@@ -279,7 +282,7 @@ mod serde_support {
     generate_impl!(tstr, TstrVisitor);
     #[cfg(feature = "std")]
     generate_impl!(fstr, FstrVisitor);
-    #[cfg(feature = "std")]
+    #[cfg(feature = "flex-str")]
     generate_impl!(Flexstr, FlexstrVisitor);
 
     #[cfg(feature = "circular-str")]

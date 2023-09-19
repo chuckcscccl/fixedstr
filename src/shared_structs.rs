@@ -6,9 +6,9 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-extern crate std;
+extern crate alloc;
 use crate::tstr;
-use std::string::String;
+use alloc::string::String;
 use Strunion::*;
 
 #[derive(Eq, PartialEq, Hash)]
