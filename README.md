@@ -6,7 +6,7 @@ typical systems.
 **Starting in Version 0.4.0, this crate supports `#![no_std]`, although
 this feature is not enabled by default.**  Giving cargo the
 `--no-default-features` option will enable `no_std` and provide only the
-zstr and tstr types with some reduced functionality.
+zstr and tstr types.
 <br>
 
 Recent enhancements include additional, optional string types.
