@@ -8,7 +8,7 @@ this feature is not enabled by default.**  Giving cargo the
 `--no-default-features` option will enable `no_std`.
 <br>
 
-Recent enhancements include additional, optional string types.  An issue with Version 0.4.4 has been corrected in newer versions.
+Recent enhancements include additional, optional string types.  An issue with compiling Version 0.4.4 with serde has been corrected in newer versions.
 
 #### Examples
 ```
