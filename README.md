@@ -9,7 +9,7 @@ this feature is not enabled by default.**  Giving cargo the
 zstr and tstr types.
 <br>
 
-Recent enhancements include additional, optional string types.
+Recent enhancements include additional, optional string types.  An issue with Version 0.4.4 has been corrected in newer versions.
 
 #### Examples
 ```
