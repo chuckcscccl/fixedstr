@@ -3,11 +3,12 @@
 //!
 //! **Important Recent Updates:**
 //!
-//! >  This crate now supports **`#![no_std]`**, although
-//! this feature is not enabled by default.  no_std is enabled with the
-//! `--no-default-features` option.  As of Version 0.4.6, the `Flexstr`
-//! and `Sharedstr` types also support no_std.  The `std` feature
-//! only enables the `fstr` type, which prints warnings to stderr.
+//! >  As of Version 0.4.6, all string types except for `fstr` support
+//! **`#![no_std]`**.  For backwards compatibility, this feature is still
+//! not enabled by default, and requires the `--no-default-features`
+//! option.  The `std` feature only enables the `fstr` type, which prints
+//! warnings to stderr. The smallest build is still for no_std with the
+//! zstr and strN type aliases (see below). 
 //!
 //! **COMPATIBILITY NOTICES**:
 //!
@@ -77,41 +78,48 @@
 //!   in constant time.  no_std is supported but **not serde**.
 //!
 //! **OPTIONAL FEATURES.**  The arrangement of features and their default
-//! availability support compatibility with previous builds.  This may
-//! change when version 0.5 is released.
+//! availability support compatibility with previous builds.
 //!
 //! - *`#![no_std]`*: this feature is enabled by the `--no-default-features`
-//! option.
-//! Only the [zstr] and tstr types are available with this option.
+//! option, which disables the `std` feature.
+//! Only the [zstr] and tstr types are available with this option alone.
+//! If you wish to use other types (Flexstr, Sharedstr, cstr), which
+//! also support no_std, they must be enabled separately (see below).
 //! - *serde* : (`--features serde`); Serialization was initially contributed
 //! by [wallefan](https://github.com/wallefan) and adopted to other types
 //! (except `Sharedstr`).
 //! This feature can be combined with `--no-default-features` for
 //! no_std support.
-//! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public
-//! - *flex-str*: this feature is available by default, requires `std` and
+//! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public - it is not recommended as `tstr<N>` for any N > 256 is invalid:
+//! use instead the aliases str4 - str256, which are always available.
+//! - *flex-str*: this feature is available by default and
 //! makes available the **`Flexstr`** type.  
-//! - *shared-str*: this feature is available by default, requires
-//! `std` and makes available the **`Sharedptr`** type.
+//! - *shared-str*: this feature is available by default
+//!   and makes available the **`Sharedptr`** type.
 //! - *circular-str*: this feature makes available the **`cstr`** type. It
-//! is compatible with serde and no-std
+//!   is *not* enabled by default.
 //!
-//! For example, for the smallest possible build, supporting `no-std` and
+//! For example, for **the smallest possible build**, supporting `no-std` and
 //! just `zstr` and the aliases for `tstr`, place the following in your `Cargo.toml`:
 //! ```ignore
 //!   [dependencies]
 //!   fixedstr = {version="0.4", default-features=false}
 //! ```
-//! To enable both no_std and serde, do the following instead:
+//! To enable no_std, serde and add the `cstr` type,
+//! do the following instead:
 //! ```ignore
 //!   [dependencies]
-//!   fixedstr = {version="0.4", features=["serde"], default-features=false}
+//!   fixedstr = {version="0.4", features=["serde","circular-str"], default-features=false}
 //! ```
-//! and to exclude `Sharedstr` but include all other string types
+//! and to exclude `Sharedstr` but include all other string types:
 //! ```ignore
 //!   [dependencies]
 //!   fixedstr = {version="0.4", features=["std","flex-str","circular-str"], default-features=false}
 //! ```
+//! The default build (with just `cargo add fixedstr`) will include std
+//! and the types fstr, zstr, tstr aliases, Flexstr and Sharedstr.  
+//! It will not include the serde, circular-str, pub-tstr or no_std
+//! features.
 //!
 //! **Recent Updates:**
 //!
