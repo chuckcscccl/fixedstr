@@ -40,6 +40,7 @@ impl<const N:usize> Clone for Strunion<N> {
   }
 }//impl Clone
 */
+/// **This type is only available with the `flex-str` option.**
 /// A `Flexstr<N>` is represented internally as a `tstr<N>` if the length of
 /// the string is less than N bytes, and by an owned String otherwise.
 /// The structure satisfies the following axiom:

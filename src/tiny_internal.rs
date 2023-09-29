@@ -31,10 +31,14 @@ use core::cmp::{min, Ordering};
 use core::ops::{Add, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 use core::ops::{RangeInclusive, RangeToInclusive};
 
-/// **This structure is only made public with the `features pub-tstr` option.**
-/// Otherwise, it can only be referenced through the
-/// public type aliases [str4] through [str256].
-/// This type supports `#![no_std]`
+/// **This structure is normally only accessible through the 
+/// public types [str4] through [str256].**  These types alias internal
+/// types [tstr]\<4\> through [tstr]\<256\> respectively.  The purpose here
+/// is to guarantee that the maximum size of the structure does not exceed
+/// 256 bytes for it uses the first byte of a u8 array to hold the length of
+/// the string.  The tstr type can be made directly public with the
+/// **`pub-tstr` option**.
+/// This type supports `#![no_std]` and serde.
 ///
 /// A feature unique to the tstr type aliases is the ability to concatenate
 /// strings by generating higher-capacity types. Concatenating two strN

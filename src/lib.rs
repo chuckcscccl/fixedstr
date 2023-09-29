@@ -1,127 +1,145 @@
-//! Library for strings of fixed maximum lengths that can be copied and
-//! stack-allocated using const generics.
+//! **Library for several alternative string types using const generics.**
 //!
-//! **Important Recent Updates:**
 //!
-//! >  As of Version 0.4.6, all string types except for `fstr` support
-//! **`#![no_std]`**.  For backwards compatibility, this feature is still
-//! not enabled by default, and requires the `--no-default-features`
-//! option.  The `std` feature only enables the `fstr` type, which prints
-//! warnings to stderr. The smallest build is still for no_std with the
-//! zstr and strN type aliases (see below). 
+//!  - The size of some types such as [str8] and [zstr]\<8\>
+//!    are 8 bytes, compared to 16 bytes for `&str` on 64bit systems,
+//!    providing possibly more efficient ways of representing small strings.
+//!  -  Most types (except the optional [Flexstr] and [Sharedstr]) can be
+//!    copied and stack-allocated.
+//!  -  `#![no_std]` is supported by all but the optional [fstr] type.
+//!  -  Unicode is supported by all but the optional [cstr] type.
+//!  -  Serde serialization is supported by all but the optional [Sharedstr] type.
+//!
 //!
 //! **COMPATIBILITY NOTICES**:
 //!
-//! >  Starting in Version 0.4.0, warnings about
-//! capacity being exceeded are only sent to stderr when using the fstr type.
-//! For other types, truncation is done silently. Consider using the
-//! `try_make` function to change this behavior.
+//! > **Starting with Version 0.5.0,** the default availability of some
+//!   string types have changed.  The default configuration now gives the
+//!   minimum build.  The `std`, `flex-str` and `shared-str`
+//!   options are no longer enabled by default.  The crate now
+//!   supports **`#![no_std]`** by default.  The `std` option only enables the
+//!   [fstr] type, which prints warnings to stderr. **However,** unless
+//!   you require one of the types [fstr], [Flexstr] or [Sharedstr], your
+//!   build configurations should work as before: the builds will just be
+//!   smaller.  If `default-features=false` is already part of your
+//!   configuration, it should also work as before: specifying
+//!   `default-features=false` now has no effect.
+//!
+//! **Other Important Recent Updates:**
+//!
+//! >  As of Version 0.4.6, all string types except for `fstr` support
+//! **`#![no_std]`**.
 //!
 //! >  Starting in Version 0.4.2, the underlying representation of the zero-terminated [zstr]
 //! type no longer allows non-zero bytes after the first zero.  In particular,
 //! the [zstr::from_raw] function now enforces this rule.
-//! The modification allows for the length of a `zstr<N>` string to be found
-//! in O(log N) time.
 //!
+//! >  Starting in Version 0.4.0, warnings about
+//! capacity being exceeded are only sent to stderr when using the fstr type.
+//! For other types, truncation is done silently. Consider using the
+//! `try_make` function to avoid silent truncation.
 //!
-//! **The main structures provided by this crate are [fstr], [zstr], [cstr]** and **[tstr]**.
-//! However, tstr is not publicly exported by default and should be referenced through the type
-//! aliases [str4], [str8], [str16], ...  [str256], as well as indirectly
-//! with [Flexstr] and [Sharedstr].  When cargo is given the `no-default-features` option,
-//! which enables `#![no_std]` support, only [zstr] and the alias types for
-//! tstr are enabled.
+//! <hr>
 //!
-//! The size of (std::mem::size_of) types str8 and zstr<8>
-//! are 8 bytes, compared to 16 bytes for &str (on 64bit systems), providing more efficient
-//! ways of representing very small strings.  Unicode is supported.
+//! **CRATE OVERVIEW**
 //!
-//! The principle versions of strings implemented are as follows.
-//! - A **[fstr]\<N\>**
-//! stores a string of up to N bytes.  It is represented underneath by
-//! a `[u8;N]` array and a separate usize variable holding the length.
-//! - A **[zstr]\<N\>** is also represented by a `[u8;N]`, without a separate
-//! length field, and can hold zero-terminated strings of up to N-1 bytes.
-//! **This type supports `#![no_std]`**.
-//! - The types **[str4]**, **[str8]** through **[str256]** are aliases for internal types
-//! tstr<4> through tstr<256> respectively.  These strings are stored
-//! in an array of u8 bytes with the first byte holding the length of the
-//! string.  Each tstr\<N\> can store strings of up to N-1 bytes, with
-//! maximum N=256. tstr
-//! combines the best of fstr and zstr in terms of speed
-//! and memory efficiency.  However, because Rust does not currently provide
-//! a way to specify conditions on const generics at compile time, such as
-//! `where N<=256`, the tstr type is not public by default and can
-//! only be used through the aliases.  The `pub-tstr` option makes the
-//! `tstr` type public but is not recommended.
-//! These types **also support `#![no_std]`**.
-//! - The type **[cstr]**, introduced in Version 0.4.4 and **only available
+//! The two string types that are always provided by this crate are **[zstr]** and **[tstr]**.
+//! However, `tstr` is not publicly exported by default and should be referenced
+//! through the type aliases [str4], [str8], [str16], ...  [str256].
+//!
+//! - A **[zstr]\<N\>** is represented by a `[u8;N]` array underneath
+//!   and can hold zero-terminated, utf-8 strings of up to N-1 bytes.
+//! Furthermore, no non-zero bytes can follow the first zero, which
+//! allows the length of a `zstr<N>` string to be found in O(log N) time.
+//! This type is available by default and supports `#![no_std]` and serde.
+//!
+//! - The types **[str4]** through **[str256]** are aliases for internal types
+//! `tstr<4>` through `tstr<256>` respectively.  These strings are stored
+//! in `[u8;N]` arrays with the first byte holding the length of the
+//! string.  Each `tstr<N>` can store strings of up to N-1 bytes, with
+//! maximum N=256. Because Rust does not currently provide
+//! a way to specify conditions (or type casts) on const generics at
+//! compile time, the tstr type is not public by
+//! default and can only be used through the aliases.  The `pub-tstr` option
+//! makes the `tstr` type public but is not recommended: any `tstr<N>` with
+//! `N>256` is not valid and will result in erroneous behavior.
+//! These type aliases are also available by default and support
+//! `#![no_std]` and serde.
+//!
+//! In addition, the following string types are available as options:
+//! 
+//! - A **[fstr]\<N\>** stores a string of up to N bytes.
+//! It's represented by a `[u8;N]` array and a separate usize variable
+//! holding the length.  This type is **enabled with either the `std` or
+//! `fstr` option** and some functions will print warnings to stderr when
+//! capacity is exceeded. This is is the only type that does not support
+//! `no_std`, but does support serde.
+//! - The type **[cstr]**, which is **made available
 //! with the `circular-str` option**, uses a fixed u8 array
 //! that is arranged as a circular queue (aka ring buffer).  This allows
 //! efficient implementations of pushing/triming characters *in front* of
 //! the string without additional memory allocation.  The downside of these
-//! strings is that the underlying strings can be non-contiguous as it allows
-//! wrap-around.  As a result, there is no efficient way to implement `Deref<str>`.  
-//! Additionally, **only single-byte characters** are currently supported.
-//! There is, however, an iterator over all characters and most common traits
-//! are implemented.  **Serde and no-std are supported.**
-//!
-//! In addition to these "fixed" string types,  two other types are
-//! provided by default, but can be optionally excluded:
-//! - A **[Flexstr]\<N\>** uses an internal enum that is either a tstr\<N\>
-//!   or an owned String, in case the length of the string exceeds N-1.
+//! strings is that the underlying representation can be non-contiguous as it allows
+//! wrap-around.  As a result, there is no efficient way to implement
+//! `Deref<str>`.  Additionally, cstr is the only string type of the crate
+//! that does not support Unicode. **Only single-byte characters** are
+//! currently supported. There is, however, an iterator over all characters
+//! and most common traits are implemented.  Serde and no-std are both supported.
+//! - The **[Flexstr]\<N\>** type becomes available with the **`flex-str` option**.
+//!   This type uses an internal enum that is either a tstr\<N\>
+//!   or an owned String (alloc::string::String) in case the length of the string exceeds N-1.
 //!   This type is designed for situations where strings only
 //!   occasionally exceed the limit of N-1 bytes. This type does not implement
 //!   the `Copy` trait.  Serde and no_std are supported.
-//! - A **[Sharedstr]\<N\>** is similar to a [Flexstr]\<N\> but uses a
+//! - The **[Sharedstr]\<N\>** type becomes available with the **`shared-str`
+//!   option**. This type is similar to a [Flexstr]\<N\> but uses a
 //!   `Rc<RefCell<..>>` underneath to allow strings to be shared as well as
 //!   mutated.  This type does not implement `Copy` but `Clone` is done
 //!   in constant time.  no_std is supported but **not serde**.
 //!
-//! **OPTIONAL FEATURES.**  The arrangement of features and their default
-//! availability support compatibility with previous builds.
+//! **SUMMARY OF OPTIONAL FEATURES** 
 //!
-//! - *`#![no_std]`*: this feature is enabled by the `--no-default-features`
-//! option, which disables the `std` feature.
-//! Only the [zstr] and tstr types are available with this option alone.
-//! If you wish to use other types (Flexstr, Sharedstr, cstr), which
-//! also support no_std, they must be enabled separately (see below).
 //! - *serde* : (`--features serde`); Serialization was initially contributed
-//! by [wallefan](https://github.com/wallefan) and adopted to other types
-//! (except `Sharedstr`).
-//! This feature can be combined with `--no-default-features` for
-//! no_std support.
-//! - *pub-tstr*: (`--features pub-tstr`); this feature will make the tstr type public - it is not recommended as `tstr<N>` for any N > 256 is invalid:
-//! use instead the aliases str4 - str256, which are always available.
-//! - *flex-str*: this feature is available by default and
-//! makes available the **`Flexstr`** type.  
-//! - *shared-str*: this feature is available by default
-//!   and makes available the **`Sharedptr`** type.
-//! - *circular-str*: this feature makes available the **`cstr`** type. It
-//!   is *not* enabled by default.
+//!   by [wallefan](https://github.com/wallefan) and adopted to other types
+//!   (except `Sharedstr`).
+//! - *circular-str*: this feature makes available the **[cstr]** type.
+//! - *flex-str*: this feature makes available the **[Flexstr]** type.  
+//! - *shared-str*: this feature makes available the **[Sharedstr]** type.
+//! - *std`: this feature cancels `no_std` by enabling the **[fstr]** type.
+//!   An alias for this feature name is 'fstr'.
+//! - *pub-tstr*: this feature will make the tstr type public - it is not
+//!   recommended: use instead the aliases [str4] - [str256], which are
+//!   always available.
+//! - *experimental*: the meaning of this option may change and will include
+//!   certain experimental features.  These features currently consist of
+//!   custom Index traits for zstr.  Experimental features are not included
+//!   in the documentation.
 //!
-//! For example, for **the smallest possible build**, supporting `no-std` and
-//! just `zstr` and the aliases for `tstr`, place the following in your `Cargo.toml`:
+//!
+//! For **the smallest possible build**, just `cargo add fixedstr` in your
+//! crate or add `fixedstr = "0.5" to your dependencies in Cargo.toml.
+//! The default build makes available the [zstr] type and the type aliases
+//! [str4] - [str256] for [tstr].  Serde is not available with this build
+//! but no_std is supported.
+//!
+//! To enable serde serialization and add the `cstr` type, 
+//! add the following instead to your Cargo.toml:
 //! ```ignore
 //!   [dependencies]
-//!   fixedstr = {version="0.4", default-features=false}
+//!   fixedstr = {version="0.5", features=["serde","circular-str"]}
 //! ```
-//! To enable no_std, serde and add the `cstr` type,
-//! do the following instead:
+//! and to exclude `cstr` but include all other features (except `experimental`):
 //! ```ignore
 //!   [dependencies]
-//!   fixedstr = {version="0.4", features=["serde","circular-str"], default-features=false}
+//!   fixedstr = {version="0.5", features=["std","flex-str","shared-str","serde","pub-tstr"]}
 //! ```
-//! and to exclude `Sharedstr` but include all other string types:
-//! ```ignore
-//!   [dependencies]
-//!   fixedstr = {version="0.4", features=["std","flex-str","circular-str"], default-features=false}
-//! ```
-//! The default build (with just `cargo add fixedstr`) will include std
-//! and the types fstr, zstr, tstr aliases, Flexstr and Sharedstr.  
-//! It will not include the serde, circular-str, pub-tstr or no_std
-//! features.
+//! Compared to previous, 0.4.x versions of the crate, these configurations
+//! are equivalent to those with the `default-features=false` additional flag.
 //!
 //! **Recent Updates:**
+//!
+//! Version 0.5.0 reset the default availability of optional features,
+//! at a cost of incompatibility with some previous build configurations.
 //!
 //! Versions 0.4.5 and 0.4.6 provided bug fixes, especially concerning the
 //! Hash trait for cstr, expanded abilities to concatenate strings. All
@@ -221,6 +239,7 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
+
 #![no_std]
 
 #[cfg(feature = "std")]
@@ -228,20 +247,19 @@ mod full_fixed;
 #[cfg(feature = "std")]
 pub use full_fixed::*;
 
-//#[cfg(feature = "std")]
+//#[cfg(feature = "flex-str")]
+//mod shared_structs;
+
+#[cfg(any(feature = "shared-str", feature = "flex-str"))]
 mod shared_structs;
 
-// #[cfg(feature = "std")]
 #[cfg(feature = "flex-str")]
 mod flexible_string;
-// #[cfg(feature = "std")]
 #[cfg(feature = "flex-str")]
 pub use flexible_string::*;
 
-// #[cfg(feature = "std")]
 #[cfg(feature = "shared-str")]
 mod shared_string;
-// #[cfg(feature = "std")]
 #[cfg(feature = "shared-str")]
 pub use shared_string::*;
 
@@ -323,11 +341,10 @@ mod serde_support {
     }
 } //serde
 
-/// types for small strings that use a more efficient representation
-/// underneath.  A str8 can hold a string of up to 7 bytes (7 ascii chars).
-/// The same functions for [fstr] and [zstr] are provided for these types
-/// so the documentation for the other types also applies.
-/// The size of str8 is 8 bytes.
+/// Types for small strings that use an efficient representation
+/// underneath.  Alias for internal type [tstr]\<8\>.
+/// A str8 is 8 bytes and can hold string of up to 7 bytes.
+/// See documentation for the aliased [tstr] type.
 ///
 /// Example:
 /// ```
@@ -372,10 +389,10 @@ pub type str128 = tstr<128>;
 
 pub type str256 = tstr<256>;
 
-///
-/// <br>strings of up to three 8-bit chars, good enough to represent abbreviations
-/// such as those for states and airports. Each str<4> is exactly 32 bits.
 /// Alias for internal type `tstr<4>`.
+/// <br>Holds strings of up to three single-byte chars, good enough to represent abbreviations
+/// such as those for states and airports. Each str<4> is exactly 32 bits.
+/// Alias for internal type `tstr<4>`.   See documentation for [tstr].
 pub type str4 = tstr<4>;
 pub type str12 = tstr<12>;
 pub type str24 = tstr<24>;
@@ -385,10 +402,13 @@ pub type str192 = tstr<192>;
 
 #[macro_export]
 /// creates a formated string of given type (by implementing [core::fmt::Write]):
-/// ```ignore
-///    let s = str_format!(str8,"abc{}{}{}",1,2,3);
 /// ```
-/// will truncate if capacity exceeded, without warning.
+///    # use fixedstr::*;
+///    let s = str_format!(str8,"abc{}{}{}",1,2,3);
+///    assert_eq!(s,"abc123");
+/// ```
+/// will truncate if capacity exceeded, without warning. See [try_format!]
+/// for version that does not truncate.
 macro_rules! str_format {
   ($ty_size:ty, $($args:tt)*) => {
      {use core::fmt::Write;

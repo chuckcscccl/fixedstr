@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.4.6"
+version = "0.5.0"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"
@@ -10,9 +10,11 @@ keywords = ["string","no-std"]
 
 
 [features]
-default = ["std", "flex-str", "shared-str"]
+default = []
+#default = ["std", "flex-str", "shared-str"]
 serde=["dep:serde"]
 std=[]
+fstr = ["std"]
 pub_tstr=[]
 pub-tstr=["pub_tstr"]
 shared-str=[]
@@ -25,9 +27,7 @@ circular-str=[]
 serde={version="1", optional=true, default-features=false}
 
 [package.metadata.docs.rs]
-#rustdoc-args = ["--document-private-items"]
-features = ["serde","circular-str","pub-tstr"]
-
+all-features = true
 
 #sp-io = "23.0.0"
 

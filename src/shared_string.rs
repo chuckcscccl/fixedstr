@@ -27,7 +27,8 @@ use alloc::rc::Rc;
 use alloc::string::String;
 use core::cell::RefCell;
 
-/// This type uses [Rc] and [RefCell] underneath to allow pointers to a [crate::Flexstr]
+/// **This type is only available with the 'shared-str' option.**
+/// A `Sharedstr` uses [Rc] and [RefCell] underneath to allow pointers to a [crate::Flexstr]
 /// to be shared, and thus cloning is always done in constant time.
 /// Similar to `Flexstr`, a `Sharedstr<N>` is represented either by a
 /// `tstr<N>` or by an owned string if its length is greater than N-1, for N up

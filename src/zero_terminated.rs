@@ -18,8 +18,10 @@
 #![allow(unused_assignments)]
 #![allow(unused_mut)]
 #![allow(dead_code)]
+
 #[cfg(feature = "std")]
 use crate::fstr;
+
 use crate::tstr;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
@@ -371,7 +373,7 @@ impl<const N: usize> zstr<N> {
         }
     }
 
-    /// Constructs a clone of this fstr but with only upper-case ascii
+    /// Constructs a clone of this zstr but with only upper-case ascii
     /// characters.  This contrasts with [str::to_ascii_uppercase],
     /// which creates an owned String.
     pub fn to_ascii_upper(&self) -> Self {
@@ -380,7 +382,7 @@ impl<const N: usize> zstr<N> {
         cp
     }
 
-    /// Constructs a clone of this fstr but with only lower-case ascii
+    /// Constructs a clone of this zstr but with only lower-case ascii
     /// characters.  This contrasts with [str::to_ascii_lowercase],
     /// which creates an owned String.
     pub fn to_ascii_lower(&self) -> Self {
@@ -388,7 +390,38 @@ impl<const N: usize> zstr<N> {
         cp.make_ascii_lowercase();
         cp
     }
+
+    // new for 0.5.0
+    /// converts zstr to a raw pointer to the first byte
+    pub fn to_ptr(&self) -> *const u8 {
+      let ptr = &self.chrs[0] as *const u8;
+      ptr
+      //ptr as *const char
+    }
+
+    /// Converts zstr to a mutable pointer to the first byte.
+    pub fn to_ptr_mut(&mut self) -> *mut u8 {
+      &mut self.chrs[0] as *mut u8
+    }
+
+    /// Creates a zstr from a raw pointer by copying bytes until the
+    /// first zero is encountered or when maximum capacity (N-1) is reached.
+    pub unsafe fn from_ptr(mut ptr:*const u8) -> Self {
+      let mut z = zstr::new();
+      let mut i = 0;
+      while *ptr!=0 && i+1 < N {
+        z.chrs[i] = *ptr;
+        ptr = (ptr as usize + 1) as *const u8;
+        i += 1;
+      }//while
+      z.chrs[i] = 0;
+      z
+    }//unsafe from_raw
+
+
 } //impl zstr<N>
+
+
 
 impl<const N: usize> core::ops::Deref for zstr<N> {
     type Target = str;
@@ -604,7 +637,7 @@ impl<const N: usize> core::fmt::Write for zstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature="experimental"))]
 mod special_index {
     extern crate std;
     use super::*;
@@ -668,7 +701,7 @@ mod special_index {
             &self.as_str()[index]
         }
     } //impl Index
-} // special_index submodule
+} // special_index submodule (--features experimental)
 
 impl<const N: usize> Add<&str> for zstr<N> {
     type Output = zstr<N>;

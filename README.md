@@ -3,12 +3,19 @@ stack-allocated.  Certain provided
 types such as `zstr<8>` and `str8` are smaller in size than a &str on
 typical systems.
 
-**Starting in Version 0.4.0, this crate supports `#![no_std]`, although
-this feature is not enabled by default.**  Giving cargo the
-`--no-default-features` option will enable `no_std`.
+#### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/latest/fixedstr/)
+
+The default availability of some features have changed.  The crate is now
+`#![no_std]` by default.  The `std` option, which also enables the `fstr`
+type, is no longer enabled by default.  Also no longer available by
+default are the `Flexstr` and `Sharedstr` types.  However, unless you
+require one of these three types, your build configuration should work
+as before.  If you already use `default-features=false`, your configuration
+should also work as before.
+
 <br>
 
-Recent enhancements include additional, optional string types.  An issue with compiling Version 0.4.4 with serde has been corrected in newer versions.
+Recent enhancements also include additional, optional string types.
 
 #### Examples
 ```
@@ -55,4 +62,3 @@ Recent enhancements include additional, optional string types.  An issue with co
 ```
 
 Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.
-

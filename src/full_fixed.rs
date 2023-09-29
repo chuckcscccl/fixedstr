@@ -16,9 +16,9 @@ use core::ops::Add;
 use std::eprintln;
 use std::string::String;
 
+/// **This type is only available with the `std` (or `fstr`) feature.**
 /// A `fstr<N>` is a string of up to const N bytes, using a separate variable to store the length.
-/// This type is not as memory-efficient as the alias types str4-str256, but
-/// provides documentation on the implemented functions.
+/// This type is not as memory-efficient as some other types such as str4-str256.  This is also the only type of the crate that does not support `no_std`.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct fstr<const N: usize> {
     chrs: [u8; N],

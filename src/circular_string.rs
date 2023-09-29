@@ -14,7 +14,6 @@ use alloc::string::String;
 use core::ops::Add;
 
 /// **This type is only available with the `circular-str` option.**
-///
 /// A *circular string* is represented underneath by a fixed-size u8
 /// array arranged as a circular queue. The string can wrap around
 /// either end and thus become internally non-contiguous.
@@ -30,7 +29,7 @@ use core::ops::Add;
 /// The Serialization (serde) and no-std options are both supported.
 ///
 /// Each `cstr<N>` can hold up to N bytes and the maximum N is 65535.
-/// Values of N that are exact powers of 2 are recommended to speed up
+/// **Values of N that are exact powers of 2 are recommended** to speed up
 /// the `%` operation for computing indices in a ciruclar queue.
 ///
 /// Examples:
@@ -747,7 +746,7 @@ impl<const N: usize> PartialEq<&cstr<N>> for &str {
     } //eq
 }
 
-/// character interator, returned by [cstr::chars]
+/// character interator, returned by [cstr::chars] (available with `circular-str` option along with [cstr])
 pub struct CircCharIter<'a> {
     first: &'a [u8],
     second: &'a [u8],
