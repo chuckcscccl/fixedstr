@@ -20,6 +20,7 @@ pub-tstr=["pub_tstr"]
 shared-str=[]
 flex-str=[]
 circular-str=[]
+experimental=["std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -27,7 +28,8 @@ circular-str=[]
 serde={version="1", optional=true, default-features=false}
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["serde","pub-tstr","circular-str","flex-str","shared-str","std"]
+#all-features = true
 
 #sp-io = "23.0.0"
 
