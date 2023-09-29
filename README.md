@@ -3,7 +3,7 @@ stack-allocated.  Certain provided
 types such as `zstr<8>` and `str8` are smaller in size than a &str on
 typical systems.
 
-#### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/latest/fixedstr/)
+#### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/0.5.0/fixedstr/)
 
 The default availability of some features have changed.  The crate is now
 `#![no_std]` by default.  The `std` option, which enables the `fstr`
