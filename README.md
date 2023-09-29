@@ -6,9 +6,9 @@ typical systems.
 #### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/latest/fixedstr/)
 
 The default availability of some features have changed.  The crate is now
-`#![no_std]` by default.  The `std` option, which also enables the `fstr`
-type, is no longer enabled by default.  Also no longer available by
-default are the `Flexstr` and `Sharedstr` types.  However, unless you
+`#![no_std]` by default.  The `std` option, which enables the `fstr`
+type, is no longer enabled by default.  The `Flexstr` and `Sharedstr` types
+are also no longer enabled by default.  However, unless you
 require one of these three types, your build configuration should work
 as before.  If you already use `default-features=false`, your configuration
 should also work as before.
