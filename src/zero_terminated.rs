@@ -105,8 +105,7 @@ impl<const N: usize> zstr<N> {
 
     /// Length of a `zstr<N>` string in bytes using O(n) linear search,
     /// may be useful when the string is of length n but n is known to be
-    /// much smaller than N, or when the underlying array is corrupted, such
-    /// as with the `IndexMut<usize>` trait.
+    /// much smaller than N, or when the underlying array is corrupted.
     /// This function is unique to the zstr type and
     /// not available for other string types in this crate.
     pub fn linear_len(&self) -> usize {
@@ -117,14 +116,28 @@ impl<const N: usize> zstr<N> {
         return i;
     } //linear_len
 
-    /// This function guarantees that there are no non-zero bytes after
-    /// the first zero, which is required by the length function.
-    pub fn clean(&mut self)  {
-      let mut n = self.linear_len();
-      while n<N {
-        self.chrs[n] = 0;
-        n += 1;
-      }
+    /// Checks that the underlying array of the zstr is
+    /// properly zero-terminated, with no non-zero bytes after the first
+    /// zero.  Returns false if there's a problem.
+    pub fn check_integrity(&self) -> bool {
+       let mut n = self.linear_len();
+       if n==N {return false;}
+       while n<N {
+          if self.chrs[n] !=0 {return false;}
+          n += 1;
+       }//while
+       true
+    }//check_integrity
+
+    /// Guarantees that the underlying array of the zstr is
+    /// properly zero-terminated, with no non-zero bytes after the first zero.
+    pub fn clean(&mut self) {
+       let mut n = self.linear_len();
+       if n==N {self.chrs[n-1] = 0;}
+       while n<N {
+          self.chrs[n] = 0;
+          n += 1;
+       }//while      
     }//clean
 
     /// returns maximum capacity in bytes
@@ -647,9 +660,9 @@ impl<const N: usize> core::fmt::Write for zstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-//#[cfg(feature = "experimental")]
-//mod special_index {
-//    use super::*;
+#[cfg(feature = "experimental")]
+mod special_index {
+    use super::*;
     use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
     use core::ops::{RangeInclusive, RangeToInclusive};
 
@@ -702,7 +715,8 @@ impl<const N: usize> core::fmt::Write for zstr<N> {
         }
     } //impl Index
     
-    /// **This trait is provided with caution** as it allows arbitrary changes
+    /// **This trait is provided with caution**, and only with the
+    /// `experimental` feature, as it allows arbitrary changes
     /// to the bytes of the string.  In particular, the string can become
     /// corrupted if a premature zero-byte is created using this function,
     /// which invalidates the [Self::len] function.  Several other operations
@@ -717,7 +731,7 @@ impl<const N: usize> core::fmt::Write for zstr<N> {
         }
     } //impl IndexMut
 
-// } // special_index submodule (--features experimental)
+} // special_index submodule (--features experimental)
 
 
 

@@ -20,10 +20,15 @@
 //!   supports **`#![no_std]`** by default.  The `std` option only enables the
 //!   [fstr] type, which prints warnings to stderr. **However,** unless
 //!   you require one of the types [fstr], [Flexstr] or [Sharedstr], your
-//!   build configurations should work as before: the builds will just be
+//!   build configurations most likely will work as before: the builds will just be
 //!   smaller.  If `default-features=false` is already part of your
-//!   configuration, it should also work as before: specifying
-//!   `default-features=false` now has no effect.
+//!   configuration, it should also work as before.
+//!
+//! > Another change that could potentially affect backwards compatibility is that 
+//!   zstr's `Index<usize>` and `IndexMut<usize>` traits, which allow
+//!   arbitrary modifications to underlying bytes, is now only available
+//!   with the optional `experimental` feature.  Previously, they were
+//!   available as a default feature.
 //!
 //! **Other Important Recent Updates:**
 //!
@@ -110,7 +115,13 @@
 //! - ***pub-tstr***: this feature will make the tstr type public. It is not
 //!   recommended: use instead the type aliases [str4] - [str256], which are
 //!   always available.
+//! - ***experimental***: the meaning of this feature may change.  Currently
+//!   it implements custom Indexing traits for the zstr type, including
+//!   `IndexMut<usize>`, which allows individual bytes to be changed
+//!   arbitrarily.  Experimental features are not part of the documentation.
 //!
+//! None of these features is provided by default, so specifying
+//! `default-features=false` has no effect.
 //!
 //! For **the smallest possible build**, just `cargo add fixedstr` in your
 //! crate or add `fixedstr = "0.5" to your dependencies in Cargo.toml.
@@ -213,9 +224,22 @@
 //! let c5 = try_format!(str8,"abcdef{}","ghijklmn");
 //! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 //!
-//! let mut s = <zstr<8>>::from("abcd");
-//! //s[0] = b'A';            // implements IndexMut<usize> (only for zstr)
-//! //assert_eq!(&s[..3],"Abc");
+//! #[cfg(feature = "shared-str")]
+//! {
+//!   let mut s:Sharedstr<8> = Sharedstr::from("abcd");
+//!   let mut s2 = s.clone(); // O(1) cost
+//!   s.push_char('e');
+//!   s2.set(0,'A');
+//!   assert_eq!(s2, "Abcde");
+//!   assert!(s==s2 && s.ptr_eq(&s2));
+//! }
+//!
+//! #[cfg(feature = "experimental")]
+//! {
+//!   let mut s = <zstr<8>>::from("abcd");
+//!   s[0] = b'A';       // implements IndexMut<usize> (only for zstr)
+//!   assert_eq!(&s[0..3],"Abc");
+//! }
 //! ```
 //!
 
@@ -728,9 +752,12 @@ mod tests {
         let f2 = f1.to_ascii_uppercase();
         //f1 = f2; // copy?
 
-        let mut s = <zstr<8>>::from("abcd");
-        s[0] = b'A'; // impls IndexMut for zstr (not for fstr nor strN types)
-        assert_eq!('A', s.nth_ascii(0));
+        #[cfg(feature = "experimental")]
+        {
+         let mut s = <zstr<8>>::from("abcd");
+         s[0] = b'A'; // impls IndexMut for zstr (not for fstr nor strN types)
+         assert_eq!('A', s.nth_ascii(0));
+        }
 
         use std::collections::HashMap;
         let mut hm = HashMap::new();

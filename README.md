@@ -11,7 +11,8 @@ type, is no longer enabled by default.  The `Flexstr` and `Sharedstr` types
 are also no longer enabled by default.  However, unless you
 require one of these three types, your build configuration should work
 as before.  If you already use `default-features=false`, your configuration
-should also work as before.
+should also work as before.  See the documentation for details and examples
+of how to configure your build.
 
 <br>
 
