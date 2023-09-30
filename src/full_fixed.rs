@@ -540,3 +540,4 @@ impl<const N: usize> Add<fstr<N>> for &str {
         a2
     }
 } //Add &str on left
+

@@ -44,7 +44,7 @@
 //! **CRATE OVERVIEW**
 //!
 //! The two string types that are always provided by this crate are **[zstr]** and **[tstr]**.
-//! However, `tstr` is not publicly exported by default and should be referenced
+//! However, [tstr] is not public by default and should be referenced
 //! through the type aliases [str4], [str8], [str16], ...  [str256].
 //!
 //! - A **[zstr]\<N\>** is represented by a `[u8;N]` array underneath
@@ -54,7 +54,7 @@
 //! This type is available by default and supports `#![no_std]` and serde.
 //!
 //! - The types **[str4]** through **[str256]** are aliases for internal types
-//! `tstr<4>` through `tstr<256>` respectively.  These strings are stored
+//! [tstr]\<4\> through [tstr]\<256\> respectively.  These strings are stored
 //! in `[u8;N]` arrays with the first byte holding the length of the
 //! string.  Each `tstr<N>` can store strings of up to N-1 bytes, with
 //! maximum N=256. Because Rust does not currently provide
@@ -72,8 +72,8 @@
 //! It's represented by a `[u8;N]` array and a separate usize variable
 //! holding the length.  This type is **enabled with either the `std` or
 //! `fstr` option** and some functions will print warnings to stderr when
-//! capacity is exceeded. This is is the only type that does not support
-//! `no_std`, but does support serde.
+//! capacity is exceeded. This is the only type that does not support
+//! `no_std`, but serde is supported.
 //! - The type **[cstr]**, which is **made available
 //! with the `circular-str` option**, uses a fixed u8 array
 //! that is arranged as a circular queue (aka ring buffer).  This allows
@@ -99,21 +99,17 @@
 //!
 //! **SUMMARY OF OPTIONAL FEATURES** 
 //!
-//! - *serde* : (`--features serde`); Serialization was initially contributed
+//! - ***serde*** : (`--features serde`); Serialization was initially contributed
 //!   by [wallefan](https://github.com/wallefan) and adopted to other types
 //!   (except `Sharedstr`).
-//! - *circular-str*: this feature makes available the **[cstr]** type.
-//! - *flex-str*: this feature makes available the **[Flexstr]** type.  
-//! - *shared-str*: this feature makes available the **[Sharedstr]** type.
-//! - *std`: this feature cancels `no_std` by enabling the **[fstr]** type.
+//! - ***circular-str***: this feature makes available the **[cstr]** type.
+//! - ***flex-str***: this feature makes available the **[Flexstr]** type.  
+//! - ***shared-str***: this feature makes available the **[Sharedstr]** type.
+//! - ***std***: this feature cancels `no_std` by enabling the **[fstr]** type.
 //!   An alias for this feature name is 'fstr'.
-//! - *pub-tstr*: this feature will make the tstr type public - it is not
-//!   recommended: use instead the aliases [str4] - [str256], which are
+//! - ***pub-tstr***: this feature will make the tstr type public. It is not
+//!   recommended: use instead the type aliases [str4] - [str256], which are
 //!   always available.
-//! - *experimental*: the meaning of this option may change and will include
-//!   certain experimental features.  These features currently consist of
-//!   custom Index traits for zstr.  Experimental features are not included
-//!   in the documentation.
 //!
 //!
 //! For **the smallest possible build**, just `cargo add fixedstr` in your
@@ -176,60 +172,52 @@
 //! the `+` operator, resulting in strings with twice the capacity,
 //! str8-str256.  This feature is only implemented for the strN types.
 //!
-//! Version 0.2.6-0.2.8 impls `AsRef<str>` and `AsMut<str>` traits.
-//! Functions try_make and reallocate
-//! have been added that do not truncate strings.  str4, str24 and
-//! str48 were added.  [str4] can only hold three bytes but is good enough
-//! for many types of abbreviations such as those for airports.
-
 //!  ## Examples
 //!
-//!```ignore
-//! let a:fstr<8> = fstr::from("abcdefg"); //creates fstr from &str
-//! let a1:fstr<8> = a; // copied, not moved
+//!```
+//! use fixedstr::*;
+//! let a = str8::from("abcdefg"); //creates new string from &str
+//! let a1 = a; // copied, not moved
 //! let a2:&str = a.to_str();
 //! let a3:String = a.to_string();
 //! assert_eq!(a.nth_ascii(2), 'c');
-//! let ab = a.substr(1,5);  // copies substring to new fstr
+//! let ab = a.substr(1,5);  // copies substring to new str8
 //! assert_eq!(ab,"bcde");  // can compare with &str
 //! assert_eq!(&a[1..4],"bcd"); // implements Index
 //! assert!(a<ab);  // implements Ord (and Hash, Debug, Display, other traits)
-//! let mut u:fstr<8> = fstr::from("aλb"); //unicode support
-//! for x in u.nth(1) {assert_eq!(x,'λ');} // nth returns Option<char>
+//! let mut u:zstr<8> = zstr::from("aλb"); //unicode support
+//! {assert_eq!(u.nth(1).unwrap(),'λ');} // nth returns Option<char>
 //! assert!(u.set(1,'μ'));  // changes a character of the same character class
 //! assert!(!u.set(1,'c')); // .set returns false on failure
 //! assert!(u.set(2,'c'));
 //! assert_eq!(u, "aμc");
 //! assert_eq!(u.len(),4);  // length in bytes
 //! assert_eq!(u.charlen(),3);  // length in chars
-//! let mut ac:fstr<16> = a.resize(); // copies to larger capacity string
+//! let mut ac:str16 = a.resize(); // copies to larger capacity string
 //! let remainder:&str = ac.push("hijklmnopqrst");  //appends string, returns left over
-//! assert_eq!(ac.len(),16);
-//! assert_eq!(remainder, "qrst");
+//! assert_eq!(ac.len(),15);
+//! assert_eq!(remainder, "pqrst");
 //! ac.truncate(10); // shortens string in place
 //! assert_eq!(&ac,"abcdefghij");
 //! let (upper,lower) = (str8::make("ABC"), str8::make("abc"));
-//! assert_eq!(upper, lower.to_ascii_uppercase()); // no owned String needed
+//! assert_eq!(upper, lower.to_ascii_upper()); // no owned String needed
 //!  
 //! let c1 = str8::from("abcdef"); // string concatenation with + for strN types  
-//! let c2 = str8::from("xyz123"); // this features is not available for fstr and tstr
-//! let c3 = c1 + c2;        // new in Version 0.2.10   
+//! let c2 = str8::from("xyz123"); 
+//! let c3 = c1 + c2;       
 //! assert_eq!(c3,"abcdefxyz123");   
 //! assert_eq!(c3.capacity(),15);  // type of c3 is str16
 //!
-//! // New in Version 0.2.11:
 //! let c4 = str_format!(str16,"abc {}{}{}",1,2,3); // impls core::fmt::Write
 //! assert_eq!(c4,"abc 123");  // str_format! truncates if capacity exceeded
 //! let c5 = try_format!(str8,"abcdef{}","ghijklmn");
 //! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 //!
-//! // New in Version 0.3.0:
 //! let mut s = <zstr<8>>::from("abcd");
-//! s[0] = b'A';            // implements IndexMut<usize> (only for zstr)
-//! assert_eq!(&s[0..3],"Abc");
+//! //s[0] = b'A';            // implements IndexMut<usize> (only for zstr)
+//! //assert_eq!(&s[..3],"Abc");
 //! ```
 //!
-//![zstr] and the type aliases [str4]...[str256] implement the same functions and traits as [fstr].
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -493,14 +481,13 @@ mod tests {
 
         #[cfg(feature = "std")]
         maintest();
-        #[cfg(feature = "std")]
+        #[cfg(all(feature = "flex-str", feature = "std"))]
         flextest();
         #[cfg(feature = "std")]
         tinytests();
-        #[cfg(feature = "std")]
+        #[cfg(all(feature = "std", feature = "flex-str"))]
         poppingtest();
-        #[cfg(feature = "std")]
-        #[cfg(feature = "shared-str")]
+        #[cfg(all(feature = "std", feature = "shared-str"))]
         strptrtests();
     } //testmain
 
@@ -529,7 +516,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", feature = "flex-str"))]
     fn poppingtest() {
         extern crate std;
         use std::println;
@@ -790,7 +777,7 @@ mod tests {
         assert_eq!(ac, "abcdefghi");
     } //ftr tests
 
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", feature = "flex-str"))]
     fn flextest() {
         extern crate std;
         use std::fmt::Write;

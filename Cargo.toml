@@ -20,7 +20,7 @@ pub-tstr=["pub_tstr"]
 shared-str=[]
 flex-str=[]
 circular-str=[]
-experimental=["std"]
+experimental=[]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

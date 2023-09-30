@@ -112,6 +112,7 @@ impl<const N: usize> tstr<N> {
     }
 
     /// creates an empty string, equivalent to tstr::default()
+    #[inline]    
     pub fn new() -> tstr<N> {
         tstr::make("")
     }
@@ -130,15 +131,13 @@ impl<const N: usize> tstr<N> {
     }
 
     /// returns maximum capacity in bytes
+    #[inline]    
     pub fn capacity(&self) -> usize {
         N - 1
     }
 
-    /// converts tstr to an owned string
-    // #[cfg(feature = "std")]
+    /// converts tstr to an alloc::string::string
     pub fn to_string(&self) -> alloc::string::String {
-        //let vs: alloc::vec::Vec<_> = self.chrs[1..self.len() + 1].iter().map(|x| *x).collect();
-        //alloc::string::String::from_utf8(vs).expect("Invalid utf8 string")
         alloc::string::String::from(self.as_str())
     }
 

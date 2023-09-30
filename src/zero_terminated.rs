@@ -105,8 +105,8 @@ impl<const N: usize> zstr<N> {
 
     /// Length of a `zstr<N>` string in bytes using O(n) linear search,
     /// may be useful when the string is of length n but n is known to be
-    /// much smaller than N, or when the underlying array is corrupted by
-    /// unsafe code.
+    /// much smaller than N, or when the underlying array is corrupted, such
+    /// as with the `IndexMut<usize>` trait.
     /// This function is unique to the zstr type and
     /// not available for other string types in this crate.
     pub fn linear_len(&self) -> usize {
@@ -116,6 +116,16 @@ impl<const N: usize> zstr<N> {
         }
         return i;
     } //linear_len
+
+    /// This function guarantees that there are no non-zero bytes after
+    /// the first zero, which is required by the length function.
+    pub fn clean(&mut self)  {
+      let mut n = self.linear_len();
+      while n<N {
+        self.chrs[n] = 0;
+        n += 1;
+      }
+    }//clean
 
     /// returns maximum capacity in bytes
     #[inline(always)]
@@ -637,33 +647,11 @@ impl<const N: usize> core::fmt::Write for zstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-#[cfg(all(feature = "std", feature="experimental"))]
-mod special_index {
-    extern crate std;
-    use super::*;
-    use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-    use std::ops::{RangeInclusive, RangeToInclusive};
-
-    //use core::ops::{Range,RangeFull,RangeFrom,RangeTo};
-    //use core::ops::{RangeInclusive,RangeToInclusive};
-    ///The implementation of `Index<usize>` for types `zstr<N>` is different
-    ///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
-    ///byte.  The type returned by this trait is &u8, not &str.
-    impl<const N: usize> core::ops::Index<usize> for zstr<N> {
-        type Output = u8;
-        fn index(&self, index: usize) -> &Self::Output {
-            &self.chrs[index]
-        }
-    } //impl Index
-    impl<const N: usize> core::ops::IndexMut<usize> for zstr<N> {
-        fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-            let ln = self.blen();
-            if index >= ln {
-                panic!("index {} out of range ({})", index, ln);
-            }
-            &mut self.chrs[index]
-        }
-    } //impl Index
+//#[cfg(feature = "experimental")]
+//mod special_index {
+//    use super::*;
+    use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
+    use core::ops::{RangeInclusive, RangeToInclusive};
 
     impl<const N: usize> core::ops::Index<Range<usize>> for zstr<N> {
         type Output = str;
@@ -701,7 +689,38 @@ mod special_index {
             &self.as_str()[index]
         }
     } //impl Index
-} // special_index submodule (--features experimental)
+
+// must include above to have the following ..
+
+    ///The implementation of `Index<usize>` for types `zstr<N>` is different
+    ///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
+    ///byte.  The type returned by this trait is &u8, not &str.  
+    impl<const N: usize> core::ops::Index<usize> for zstr<N> {
+        type Output = u8;
+        fn index(&self, index: usize) -> &Self::Output {
+            &self.chrs[index]
+        }
+    } //impl Index
+    
+    /// **This trait is provided with caution** as it allows arbitrary changes
+    /// to the bytes of the string.  In particular, the string can become
+    /// corrupted if a premature zero-byte is created using this function,
+    /// which invalidates the [Self::len] function.  Several other operations
+    /// such as [Self::push] depend on a correct length function.
+    impl<const N: usize> core::ops::IndexMut<usize> for zstr<N> {
+        fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+            let ln = self.blen();
+            if index >= ln {
+                panic!("index {} out of range ({})", index, ln);
+            }
+            &mut self.chrs[index]
+        }
+    } //impl IndexMut
+
+// } // special_index submodule (--features experimental)
+
+
+
 
 impl<const N: usize> Add<&str> for zstr<N> {
     type Output = zstr<N>;
