@@ -19,7 +19,7 @@ use std::string::String;
 /// **This type is only available with the `std` (or `fstr`) feature.**
 /// A `fstr<N>` is a string of up to const N bytes, using a separate variable to store the length.
 /// This type is not as memory-efficient as some other types such as str4-str256.  This is also the only type of the crate that does not support `no_std`.
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq)]
 pub struct fstr<const N: usize> {
     chrs: [u8; N],
     len: usize, // length will be <=N
@@ -541,3 +541,16 @@ impl<const N: usize> Add<fstr<N>> for &str {
     }
 } //Add &str on left
 
+
+
+impl<const N: usize> core::hash::Hash for fstr<N> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+            self.as_ref().hash(state);
+    }
+} //hash
+
+impl<const N: usize> PartialEq for fstr<N> {
+    fn eq(&self, other: &Self) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}

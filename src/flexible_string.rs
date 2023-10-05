@@ -21,25 +21,9 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
-//use crate::flexible_string::Strunion::*;
 use crate::shared_structs::Strunion;
 use crate::shared_structs::Strunion::*;
-/*
-#[derive(Eq, PartialEq, Hash)]
-enum Strunion<const N:usize>
-{
-   fixed(tstr<N>),
-   owned(String),
-}//Strunion
-impl<const N:usize> Clone for Strunion<N> {
-  fn clone(&self) -> Self {
-    match &self {
-      fixed(s) => fixed(*s),
-      owned(s) => owned(s.clone()),
-    }//match
-  }
-}//impl Clone
-*/
+
 /// **This type is only available with the `flex-str` option.**
 /// A `Flexstr<N>` is represented internally as a `tstr<N>` if the length of
 /// the string is less than N bytes, and by an owned String otherwise.
@@ -83,8 +67,7 @@ impl<const N:usize> Clone for Strunion<N> {
 ///  assert_eq!(&b,"abcdefg");
 /// ```
 ///
-
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq)]
 pub struct Flexstr<const N: usize = 32> {
     inner: Strunion<N>,
 }
@@ -694,6 +677,22 @@ impl<const N: usize> Add<Flexstr<N>> for &str {
     }
 } //Add &str on left
 
+
+
+impl<const N: usize> core::hash::Hash for Flexstr<N> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+            self.as_ref().hash(state);
+    }
+} //hash
+
+impl<const N: usize> core::cmp::PartialEq for Flexstr<N> {
+    fn eq(&self, other: &Self) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}//eq
+
+
+
 /// convenient type aliases for [Flexstr]
 pub type flexstr8 = Flexstr<8>;
 pub type flexstr16 = Flexstr<16>;
@@ -701,3 +700,4 @@ pub type flexstr32 = Flexstr<32>;
 pub type flexstr64 = Flexstr<64>;
 pub type flexstr128 = Flexstr<128>;
 pub type flexstr256 = Flexstr<256>;
+

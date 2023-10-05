@@ -53,7 +53,7 @@ use core::ops::{RangeInclusive, RangeToInclusive};
 /// ```
 /// In contrast, concatenating other string types such as zstr will always
 /// produce strings of the same type and capacity.
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq)]
 pub struct tstr<const N: usize = 256> {
     chrs: [u8; N],
 } //tstr
@@ -407,7 +407,6 @@ impl<const N: usize, const M: usize> core::convert::From<zstr<M>> for tstr<N> {
 
 impl<const N: usize> core::cmp::PartialOrd for tstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        //Some(self.chrs[0..self.len()].cmp(other.chrs[0..other.len()]))
         Some(self.cmp(other))
     }
 }
@@ -716,6 +715,22 @@ impl<const N: usize> core::fmt::Write for tstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
+
+
+impl<const N: usize> core::hash::Hash for tstr<N> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+            self.as_ref().hash(state);
+    }
+} //hash
+
+impl<const N: usize> core::cmp::PartialEq for tstr<N> {
+    fn eq(&self, other: &Self) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}
+
+
+
 /*
 impl<T:core::fmt::Display, const N:usize> ToTstr<N> for T {
   fn to_tstr(&self) -> tstr<N> {
@@ -756,3 +771,5 @@ impl<const N:usize> ToTstr<N> for i64 {
   }
 }// i64 tostr
 */
+
+

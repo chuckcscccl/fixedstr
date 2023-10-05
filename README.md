@@ -1,11 +1,11 @@
-Library for strings of fixed maximum lengths that can be copied and
-stack-allocated.  Certain provided
-types such as `zstr<8>` and `str8` are smaller in size than a &str on
-typical systems.
+Library for several alternative string types using const generics.
+Most types can be copied and stack-allocated.  Certain types such as
+`zstr<8>` and `str8` are smaller in size than a &str on typical
+systems.
 
 #### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/0.5.0/fixedstr/)
 
-The default availability of some features have changed.  The crate is now
+**The default availability of some features have changed.**  The crate is now
 `#![no_std]` by default.  The `std` option, which enables the `fstr`
 type, is no longer enabled by default.  The `Flexstr` and `Sharedstr` types
 are also no longer enabled by default.  However, unless you
@@ -16,7 +16,7 @@ of how to configure your build.
 
 <br>
 
-Recent enhancements also include additional, optional string types.
+Recent enhancements also include additional, optional string types and bug fixes.
 
 #### Examples
 ```

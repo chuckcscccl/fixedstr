@@ -59,8 +59,7 @@ use core::ops::Add;
 pub struct cstr<const N: usize = 32> {
     chrs: [u8; N],
     front: u16,
-    len: u16,
-} //cstr
+    len: u16,} //cstr
 
 impl<const N: usize> cstr<N> {
     /// create `cstr` from `&str` with silent truncation; panics if
@@ -717,18 +716,6 @@ impl<const N: usize> PartialEq<&str> for &cstr<N> {
         alen + blen == other.len() && a == &other[..alen] && (blen == 0 || b == &other[alen..])
     } //eq
 }
-
-/*
-impl<T:AsRef<str>, const N: usize> PartialEq<&T> for &cstr<N> {
-    fn eq(&self, other: &&T) -> bool {
-        let (a,b) = self.to_strs();
-        let (alen, blen) = (a.len(), b.len());
-        let oref = other.as_ref();
-        alen+blen==oref.len() &&
-          a == &oref[..alen]  &&  (blen==0 || b == &oref[alen..])
-    } //eq
-}
-*/
 
 impl<const N: usize> PartialEq<cstr<N>> for &str {
     fn eq(&self, other: &cstr<N>) -> bool {

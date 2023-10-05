@@ -40,7 +40,7 @@ extern crate std;
 ///
 /// This type supports `#![no_std]` by giving cargo the
 /// the `no-default-features` option.
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq)]
 pub struct zstr<const N: usize> {
     chrs: [u8; N],
 } //zstr
@@ -707,7 +707,8 @@ mod special_index {
 
     ///The implementation of `Index<usize>` for types `zstr<N>` is different
     ///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
-    ///byte.  The type returned by this trait is &u8, not &str.  
+    ///byte.  The type returned by this trait is &u8, not &str.  This special
+    ///trait is only available with the `experimental` feature.
     impl<const N: usize> core::ops::Index<usize> for zstr<N> {
         type Output = u8;
         fn index(&self, index: usize) -> &Self::Output {
@@ -716,7 +717,7 @@ mod special_index {
     } //impl Index
     
     /// **This trait is provided with caution**, and only with the
-    /// `experimental` feature, as it allows arbitrary changes
+    /// **`experimental`** feature, as it allows arbitrary changes
     /// to the bytes of the string.  In particular, the string can become
     /// corrupted if a premature zero-byte is created using this function,
     /// which invalidates the [Self::len] function.  Several other operations
@@ -762,3 +763,17 @@ impl<const N: usize> Add<zstr<N>> for &str {
         a2
     }
 } //Add &str on left
+
+
+
+impl<const N: usize> core::hash::Hash for zstr<N> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+            self.as_ref().hash(state);
+    }
+} //hash
+
+impl<const N: usize> core::cmp::PartialEq for zstr<N> {
+    fn eq(&self, other: &Self) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}

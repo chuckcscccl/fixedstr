@@ -13,8 +13,8 @@
 //!
 //! **COMPATIBILITY NOTICES**:
 //!
-//! > **Starting with Version 0.5.0,** the default availability of some
-//!   string types have changed.  The default configuration now gives the
+//! > **Starting with Version 0.5.0, the default availability of some
+//!   string types have changed.**  The default configuration now gives the
 //!   minimum build.  The `std`, `flex-str` and `shared-str`
 //!   options are no longer enabled by default.  The crate now
 //!   supports **`#![no_std]`** by default.  The `std` option only enables the
@@ -54,7 +54,7 @@
 //!
 //! - A **[zstr]\<N\>** is represented by a `[u8;N]` array underneath
 //!   and can hold zero-terminated, utf-8 strings of up to N-1 bytes.
-//! Furthermore, no non-zero bytes can follow the first zero, which
+//! Furthermore, no non-zero bytes can follow the first zero. This
 //! allows the length of a `zstr<N>` string to be found in O(log N) time.
 //! This type is available by default and supports `#![no_std]` and serde.
 //!
@@ -104,9 +104,10 @@
 //!
 //! **SUMMARY OF OPTIONAL FEATURES** 
 //!
-//! - ***serde*** : (`--features serde`); Serialization was initially contributed
+//! - ***serde*** : Serialization was initially contributed
 //!   by [wallefan](https://github.com/wallefan) and adopted to other types
-//!   (except `Sharedstr`).
+//!   (except `Sharedstr`).  This feature enables the Serialize/Deserialize
+//!   traits.
 //! - ***circular-str***: this feature makes available the **[cstr]** type.
 //! - ***flex-str***: this feature makes available the **[Flexstr]** type.  
 //! - ***shared-str***: this feature makes available the **[Sharedstr]** type.
@@ -123,8 +124,8 @@
 //! None of these features is provided by default, so specifying
 //! `default-features=false` has no effect.
 //!
-//! For **the smallest possible build**, just `cargo add fixedstr` in your
-//! crate or add `fixedstr = "0.5" to your dependencies in Cargo.toml.
+//! For **the smallest possible build**, just **cargo add fixedstr** in your
+//! crate or add `fixedstr = "0.5"` to your dependencies in Cargo.toml.
 //! The default build makes available the [zstr] type and the type aliases
 //! [str4] - [str256] for [tstr].  Serde is not available with this build
 //! but no_std is supported.
@@ -142,46 +143,6 @@
 //! ```
 //! Compared to previous, 0.4.x versions of the crate, these configurations
 //! are equivalent to those with the `default-features=false` additional flag.
-//!
-//! **Recent Updates:**
-//!
-//! Version 0.5.0 reset the default availability of optional features,
-//! at a cost of incompatibility with some previous build configurations.
-//!
-//! Versions 0.4.5 and 0.4.6 provided bug fixes, especially concerning the
-//! Hash trait for cstr, expanded abilities to concatenate strings. All
-//! string types except for `fstr` now support no_std.
-//!
-//! Version 0.4.4 added the optional `cstr` type.
-//!
-//! Version 0.4.3 added the optional `Sharestr` type along with other, minor
-//! enhancements.
-//!
-//! Version 0.4.2 improved the implementation of zstr to require all bytes
-//! following the first zero byte to also be zeros, which allows the length
-//! of the string to be found by binary search.  
-//!
-//! Version 0.4.0 introduced no_std support
-//!
-//! Version 0.3.2 introduced the [Flexstr] type.
-//!
-//! Version 0.3.1 implements `Deref<Target=str>` and removed
-//! some redundant procedures.  The functions `to_ascii_lowercase`
-//! and `to_ascii_uppercase` **has been renamed to `to_ascii_lower` and
-//! `to_ascii_upper`**, to avoid clash with those from the Deref trait.
-//!
-//! Version 0.2.12 includes contribution from
-//! [wallefan](https://github.com/wallefan),
-//! and added optional serde support for serialization.
-//! This feature can be enabled by giving cargo the
-//! **`--features serde`** option.
-//!
-//! Version 0.2.11 impls [core::fmt::Write], thereby enabling the [write!]
-//! macro. Also adds new macros [str_format!] and [try_format!].
-//!
-//! Version 0.2.10 allows str4-str128 strings to be concatenated with
-//! the `+` operator, resulting in strings with twice the capacity,
-//! str8-str256.  This feature is only implemented for the strN types.
 //!
 //!  ## Examples
 //!
@@ -242,6 +203,7 @@
 //! }
 //! ```
 //!
+// #![doc = document_features::document_features!()]
 
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
@@ -652,8 +614,12 @@ mod tests {
             assert_eq!(&a, "tuvwabc1");
             assert_eq!(rem, "");
             a.truncate(5);
-            let ba = "123" + a;
+            let mut ba = "123" + a;
             assert_eq!(ba, "123tuvwa");
+            ba.truncate_left(4);
+            a.truncate_left(1);
+            assert_eq!(a,ba);
+            
 
             #[cfg(feature = "std")]
             {
@@ -802,6 +768,11 @@ mod tests {
 
         assert_eq!(ac.pop_char().unwrap(), 'j');
         assert_eq!(ac, "abcdefghi");
+
+        let ac2:fstr<16> = fstr::make("abcd");
+        ac.truncate(4);
+        assert_eq!(ac,ac2);
+        
     } //ftr tests
 
     #[cfg(all(feature = "std", feature = "flex-str"))]
@@ -961,5 +932,14 @@ mod tests {
         let s = try_format!(str32, "abcdefg{}", "hijklmnop").unwrap();
         let s2 = try_format!(str8, "abcdefg{}", "hijklmnop");
         assert!(s2.is_none());
+
+        let mut c4b = str16::from("abc 12345");
+        c4b.truncate(7);
+        assert_eq!(c4,c4b);
+
+        let zb = ztr8::from("abc");
+        let mut zc = ztr8::from("abcde");
+        zc.truncate(3);
+        assert_eq!(zb,zc);
     } //tiny tests
 } //tests mod

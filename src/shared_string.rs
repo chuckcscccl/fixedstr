@@ -51,7 +51,7 @@ use core::cell::RefCell;
 /// pointer-equality.
 /// This type **does not support serde**, as expected of shared
 /// pointers.  Convert to another type of string for serialization.
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, Clone)]
 pub struct Sharedstr<const N: usize = 32> {
     inner: Rc<RefCell<Strunion<N>>>,
 }
@@ -723,6 +723,22 @@ impl<const N: usize> Add<Sharedstr<N>> for &str {
         a2
     }
 } //Add &str on left
+
+/*
+impl<const N: usize> core::hash::Hash for Sharedstr<N> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+            self.as_ref().hash(state);
+    }
+} //hash
+*/
+
+impl<const N: usize> core::cmp::PartialEq for Sharedstr<N> {
+    fn eq(&self, other: &Self) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}//eq
+
+
 
 /// convenient type aliases for [Sharedstr]
 pub type sharedstr8 = Sharedstr<8>;
