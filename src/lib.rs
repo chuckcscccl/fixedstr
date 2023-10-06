@@ -56,7 +56,6 @@
 //!   and can hold zero-terminated, utf-8 strings of up to N-1 bytes.
 //! Furthermore, no non-zero bytes can follow the first zero. This
 //! allows the length of a `zstr<N>` string to be found in O(log N) time.
-//! This type is available by default and supports `#![no_std]` and serde.
 //!
 //! - The types **[str4]** through **[str256]** are aliases for internal types
 //! [tstr]\<4\> through [tstr]\<256\> respectively.  These strings are stored
@@ -68,8 +67,6 @@
 //! default and can only be used through the aliases.  The `pub-tstr` option
 //! makes the `tstr` type public but is not recommended: any `tstr<N>` with
 //! `N>256` is not valid and will result in erroneous behavior.
-//! These type aliases are also available by default and support
-//! `#![no_std]` and serde.
 //!
 //! In addition, the following string types are available as options:
 //! 
