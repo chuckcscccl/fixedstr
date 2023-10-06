@@ -403,9 +403,9 @@ impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for tst
     }
 }
 
-#[cfg(feature = "std")]
-impl<const N: usize> core::convert::From<std::string::String> for tstr<N> {
-    fn from(s: std::string::String) -> tstr<N> {
+// #[cfg(feature = "std")]
+impl<const N: usize> core::convert::From<alloc::string::String> for tstr<N> {
+    fn from(s: alloc::string::String) -> tstr<N> {
         tstr::<N>::make(&s[..])
     }
 }
