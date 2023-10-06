@@ -319,6 +319,22 @@ impl<const N: usize> fstr<N> {
         cp.make_ascii_lowercase();
         cp
     }
+
+    /// Tests for ascii case-insensitive equality with a string slice.
+    /// This function does not check if either string is ascii.
+    pub fn case_insensitive_eq(&self, other:&str) -> bool {
+       if self.len() != other.len() { return false; }
+       let obytes = other.as_bytes();
+       for i in 0..self.len() {
+         let mut c = self.chrs[i];
+         if (c>64 && c<91) { c = c | 32; } // make lowercase
+         let mut d = obytes[i];
+         if (d>64 && d<91) { d = d | 32; } // make lowercase
+         if c!=d {return false;}
+       }//for
+       true
+    }//case_insensitive_eq
+
 } //impl fstr<N>
 
 impl<const N: usize> std::ops::Deref for fstr<N> {
@@ -548,7 +564,13 @@ impl<const N: usize> core::hash::Hash for fstr<N> {
             self.as_ref().hash(state);
     }
 } //hash
-
+/*  can't adopt because it affects type inference for .resize()
+impl<const N: usize, const M:usize> PartialEq<fstr<M>> for fstr<N> {
+    fn eq(&self, other: &fstr<M>) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}
+*/
 impl<const N: usize> PartialEq for fstr<N> {
     fn eq(&self, other: &Self) -> bool {
        self.as_ref() == other.as_ref()

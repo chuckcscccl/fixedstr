@@ -414,6 +414,22 @@ impl<const N: usize> zstr<N> {
         cp
     }
 
+
+    /// Tests for ascii case-insensitive equality with a string slice.  This
+    /// function does not check if either string is ascii.
+    pub fn case_insensitive_eq(&self, other:&str) -> bool {
+       if self.len() != other.len() { return false; }
+       let obytes = other.as_bytes();
+       for i in 0..self.len() {
+         let mut c = self.chrs[i];
+         if (c>64 && c<91) { c = c | 32; } // make lowercase
+         let mut d = obytes[i];
+         if (d>64 && d<91) { d = d | 32; } // make lowercase
+         if c!=d {return false;}
+       }//for
+       true
+    }//case_insensitive_eq
+
     // new for 0.5.0
     /// converts zstr to a raw pointer to the first byte
     pub fn to_ptr(&self) -> *const u8 {
@@ -510,7 +526,7 @@ impl<const N: usize> core::cmp::Ord for zstr<N> {
 
 impl<const M: usize> zstr<M> {
     /// converts an zstr\<M\> to an zstr\<N\>. If the length of the string being
-    /// converted is greater than N, the extra characters are ignored.
+    /// converted is greater than N-1, the extra characters are ignored.
     /// This operation produces a copy (non-destructive).
     /// Example:
     ///```ignore
@@ -771,6 +787,13 @@ impl<const N: usize> core::hash::Hash for zstr<N> {
             self.as_ref().hash(state);
     }
 } //hash
+/*
+impl<const N: usize, const M:usize> core::cmp::PartialEq<zstr<M>> for zstr<N> {
+    fn eq(&self, other: &zstr<M>) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}
+*/
 
 impl<const N: usize> core::cmp::PartialEq for zstr<N> {
     fn eq(&self, other: &Self) -> bool {

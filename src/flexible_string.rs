@@ -109,6 +109,7 @@ impl<const N: usize> Flexstr<N> {
     }
 
     /// length of the string in bytes. This is a constant-time operation.
+    #[inline]
     pub fn len(&self) -> usize {
         match &self.inner {
             fixed(s) => s.len(),
@@ -117,6 +118,7 @@ impl<const N: usize> Flexstr<N> {
     } //len
 
     /// creates an empty string, equivalent to [Flexstr::default]
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
@@ -446,7 +448,7 @@ impl<const N: usize> Flexstr<N> {
         } //match
     } //split_off
 
-    /// in-place modification of ascii characters to lower-case
+    /// in-place modification of ascii string to lower-case
     pub fn make_ascii_lowercase(&mut self) {
         match &mut self.inner {
             fixed(s) => {
@@ -458,7 +460,7 @@ impl<const N: usize> Flexstr<N> {
         } //match
     } //make_ascii_lowercase
 
-    /// in-place modification of ascii characters to upper-case
+    /// in-place modification of ascii string to upper-case
     pub fn make_ascii_uppercase(&mut self) {
         match &mut self.inner {
             fixed(s) => {
@@ -469,7 +471,26 @@ impl<const N: usize> Flexstr<N> {
             }
         } //match
     }
+
+    /// Tests for ascii case-insensitive equality with a string slice.
+    /// This function does not test if either string is ascii.
+    pub fn case_insensitive_eq(&self, other:&str) -> bool {
+       if self.len() != other.len() { return false; }
+       let obytes = other.as_bytes();
+       let sbytes = self.as_bytes();
+       for i in 0..self.len() {
+         let mut c = sbytes[i];
+         if (c>64 && c<91) { c = c | 32; } // make lowercase
+         let mut d = obytes[i];
+         if (d>64 && d<91) { d = d | 32; } // make lowercase
+         if c!=d {return false;}
+       }//for
+       true
+    }//case_insensitive_eq
+
 } //impl<N>
+
+
 
 impl<const N: usize> Default for Flexstr<N> {
     fn default() -> Self {

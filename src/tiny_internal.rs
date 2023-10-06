@@ -141,7 +141,7 @@ impl<const N: usize> tstr<N> {
         alloc::string::String::from(self.as_str())
     }
 
-    /// returns copy of u8 array underneath the tstr
+    /// returns slice of u8 array underneath the tstr
     pub fn as_bytes(&self) -> &[u8] {
         &self.chrs[1..self.len() + 1]
     }
@@ -354,7 +354,25 @@ impl<const N: usize> tstr<N> {
         cp.make_ascii_lowercase();
         cp
     }
+
+    /// Tests for ascii case-insensitive equality with a string slice.
+    /// This function does not check if either string is ascii.
+    pub fn case_insensitive_eq(&self, other:&str) -> bool {
+       if self.len() != other.len() { return false; }
+       let obytes = other.as_bytes();
+       for i in 0..self.len() {
+         let mut c = self.chrs[i+1];
+         if (c>64 && c<91) { c = c | 32; } // make lowercase
+         let mut d = obytes[i];
+         if (d>64 && d<91) { d = d | 32; } // make lowercase
+         if c!=d {return false;}
+       }//for
+       true
+    }//case_insensitive_eq
+
 } //impl tstr<N>
+
+
 
 impl<const N: usize> core::ops::Deref for tstr<N> {
     type Target = str;
@@ -419,7 +437,7 @@ impl<const N: usize> core::cmp::Ord for tstr<N> {
 
 impl<const M: usize> tstr<M> {
     /// converts an tstr\<M\> to an tstr\<N\>. If the length of the string being
-    /// converted is greater than N, the extra characters will be ignored.
+    /// converted is greater than N-1, the extra characters will be ignored.
     /// This operation produces a copy (non-destructive).
     /// Example:
     ///```ignore
@@ -723,12 +741,20 @@ impl<const N: usize> core::hash::Hash for tstr<N> {
     }
 } //hash
 
+
 impl<const N: usize> core::cmp::PartialEq for tstr<N> {
     fn eq(&self, other: &Self) -> bool {
        self.as_ref() == other.as_ref()
     }
 }
 
+/*   cannot adopt, because it affects type inference of s1 == s2.resize()
+impl<const N: usize, const M:usize> core::cmp::PartialEq<tstr<M>> for tstr<N> {
+    fn eq(&self, other: &tstr<M>) -> bool {
+       self.as_ref() == other.as_ref()
+    }
+}
+*/
 
 
 /*

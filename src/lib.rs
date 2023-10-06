@@ -551,6 +551,7 @@ mod tests {
 
         let c1 = str8::from("abcd"); // string concatenation with + for strN types
         let c2 = str8::from("xyz");
+        assert!(c2.case_insensitive_eq("XYz"));
         let mut c3 = c1 + c2;
         assert_eq!(c3, "abcdxyz");
         assert_eq!(c3.capacity(), 15); // type of c3 is str16
@@ -637,7 +638,7 @@ mod tests {
         let a: zstr<8> = zstr::from("abcdefg"); //creates zstr from &str
         let ab = a.substr(1, 5); // copies, not move substring to new string
         assert_eq!(ab, "bcde"); // can compare equality with &str
-                                //println!("zstr: {}", &a);
+        assert!(ab.case_insensitive_eq("bCdE"));
         let mut u: zstr<8> = zstr::from("aλb"); //unicode support
         assert!(u.set(1, 'μ')); // changes a character of the same character class
         assert!(!u.set(1, 'c')); // .set returns false on failure

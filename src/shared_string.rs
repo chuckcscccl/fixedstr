@@ -517,6 +517,23 @@ impl<const N: usize> Sharedstr<N> {
             }
         } //match
     }
+    
+    /// Tests for ascii case-insensitive equality with a string slice.
+    /// This function does not test if either string is ascii.
+    pub fn case_insensitive_eq(&self, other:&str) -> bool {
+       if self.len() != other.len() { return false; }
+       let obytes = other.as_bytes();
+       let sbytes = self.as_bytes();
+       for i in 0..self.len() {
+         let mut c = sbytes[i];
+         if (c>64 && c<91) { c = c | 32; } // make lowercase
+         let mut d = obytes[i];
+         if (d>64 && d<91) { d = d | 32; } // make lowercase
+         if c!=d {return false;}
+       }//for
+       true
+    }//case_insensitive_eq
+
 } //impl Sharedstr
 
 impl<const N: usize> Default for Sharedstr<N> {
@@ -558,11 +575,13 @@ impl<const N: usize> core::ops::Deref for Sharedstr<N> {
     }
 }
 
+/*
 impl<const N: usize> core::hash::Hash for Sharedstr<N> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         (&*self.inner.borrow()).hash(state)
     }
 } //hash
+*/
 
 impl<T: AsRef<str> + ?Sized, const N: usize> core::convert::From<&T> for Sharedstr<N> {
     fn from(s: &T) -> Self {
@@ -724,13 +743,13 @@ impl<const N: usize> Add<Sharedstr<N>> for &str {
     }
 } //Add &str on left
 
-/*
+
 impl<const N: usize> core::hash::Hash for Sharedstr<N> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
             self.as_ref().hash(state);
     }
 } //hash
-*/
+
 
 impl<const N: usize> core::cmp::PartialEq for Sharedstr<N> {
     fn eq(&self, other: &Self) -> bool {

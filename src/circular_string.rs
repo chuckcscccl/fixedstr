@@ -617,6 +617,21 @@ impl<const N: usize> cstr<N> {
         }
     } //make_ascii_uppercase
 
+
+    /// tests for ascii case-insensitive equality with a string slice.
+    pub fn case_insensitive_eq(&self, other:&str) -> bool {
+       if self.len() != other.len() { return false; }
+       let obytes = other.as_bytes();
+       for i in 0..self.len() {
+         let mut c = self.chrs[(self.front as usize + i)%N];
+         if (c>64 && c<91) { c = c | 32; } // make lowercase
+         let mut d = obytes[i];
+         if (d>64 && d<91) { d = d | 32; } // make lowercase
+         if c!=d {return false;}
+       }//for
+       true
+    }//case_insensitive_eq
+
     /*
     /// returns an str slice representation by possibly calling
     /// [Self::reset] first, which is expensive.
@@ -754,8 +769,18 @@ impl<'a> Iterator for CircCharIter<'a> {
     } //next
 } // impl CircCharIter
 
-impl<const N: usize> PartialEq for cstr<N> {
-    fn eq(&self, other: &Self) -> bool {
+/// The implementation of this trait allows comparison between
+/// circular strings of different capacity.  This could affect the
+/// type inference of the [cstr::resize] function.
+impl<const N: usize, const M:usize> PartialEq<cstr<M>> for cstr<N> {
+    fn eq(&self, other: &cstr<M>) -> bool {
+      if self.len != other.len {return false;}
+      for i in 0 .. self.len {
+        if self.chrs[(self.front+i) as usize % N] 
+           != other.chrs[(other.front+i) as usize % M] { return false; }
+      }//for
+      true
+      /*
         let mut schars = self.chars();
         let mut ochars = other.chars();
         loop {
@@ -770,6 +795,7 @@ impl<const N: usize> PartialEq for cstr<N> {
             } //match
         } //loop
         true
+      */
     } //eq for Self
 } // PartialEq
 impl<const N: usize> Eq for cstr<N> {}
