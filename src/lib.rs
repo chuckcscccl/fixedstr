@@ -142,7 +142,7 @@
 //! but no_std is supported, substituting some std features with those from the
 //! alloc crate.
 //!
-//! For **the smallest possible build**, do **cargo add fixedstr --features no-alloc**
+//! For **the smallest possible build**, do **`cargo add fixedstr --features no-alloc`**
 //! in your crate or add the following in Cargo.toml.
 //! ```ignore
 //!   [dependencies]
