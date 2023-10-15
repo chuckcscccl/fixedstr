@@ -135,7 +135,7 @@
 //!
 //! **SAMPLE BUILD CONFIGURATIONS**
 //!
-//! The simplest way to install this create is to **cargo add fixedstr** in your
+//! The simplest way to install this create is to **`cargo add fixedstr`** in your
 //! crate or add `fixedstr = "0.5"` to your dependencies in Cargo.toml.
 //! The default build makes available the [zstr] type and the type aliases
 //! [str4] - [str256] for [tstr].  Serde is not available with this build
@@ -154,10 +154,10 @@
 //!   [dependencies]
 //!   fixedstr = {version="0.5", features=["serde","no-alloc"]}
 //! ```
-//! and to exclude `cstr` but include all other features (except `experimental`):
+//! and to exclude `cstr` but include all other features (except `no-alloc`):
 //! ```ignore
 //!   [dependencies]
-//!   fixedstr = {version="0.5", features=["std","flex-str","shared-str","serde","pub-tstr"]}
+//!   fixedstr = {version="0.5", features=["std","flex-str","shared-str","serde","pub-tstr","experimental"]}
 //! ```
 //! Compared to previous, 0.4.x versions of the crate, these configurations
 //! are equivalent to those with the `default-features=false` additional flag.
