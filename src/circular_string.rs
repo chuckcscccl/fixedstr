@@ -577,7 +577,7 @@ impl<const N: usize> cstr<N> {
     #[cfg(not(feature = "no-alloc"))]
     pub fn to_string(&self) -> alloc::string::String {
         let (a, b) = self.to_strs();
-        let mut s = String::from(a);
+        let mut s = alloc::string::String::from(a);
         if b.len() > 0 {
             s.push_str(b);
         }

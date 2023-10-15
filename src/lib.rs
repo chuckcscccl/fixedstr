@@ -7,16 +7,16 @@
 //!  -  Most types (except the optional [Flexstr] and [Sharedstr]) can be
 //!    copied and stack-allocated.
 //!  -  `#![no_std]` is supported by all but the optional [fstr] type.  Additionally,
-//!     features that use the [alloc] crate can also be optionally excluded.
+//!     features that use the alloc crate can also be optionally excluded.
 //!  -  Unicode is supported by all but the optional [cstr] type.
 //!  -  Serde serialization is supported by all but the optional [Sharedstr] type.
 //!
 //!
 //! **COMPATIBILITY NOTICES**:
 //!
-//! > **Starting with Version 0.5.0, the default availability of some
-//!   string types have changed.**  The default configuration now gives the
-//!   minimum build.  The `std`, `flex-str` and `shared-str`
+//! > **With Version 0.5.0, the default availability of some
+//!   string types have changed.**  The default configuration is minimalized.
+//!   The `std`, `flex-str` and `shared-str`
 //!   options are no longer enabled by default.  The crate now
 //!   supports **`#![no_std]`** by default.  The `std` option only enables the
 //!   [fstr] type, which prints warnings to stderr. **However,** unless
@@ -29,14 +29,14 @@
 //!   zstr's `Index<usize>` and `IndexMut<usize>` traits, which allow
 //!   arbitrary modifications to underlying bytes, is now only available
 //!   with the optional `experimental` feature.  Previously, they were
-//!   available as a default feature.
+//!   available as default features.
 //!
 //! **Other Important Recent Updates:**
 //!
 //! >  **Version 0.5.1 introduced the new *`no-alloc`* option**.  In addition to support
 //!    for no_std (for all but the fstr type), this option disables compilation of
 //!    any features that use the alloc crate.  This may make some no_std implementations
-//!    easier. 
+//!    easier. The default build is no longer minimal (see below).
 //!
 //! >  As of Version 0.4.6, all string types except for `fstr` support
 //! **`#![no_std]`**.
@@ -119,11 +119,12 @@
 //! - ***pub-tstr***: this feature will make the tstr type public. It is not
 //!   recommended: use instead the type aliases [str4] - [str256], which are
 //!   always available.
-//! - **NEW IN VERSION 0.5.1**: ***no-alloc***: this feature disables any features that requires the [alloc] (or std)
+//! - **NEW IN VERSION 0.5.1**: ***no-alloc***: this feature disables any features that requires the alloc (or std)
 //!   crate.  It will disable *entirely* the fstr, Flexstr and Sharedstr types: using
 //!   `no-alloc` together with `flex-str`, for example, will not enable the Flexstr type.
 //!   It also disables the features in [tstr], [zstr] and [cstr] that require the
-//!   alloc create, in particular any use of [alloc::string::String].
+//!   alloc crate, in particular any use of alloc::string::String.  Using this feature
+//!   is *stronger than no_std*.
 //! - ***experimental***: the meaning of this feature may change.  Currently
 //!   it implements custom Indexing traits for the zstr type, including
 //!   `IndexMut<usize>`, which allows individual bytes to be changed
@@ -132,17 +133,26 @@
 //! None of these features is provided by default, so specifying
 //! `default-features=false` has no effect.
 //!
-//! For **the smallest possible build**, just **cargo add fixedstr** in your
+//! **SAMPLE BUILD CONFIGURATIONS**
+//!
+//! The simplest way to install this create is to **cargo add fixedstr** in your
 //! crate or add `fixedstr = "0.5"` to your dependencies in Cargo.toml.
 //! The default build makes available the [zstr] type and the type aliases
 //! [str4] - [str256] for [tstr].  Serde is not available with this build
-//! but no_std is supported.
+//! but no_std is supported, substituting some std features with those from the
+//! alloc crate.
 //!
-//! To enable serde serialization and add the `cstr` type, 
-//! add the following instead to your Cargo.toml:
+//! For **the smallest possible build**, do **cargo add fixedstr --features no-alloc**
+//! in your crate or add the following in Cargo.toml.
 //! ```ignore
 //!   [dependencies]
-//!   fixedstr = {version="0.5", features=["serde","circular-str"]}
+//!   fixedstr = {version="0.5", features=["no-alloc"]}
+//! ```
+//!
+//! To further enable serde serialization, add the following instead:
+//! ```ignore
+//!   [dependencies]
+//!   fixedstr = {version="0.5", features=["serde","no-alloc"]}
 //! ```
 //! and to exclude `cstr` but include all other features (except `experimental`):
 //! ```ignore
