@@ -3,10 +3,11 @@
 //!
 //!  - The size of some types such as [str8] and [zstr]\<8\>
 //!    are 8 bytes, compared to 16 bytes for `&str` on 64bit systems,
-//!    providing possibly more efficient ways of representing small strings.
+//!    providing more efficient ways of representing small strings.
 //!  -  Most types (except the optional [Flexstr] and [Sharedstr]) can be
 //!    copied and stack-allocated.
-//!  -  `#![no_std]` is supported by all but the optional [fstr] type.
+//!  -  `#![no_std]` is supported by all but the optional [fstr] type.  Additionally,
+//!     features that use the [alloc] crate can also be optionally excluded.
 //!  -  Unicode is supported by all but the optional [cstr] type.
 //!  -  Serde serialization is supported by all but the optional [Sharedstr] type.
 //!
@@ -31,6 +32,11 @@
 //!   available as a default feature.
 //!
 //! **Other Important Recent Updates:**
+//!
+//! >  **Version 0.5.1 introduced the new *`no-alloc`* option**.  In addition to support
+//!    for no_std (for all but the fstr type), this option disables compilation of
+//!    any features that use the alloc crate.  This may make some no_std implementations
+//!    easier. 
 //!
 //! >  As of Version 0.4.6, all string types except for `fstr` support
 //! **`#![no_std]`**.
@@ -113,6 +119,11 @@
 //! - ***pub-tstr***: this feature will make the tstr type public. It is not
 //!   recommended: use instead the type aliases [str4] - [str256], which are
 //!   always available.
+//! - **NEW IN VERSION 0.5.1**: ***no-alloc***: this feature disables any features that requires the [alloc] (or std)
+//!   crate.  It will disable *entirely* the fstr, Flexstr and Sharedstr types: using
+//!   `no-alloc` together with `flex-str`, for example, will not enable the Flexstr type.
+//!   It also disables the features in [tstr], [zstr] and [cstr] that require the
+//!   alloc create, in particular any use of [alloc::string::String].
 //! - ***experimental***: the meaning of this feature may change.  Currently
 //!   it implements custom Indexing traits for the zstr type, including
 //!   `IndexMut<usize>`, which allows individual bytes to be changed
@@ -183,6 +194,7 @@
 //! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 //!
 //! #[cfg(feature = "shared-str")]
+//! #[cfg(not(feature = "no-alloc"))]
 //! {
 //!   let mut s:Sharedstr<8> = Sharedstr::from("abcd");
 //!   let mut s2 = s.clone(); // O(1) cost
@@ -214,24 +226,31 @@
 #![no_std]
 
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 mod full_fixed;
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 pub use full_fixed::*;
 
 //#[cfg(feature = "flex-str")]
 //mod shared_structs;
 
+#[cfg(not(feature = "no-alloc"))]
 #[cfg(any(feature = "shared-str", feature = "flex-str"))]
 mod shared_structs;
 
 #[cfg(feature = "flex-str")]
+#[cfg(not(feature = "no-alloc"))]
 mod flexible_string;
 #[cfg(feature = "flex-str")]
+#[cfg(not(feature = "no-alloc"))]
 pub use flexible_string::*;
 
 #[cfg(feature = "shared-str")]
+#[cfg(not(feature = "no-alloc"))]
 mod shared_string;
 #[cfg(feature = "shared-str")]
+#[cfg(not(feature = "no-alloc"))]
 pub use shared_string::*;
 
 mod zero_terminated;
@@ -278,8 +297,10 @@ mod serde_support {
     generate_impl!(zstr, ZstrVisitor);
     generate_impl!(tstr, TstrVisitor);
     #[cfg(feature = "std")]
+    #[cfg(not(feature = "no-alloc"))]
     generate_impl!(fstr, FstrVisitor);
     #[cfg(feature = "flex-str")]
+    #[cfg(not(feature = "no-alloc"))]
     generate_impl!(Flexstr, FlexstrVisitor);
 
     #[cfg(feature = "circular-str")]
@@ -463,19 +484,25 @@ mod tests {
         ztests();
 
         #[cfg(feature = "std")]
+        #[cfg(not(feature = "no-alloc"))]
         maintest();
         #[cfg(all(feature = "flex-str", feature = "std"))]
+        #[cfg(not(feature = "no-alloc"))]
         flextest();
         #[cfg(feature = "std")]
+	#[cfg(not(feature = "no-alloc"))]
         tinytests();
         #[cfg(all(feature = "std", feature = "flex-str"))]
+	#[cfg(not(feature = "no-alloc"))]
         poppingtest();
         #[cfg(all(feature = "std", feature = "shared-str"))]
+	#[cfg(not(feature = "no-alloc"))]
         strptrtests();
     } //testmain
 
     #[cfg(feature = "std")]
     #[cfg(feature = "shared-str")]
+    #[cfg(not(feature = "no-alloc"))]
     fn strptrtests() {
         extern crate std;
         use std::fmt::Write;
@@ -500,6 +527,7 @@ mod tests {
     }
 
     #[cfg(all(feature = "std", feature = "flex-str"))]
+    #[cfg(not(feature = "no-alloc"))]
     fn poppingtest() {
         extern crate std;
         use std::println;
@@ -671,6 +699,7 @@ mod tests {
     } //ztr tests
 
     #[cfg(feature = "std")]
+    #[cfg(not(feature = "no-alloc"))]
     fn maintest() {
         extern crate std;
         use std::fmt::Write;
@@ -736,6 +765,7 @@ mod tests {
     } //maintest
 
     #[cfg(feature = "std")]
+    #[cfg(not(feature = "no-alloc"))]
     fn ftests() {
         extern crate std;
         use std::{println, string::String};
@@ -774,6 +804,7 @@ mod tests {
     } //ftr tests
 
     #[cfg(all(feature = "std", feature = "flex-str"))]
+    #[cfg(not(feature = "no-alloc"))]
     fn flextest() {
         extern crate std;
         use std::fmt::Write;
@@ -838,6 +869,7 @@ mod tests {
     } //flextest
 
     #[cfg(feature = "std")]
+    #[cfg(not(feature = "no-alloc"))]
     fn tinytests() {
         extern crate std;
         use std::fmt::Write;

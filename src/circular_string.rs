@@ -9,8 +9,8 @@
 //! fixed strings with circular-queue backing
 
 use core::cmp::{min, Ordering, PartialOrd};
+#[cfg(not(feature = "no-alloc"))]
 extern crate alloc;
-use alloc::string::String;
 use core::ops::Add;
 
 /// **This type is only available with the `circular-str` option.**
@@ -574,7 +574,8 @@ impl<const N: usize> cstr<N> {
     }
 
     /// converts cstr to an owned string
-    pub fn to_string(&self) -> String {
+    #[cfg(not(feature = "no-alloc"))]
+    pub fn to_string(&self) -> alloc::string::String {
         let (a, b) = self.to_strs();
         let mut s = String::from(a);
         if b.len() > 0 {

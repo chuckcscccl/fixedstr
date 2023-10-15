@@ -20,6 +20,7 @@
 #![allow(dead_code)]
 
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 use crate::fstr;
 
 use crate::tstr;
@@ -165,6 +166,7 @@ impl<const N: usize> zstr<N> {
 
     /// converts zstr to an owned string
     // #[cfg(feature = "std")]
+    #[cfg(not(feature = "no-alloc"))]
     pub fn to_string(&self) -> alloc::string::String {
         alloc::string::String::from(self.as_str())
     }
@@ -493,12 +495,14 @@ impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for zst
 }
 
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize> std::convert::From<std::string::String> for zstr<N> {
     fn from(s: std::string::String) -> zstr<N> {
         zstr::<N>::make(&s[..])
     }
 }
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> std::convert::From<fstr<M>> for zstr<N> {
     fn from(s: fstr<M>) -> zstr<N> {
         zstr::<N>::make(s.to_str())
@@ -597,6 +601,7 @@ impl<const N: usize> Default for zstr<N> {
     }
 }
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
     fn eq(&self, other: &zstr<N>) -> bool {
         other.as_str() == self.to_str()
@@ -604,13 +609,16 @@ impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
 }
 
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
     fn eq(&self, other: &fstr<N>) -> bool {
         other.to_str() == self.as_str()
     }
 }
 
+
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for zstr<M> {
     fn eq(&self, other: &&fstr<N>) -> bool {
         other.to_str() == self.as_str()

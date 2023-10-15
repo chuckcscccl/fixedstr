@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"
@@ -21,6 +21,7 @@ shared-str=[]
 flex-str=[]
 circular-str=[]
 experimental=[]
+no-alloc=[]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

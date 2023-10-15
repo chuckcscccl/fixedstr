@@ -3,9 +3,15 @@ Most types can be copied and stack-allocated.  Certain types such as
 `zstr<8>` and `str8` are smaller in size than a &str on typical
 systems.
 
+#### IMPORTANT CHANGES FOR [Version 0.5.1](https://docs.rs/fixedstr/0.5.1/fixedstr/)
+
+**The *no-alloc* build option has been added.**  In addition to no_std, this feature
+will disable compilation of any features the require the alloc crate, in particular
+alloc::string::String.
+
 #### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/0.5.0/fixedstr/)
 
-**The default availability of some features have changed. The crate
+**The default availability of some features have changed.** The crate
 is now `#![no_std]` by default.  The `std` option, which enables the
 `fstr` type, is no longer enabled by default.  The `Flexstr` and
 `Sharedstr` types are also no longer enabled by default.  However,
@@ -13,7 +19,7 @@ unless you require one of these three types, your build configuration
 should most likely work as before.  If you already use
 `default-features=false`, your configuration should also work as
 before.  See the documentation for details and examples of how to
-configure your build.**
+configure your build.
 
 <br>
 
