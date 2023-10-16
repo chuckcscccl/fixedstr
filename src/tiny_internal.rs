@@ -42,7 +42,7 @@ use core::ops::{RangeInclusive, RangeToInclusive};
 /// 256 bytes for it uses the first byte of a u8 array to hold the length of
 /// the string.  The tstr type can be made directly public with the
 /// **`pub-tstr` option**.
-/// This type supports `#![no_std]` and serde.
+/// This type supports the `#![no_std]` and serde options.
 ///
 /// A feature unique to the tstr type aliases is the ability to concatenate
 /// strings by generating higher-capacity types. Concatenating two strN
