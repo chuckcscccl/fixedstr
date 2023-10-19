@@ -9,10 +9,12 @@
 
 #[cfg(feature = "std")]
 extern crate std;
+
 use crate::tiny_internal::*;
 use crate::zero_terminated::*;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
+use core::str::FromStr;
 use std::eprintln;
 use std::string::String;
 
@@ -386,6 +388,19 @@ impl<const N: usize> std::cmp::Ord for fstr<N> {
     }
 }
 
+
+impl<const N: usize> FromStr for fstr<N> {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() <= N {
+            Ok(Self::create(s))
+        } else {
+            Err(())
+        }
+    }
+}
+
+
 impl<const M: usize> fstr<M> {
     /// converts an fstr\<M\> to an fstr\<N\>. If the length of the string being
     /// converted is greater than N, the extra characters are ignored.
@@ -574,5 +589,31 @@ impl<const N: usize, const M:usize> PartialEq<fstr<M>> for fstr<N> {
 impl<const N: usize> PartialEq for fstr<N> {
     fn eq(&self, other: &Self) -> bool {
        self.as_ref() == other.as_ref()
+    }
+}
+
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+
+    #[test]
+    fn test_from_str_success() {
+        const N: usize = 42;
+        let test_string = "some string short enough";
+        assert!(test_string.len() <= N);
+        let s = fstr::<N>::from_str(test_string);
+        assert!(s.is_ok());
+        assert_eq!(s.unwrap(), test_string);
+    }
+
+
+    #[test]
+    fn test_from_str_failure() {
+        const N: usize = 6;
+        let test_string = "some string too long";
+        assert!(test_string.len() > N);
+        let s = fstr::<N>::from_str(test_string);
+        assert!(s.is_err());
     }
 }
