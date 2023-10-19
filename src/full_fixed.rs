@@ -9,7 +9,6 @@
 
 #[cfg(feature = "std")]
 extern crate std;
-
 use crate::tiny_internal::*;
 use crate::zero_terminated::*;
 use core::cmp::{min, Ordering};
