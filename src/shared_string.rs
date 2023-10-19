@@ -139,7 +139,8 @@ impl<const N: usize> Sharedstr<N> {
     /// Note that since the `tstr` type is not exported, this function should
     /// be used in conjunction with one of the public aliases [str4]-[str256].
     /// For example,
-    /// ```ignore
+    /// ```
+    ///   # use fixedstr::*;
     ///   let s = Sharedstr::<8>::from("abcd");
     ///   let t:str8 = s.get_str().unwrap();
     /// ```
@@ -517,23 +518,30 @@ impl<const N: usize> Sharedstr<N> {
             }
         } //match
     }
-    
+
     /// Tests for ascii case-insensitive equality with a string slice.
     /// This function does not test if either string is ascii.
-    pub fn case_insensitive_eq(&self, other:&str) -> bool {
-       if self.len() != other.len() { return false; }
-       let obytes = other.as_bytes();
-       let sbytes = self.as_bytes();
-       for i in 0..self.len() {
-         let mut c = sbytes[i];
-         if (c>64 && c<91) { c = c | 32; } // make lowercase
-         let mut d = obytes[i];
-         if (d>64 && d<91) { d = d | 32; } // make lowercase
-         if c!=d {return false;}
-       }//for
-       true
-    }//case_insensitive_eq
-
+    pub fn case_insensitive_eq(&self, other: &str) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        let obytes = other.as_bytes();
+        let sbytes = self.as_bytes();
+        for i in 0..self.len() {
+            let mut c = sbytes[i];
+            if (c > 64 && c < 91) {
+                c = c | 32;
+            } // make lowercase
+            let mut d = obytes[i];
+            if (d > 64 && d < 91) {
+                d = d | 32;
+            } // make lowercase
+            if c != d {
+                return false;
+            }
+        } //for
+        true
+    } //case_insensitive_eq
 } //impl Sharedstr
 
 impl<const N: usize> Default for Sharedstr<N> {
@@ -743,21 +751,17 @@ impl<const N: usize> Add<Sharedstr<N>> for &str {
     }
 } //Add &str on left
 
-
 impl<const N: usize> core::hash::Hash for Sharedstr<N> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-            self.as_ref().hash(state);
+        self.as_ref().hash(state);
     }
 } //hash
 
-
 impl<const N: usize> core::cmp::PartialEq for Sharedstr<N> {
     fn eq(&self, other: &Self) -> bool {
-       self.as_ref() == other.as_ref()
+        self.as_ref() == other.as_ref()
     }
-}//eq
-
-
+} //eq
 
 /// convenient type aliases for [Sharedstr]
 pub type sharedstr8 = Sharedstr<8>;

@@ -59,7 +59,8 @@ use core::ops::Add;
 pub struct cstr<const N: usize = 32> {
     chrs: [u8; N],
     front: u16,
-    len: u16,} //cstr
+    len: u16,
+} //cstr
 
 impl<const N: usize> cstr<N> {
     /// create `cstr` from `&str` with silent truncation; panics if
@@ -618,20 +619,27 @@ impl<const N: usize> cstr<N> {
         }
     } //make_ascii_uppercase
 
-
     /// tests for ascii case-insensitive equality with a string slice.
-    pub fn case_insensitive_eq(&self, other:&str) -> bool {
-       if self.len() != other.len() { return false; }
-       let obytes = other.as_bytes();
-       for i in 0..self.len() {
-         let mut c = self.chrs[(self.front as usize + i)%N];
-         if (c>64 && c<91) { c = c | 32; } // make lowercase
-         let mut d = obytes[i];
-         if (d>64 && d<91) { d = d | 32; } // make lowercase
-         if c!=d {return false;}
-       }//for
-       true
-    }//case_insensitive_eq
+    pub fn case_insensitive_eq(&self, other: &str) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        let obytes = other.as_bytes();
+        for i in 0..self.len() {
+            let mut c = self.chrs[(self.front as usize + i) % N];
+            if (c > 64 && c < 91) {
+                c = c | 32;
+            } // make lowercase
+            let mut d = obytes[i];
+            if (d > 64 && d < 91) {
+                d = d | 32;
+            } // make lowercase
+            if c != d {
+                return false;
+            }
+        } //for
+        true
+    } //case_insensitive_eq
 
     /*
     /// returns an str slice representation by possibly calling
@@ -773,30 +781,35 @@ impl<'a> Iterator for CircCharIter<'a> {
 /// The implementation of this trait allows comparison between
 /// circular strings of different capacity.  This could affect the
 /// type inference of the [cstr::resize] function.
-impl<const N: usize, const M:usize> PartialEq<cstr<M>> for cstr<N> {
+impl<const N: usize, const M: usize> PartialEq<cstr<M>> for cstr<N> {
     fn eq(&self, other: &cstr<M>) -> bool {
-      if self.len != other.len {return false;}
-      for i in 0 .. self.len {
-        if self.chrs[(self.front+i) as usize % N] 
-           != other.chrs[(other.front+i) as usize % M] { return false; }
-      }//for
-      true
-      /*
-        let mut schars = self.chars();
-        let mut ochars = other.chars();
-        loop {
-            match (schars.next(), ochars.next()) {
-                (None, None) => {
-                    break;
-                }
-                (Some(x), Some(y)) if x == y => {}
-                _ => {
-                    return false;
-                }
-            } //match
-        } //loop
+        if self.len != other.len {
+            return false;
+        }
+        for i in 0..self.len {
+            if self.chrs[(self.front + i) as usize % N]
+                != other.chrs[(other.front + i) as usize % M]
+            {
+                return false;
+            }
+        } //for
         true
-      */
+        /*
+          let mut schars = self.chars();
+          let mut ochars = other.chars();
+          loop {
+              match (schars.next(), ochars.next()) {
+                  (None, None) => {
+                      break;
+                  }
+                  (Some(x), Some(y)) if x == y => {}
+                  _ => {
+                      return false;
+                  }
+              } //match
+          } //loop
+          true
+        */
     } //eq for Self
 } // PartialEq
 impl<const N: usize> Eq for cstr<N> {}
@@ -993,11 +1006,15 @@ impl<const N: usize> Add for cstr<N> {
     }
 } //Add &str
 
-impl<const N:usize> core::str::FromStr for cstr<N> {
-  type Err = &'static str;
-  fn from_str(s:&str) -> Result<Self,Self::Err> {
-    if N>0 && s.len()<=N {Ok(cstr::from(s))} else {Err("Parse cstr Error: capacity exceeded")}
-  }
+impl<const N: usize> core::str::FromStr for cstr<N> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if N > 0 && s.len() <= N {
+            Ok(cstr::from(s))
+        } else {
+            Err("Parse cstr Error: capacity exceeded")
+        }
+    }
 }
 
 /*

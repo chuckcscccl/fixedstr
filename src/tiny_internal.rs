@@ -35,7 +35,7 @@ use core::cmp::{min, Ordering};
 use core::ops::{Add, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 use core::ops::{RangeInclusive, RangeToInclusive};
 
-/// **This structure is normally only accessible through the 
+/// **This structure is normally only accessible through the
 /// public types [str4] through [str256].**  These types alias internal
 /// types [tstr]\<4\> through [tstr]\<256\> respectively.  The purpose here
 /// is to guarantee that the maximum size of the structure does not exceed
@@ -116,7 +116,7 @@ impl<const N: usize> tstr<N> {
     }
 
     /// creates an empty string, equivalent to tstr::default()
-    #[inline]    
+    #[inline]
     pub fn new() -> tstr<N> {
         tstr::make("")
     }
@@ -135,13 +135,13 @@ impl<const N: usize> tstr<N> {
     }
 
     /// returns maximum capacity in bytes
-    #[inline]    
+    #[inline]
     pub fn capacity(&self) -> usize {
         N - 1
     }
 
     /// converts tstr to an alloc::string::string
-    #[cfg(not(feature = "no-alloc"))]    
+    #[cfg(not(feature = "no-alloc"))]
     pub fn to_string(&self) -> alloc::string::String {
         alloc::string::String::from(self.as_str())
     }
@@ -362,22 +362,27 @@ impl<const N: usize> tstr<N> {
 
     /// Tests for ascii case-insensitive equality with a string slice.
     /// This function does not check if either string is ascii.
-    pub fn case_insensitive_eq(&self, other:&str) -> bool {
-       if self.len() != other.len() { return false; }
-       let obytes = other.as_bytes();
-       for i in 0..self.len() {
-         let mut c = self.chrs[i+1];
-         if (c>64 && c<91) { c = c | 32; } // make lowercase
-         let mut d = obytes[i];
-         if (d>64 && d<91) { d = d | 32; } // make lowercase
-         if c!=d {return false;}
-       }//for
-       true
-    }//case_insensitive_eq
-
+    pub fn case_insensitive_eq(&self, other: &str) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        let obytes = other.as_bytes();
+        for i in 0..self.len() {
+            let mut c = self.chrs[i + 1];
+            if (c > 64 && c < 91) {
+                c = c | 32;
+            } // make lowercase
+            let mut d = obytes[i];
+            if (d > 64 && d < 91) {
+                d = d | 32;
+            } // make lowercase
+            if c != d {
+                return false;
+            }
+        } //for
+        true
+    } //case_insensitive_eq
 } //impl tstr<N>
-
-
 
 impl<const N: usize> core::ops::Deref for tstr<N> {
     type Target = str;
@@ -741,26 +746,27 @@ impl<const N: usize> core::fmt::Write for tstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-
-
 impl<const N: usize> core::hash::Hash for tstr<N> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-            self.as_ref().hash(state);
+        self.as_ref().hash(state);
     }
 } //hash
 
-
 impl<const N: usize> core::cmp::PartialEq for tstr<N> {
     fn eq(&self, other: &Self) -> bool {
-       self.as_ref() == other.as_ref()
+        self.as_ref() == other.as_ref()
     }
 }
 
-impl<const N:usize> core::str::FromStr for tstr<N> {
-  type Err = &'static str;
-  fn from_str(s:&str) -> Result<Self,Self::Err> {
-    if N>0 && N<257 && s.len()<N {Ok(tstr::from(s))} else {Err("Parse tstr Error: capacity exceeded")}
-  }
+impl<const N: usize> core::str::FromStr for tstr<N> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if N > 0 && N < 257 && s.len() < N {
+            Ok(tstr::from(s))
+        } else {
+            Err("Parse tstr Error: capacity exceeded")
+        }
+    }
 }
 
 /*   cannot adopt, because it affects type inference of s1 == s2.resize()
@@ -770,7 +776,6 @@ impl<const N: usize, const M:usize> core::cmp::PartialEq<tstr<M>> for tstr<N> {
     }
 }
 */
-
 
 /*
 impl<T:core::fmt::Display, const N:usize> ToTstr<N> for T {
@@ -812,5 +817,3 @@ impl<const N:usize> ToTstr<N> for i64 {
   }
 }// i64 tostr
 */
-
-

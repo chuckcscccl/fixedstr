@@ -25,7 +25,7 @@
 //!   smaller.  If `default-features=false` is already part of your
 //!   configuration, it should also work as before.
 //!
-//! > Another change that could potentially affect backwards compatibility is that 
+//! > Another change that could potentially affect backwards compatibility is that
 //!   zstr's `Index<usize>` and `IndexMut<usize>` traits, which allow
 //!   arbitrary modifications to underlying bytes, is now only available
 //!   with the optional `experimental` feature.  Previously, they were
@@ -75,7 +75,7 @@
 //! `N>256` is not valid and will result in erroneous behavior.
 //!
 //! In addition, the following string types are available as options:
-//! 
+//!
 //! - A **[fstr]\<N\>** stores a string of up to N bytes.
 //! It's represented by a `[u8;N]` array and a separate usize variable
 //! holding the length.  This type is **enabled with either the `std` or
@@ -105,7 +105,7 @@
 //!   mutated.  This type does not implement `Copy` but `Clone` is done
 //!   in constant time.  no_std is supported but **not serde**.
 //!
-//! **SUMMARY OF OPTIONAL FEATURES** 
+//! **SUMMARY OF OPTIONAL FEATURES**
 //!
 //! - ***serde*** : Serialization was initially contributed
 //!   by [wallefan](https://github.com/wallefan) and adopted to other types
@@ -193,7 +193,7 @@
 //! assert_eq!(upper, lower.to_ascii_upper()); // no owned String needed
 //!  
 //! let c1 = str8::from("abcdef"); // string concatenation with + for strN types  
-//! let c2 = str8::from("xyz123"); 
+//! let c2 = str8::from("xyz123");
 //! let c3 = c1 + c2;       
 //! assert_eq!(c3,"abcdefxyz123");   
 //! assert_eq!(c3.capacity(),15);  // type of c3 is str16
@@ -232,7 +232,6 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-
 #![no_std]
 
 #[cfg(feature = "std")]
@@ -500,13 +499,13 @@ mod tests {
         #[cfg(not(feature = "no-alloc"))]
         flextest();
         #[cfg(feature = "std")]
-	#[cfg(not(feature = "no-alloc"))]
+        #[cfg(not(feature = "no-alloc"))]
         tinytests();
         #[cfg(all(feature = "std", feature = "flex-str"))]
-	#[cfg(not(feature = "no-alloc"))]
+        #[cfg(not(feature = "no-alloc"))]
         poppingtest();
         #[cfg(all(feature = "std", feature = "shared-str"))]
-	#[cfg(not(feature = "no-alloc"))]
+        #[cfg(not(feature = "no-alloc"))]
         strptrtests();
     } //testmain
 
@@ -654,8 +653,7 @@ mod tests {
             assert_eq!(ba, "123tuvwa");
             ba.truncate_left(4);
             a.truncate_left(1);
-            assert_eq!(a,ba);
-            
+            assert_eq!(a, ba);
 
             #[cfg(feature = "std")]
             {
@@ -757,9 +755,9 @@ mod tests {
 
         #[cfg(feature = "experimental")]
         {
-         let mut s = <zstr<8>>::from("abcd");
-         s[0] = b'A'; // impls IndexMut for zstr (not for fstr nor strN types)
-         assert_eq!('A', s.nth_ascii(0));
+            let mut s = <zstr<8>>::from("abcd");
+            s[0] = b'A'; // impls IndexMut for zstr (not for fstr nor strN types)
+            assert_eq!('A', s.nth_ascii(0));
         }
 
         use std::collections::HashMap;
@@ -807,10 +805,9 @@ mod tests {
         assert_eq!(ac.pop_char().unwrap(), 'j');
         assert_eq!(ac, "abcdefghi");
 
-        let ac2:fstr<16> = fstr::make("abcd");
+        let ac2: fstr<16> = fstr::make("abcd");
         ac.truncate(4);
-        assert_eq!(ac,ac2);
-        
+        assert_eq!(ac, ac2);
     } //ftr tests
 
     #[cfg(all(feature = "std", feature = "flex-str"))]
@@ -975,11 +972,11 @@ mod tests {
 
         let mut c4b = str16::from("abc 12345");
         c4b.truncate(7);
-        assert_eq!(c4,c4b);
+        assert_eq!(c4, c4b);
 
         let zb = ztr8::from("abc");
         let mut zc = ztr8::from("abcde");
         zc.truncate(3);
-        assert_eq!(zb,zc);
+        assert_eq!(zb, zc);
     } //tiny tests
 } //tests mod

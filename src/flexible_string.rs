@@ -16,13 +16,13 @@ use crate::zstr;
 #[cfg(feature = "std")]
 use crate::fstr;
 
+use crate::shared_structs::Strunion;
+use crate::shared_structs::Strunion::*;
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
-use crate::shared_structs::Strunion;
-use crate::shared_structs::Strunion::*;
 
 /// **This type is only available with the `flex-str` option.**
 /// A `Flexstr<N>` is represented internally as a `tstr<N>` if the length of
@@ -474,23 +474,28 @@ impl<const N: usize> Flexstr<N> {
 
     /// Tests for ascii case-insensitive equality with a string slice.
     /// This function does not test if either string is ascii.
-    pub fn case_insensitive_eq(&self, other:&str) -> bool {
-       if self.len() != other.len() { return false; }
-       let obytes = other.as_bytes();
-       let sbytes = self.as_bytes();
-       for i in 0..self.len() {
-         let mut c = sbytes[i];
-         if (c>64 && c<91) { c = c | 32; } // make lowercase
-         let mut d = obytes[i];
-         if (d>64 && d<91) { d = d | 32; } // make lowercase
-         if c!=d {return false;}
-       }//for
-       true
-    }//case_insensitive_eq
-
+    pub fn case_insensitive_eq(&self, other: &str) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        let obytes = other.as_bytes();
+        let sbytes = self.as_bytes();
+        for i in 0..self.len() {
+            let mut c = sbytes[i];
+            if (c > 64 && c < 91) {
+                c = c | 32;
+            } // make lowercase
+            let mut d = obytes[i];
+            if (d > 64 && d < 91) {
+                d = d | 32;
+            } // make lowercase
+            if c != d {
+                return false;
+            }
+        } //for
+        true
+    } //case_insensitive_eq
 } //impl<N>
-
-
 
 impl<const N: usize> Default for Flexstr<N> {
     fn default() -> Self {
@@ -698,21 +703,17 @@ impl<const N: usize> Add<Flexstr<N>> for &str {
     }
 } //Add &str on left
 
-
-
 impl<const N: usize> core::hash::Hash for Flexstr<N> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-            self.as_ref().hash(state);
+        self.as_ref().hash(state);
     }
 } //hash
 
 impl<const N: usize> core::cmp::PartialEq for Flexstr<N> {
     fn eq(&self, other: &Self) -> bool {
-       self.as_ref() == other.as_ref()
+        self.as_ref() == other.as_ref()
     }
-}//eq
-
-
+} //eq
 
 /// convenient type aliases for [Flexstr]
 pub type flexstr8 = Flexstr<8>;
@@ -721,4 +722,3 @@ pub type flexstr32 = Flexstr<32>;
 pub type flexstr64 = Flexstr<64>;
 pub type flexstr128 = Flexstr<128>;
 pub type flexstr256 = Flexstr<256>;
-

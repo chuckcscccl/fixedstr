@@ -121,25 +121,31 @@ impl<const N: usize> zstr<N> {
     /// properly zero-terminated, with no non-zero bytes after the first
     /// zero.  Returns false if there's a problem.
     pub fn check_integrity(&self) -> bool {
-       let mut n = self.linear_len();
-       if n==N {return false;}
-       while n<N {
-          if self.chrs[n] !=0 {return false;}
-          n += 1;
-       }//while
-       true
-    }//check_integrity
+        let mut n = self.linear_len();
+        if n == N {
+            return false;
+        }
+        while n < N {
+            if self.chrs[n] != 0 {
+                return false;
+            }
+            n += 1;
+        } //while
+        true
+    } //check_integrity
 
     /// Guarantees that the underlying array of the zstr is
     /// properly zero-terminated, with no non-zero bytes after the first zero.
     pub fn clean(&mut self) {
-       let mut n = self.linear_len();
-       if n==N {self.chrs[n-1] = 0;}
-       while n<N {
-          self.chrs[n] = 0;
-          n += 1;
-       }//while      
-    }//clean
+        let mut n = self.linear_len();
+        if n == N {
+            self.chrs[n - 1] = 0;
+        }
+        while n < N {
+            self.chrs[n] = 0;
+            n += 1;
+        } //while
+    } //clean
 
     /// returns maximum capacity in bytes
     #[inline(always)]
@@ -416,53 +422,56 @@ impl<const N: usize> zstr<N> {
         cp
     }
 
-
     /// Tests for ascii case-insensitive equality with a string slice.  This
     /// function does not check if either string is ascii.
-    pub fn case_insensitive_eq(&self, other:&str) -> bool {
-       if self.len() != other.len() { return false; }
-       let obytes = other.as_bytes();
-       for i in 0..self.len() {
-         let mut c = self.chrs[i];
-         if (c>64 && c<91) { c = c | 32; } // make lowercase
-         let mut d = obytes[i];
-         if (d>64 && d<91) { d = d | 32; } // make lowercase
-         if c!=d {return false;}
-       }//for
-       true
-    }//case_insensitive_eq
+    pub fn case_insensitive_eq(&self, other: &str) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        let obytes = other.as_bytes();
+        for i in 0..self.len() {
+            let mut c = self.chrs[i];
+            if (c > 64 && c < 91) {
+                c = c | 32;
+            } // make lowercase
+            let mut d = obytes[i];
+            if (d > 64 && d < 91) {
+                d = d | 32;
+            } // make lowercase
+            if c != d {
+                return false;
+            }
+        } //for
+        true
+    } //case_insensitive_eq
 
     // new for 0.5.0
     /// converts zstr to a raw pointer to the first byte
     pub fn to_ptr(&self) -> *const u8 {
-      let ptr = &self.chrs[0] as *const u8;
-      ptr
-      //ptr as *const char
+        let ptr = &self.chrs[0] as *const u8;
+        ptr
+        //ptr as *const char
     }
 
     /// Converts zstr to a mutable pointer to the first byte.
     pub fn to_ptr_mut(&mut self) -> *mut u8 {
-      &mut self.chrs[0] as *mut u8
+        &mut self.chrs[0] as *mut u8
     }
 
     /// Creates a zstr from a raw pointer by copying bytes until the
     /// first zero is encountered or when maximum capacity (N-1) is reached.
-    pub unsafe fn from_ptr(mut ptr:*const u8) -> Self {
-      let mut z = zstr::new();
-      let mut i = 0;
-      while *ptr!=0 && i+1 < N {
-        z.chrs[i] = *ptr;
-        ptr = (ptr as usize + 1) as *const u8;
-        i += 1;
-      }//while
-      z.chrs[i] = 0;
-      z
-    }//unsafe from_raw
-
-
+    pub unsafe fn from_ptr(mut ptr: *const u8) -> Self {
+        let mut z = zstr::new();
+        let mut i = 0;
+        while *ptr != 0 && i + 1 < N {
+            z.chrs[i] = *ptr;
+            ptr = (ptr as usize + 1) as *const u8;
+            i += 1;
+        } //while
+        z.chrs[i] = 0;
+        z
+    } //unsafe from_raw
 } //impl zstr<N>
-
-
 
 impl<const N: usize> core::ops::Deref for zstr<N> {
     type Target = str;
@@ -616,7 +625,6 @@ impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
     }
 }
 
-
 #[cfg(feature = "std")]
 #[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for zstr<M> {
@@ -727,7 +735,7 @@ mod special_index {
         }
     } //impl Index
 
-// must include above to have the following ..
+    // must include above to have the following ..
 
     ///The implementation of `Index<usize>` for types `zstr<N>` is different
     ///from that of `fstr<N>` and `tstr<N>`, to allow `IndexMut` on a single
@@ -739,7 +747,7 @@ mod special_index {
             &self.chrs[index]
         }
     } //impl Index
-    
+
     /// **This trait is provided with caution**, and only with the
     /// **`experimental`** feature, as it allows arbitrary changes
     /// to the bytes of the string.  In particular, the string can become
@@ -755,11 +763,7 @@ mod special_index {
             &mut self.chrs[index]
         }
     } //impl IndexMut
-
 } // special_index submodule (--features experimental)
-
-
-
 
 impl<const N: usize> Add<&str> for zstr<N> {
     type Output = zstr<N>;
@@ -788,32 +792,32 @@ impl<const N: usize> Add<zstr<N>> for &str {
     }
 } //Add &str on left
 
-
-
 impl<const N: usize> core::hash::Hash for zstr<N> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-            self.as_ref().hash(state);
+        self.as_ref().hash(state);
     }
 } //hash
-/*
-impl<const N: usize, const M:usize> core::cmp::PartialEq<zstr<M>> for zstr<N> {
-    fn eq(&self, other: &zstr<M>) -> bool {
-       self.as_ref() == other.as_ref()
-    }
-}
-*/
+  /*
+  impl<const N: usize, const M:usize> core::cmp::PartialEq<zstr<M>> for zstr<N> {
+      fn eq(&self, other: &zstr<M>) -> bool {
+         self.as_ref() == other.as_ref()
+      }
+  }
+  */
 
 impl<const N: usize> core::cmp::PartialEq for zstr<N> {
     fn eq(&self, other: &Self) -> bool {
-       self.as_ref() == other.as_ref()
+        self.as_ref() == other.as_ref()
     }
 }
 
-
-impl<const N:usize> core::str::FromStr for zstr<N> {
-  type Err = &'static str;
-  fn from_str(s:&str) -> Result<Self,Self::Err> {
-    if N>0 && s.len()<N {Ok(zstr::from(s))} else {Err("Parse zstr Error: capacity exceeded")}
-  }
+impl<const N: usize> core::str::FromStr for zstr<N> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if N > 0 && s.len() < N {
+            Ok(zstr::from(s))
+        } else {
+            Err("Parse zstr Error: capacity exceeded")
+        }
+    }
 } // don't know what's the point, given the from function already exists.
-
