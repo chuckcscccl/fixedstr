@@ -817,7 +817,7 @@ impl<const N: usize> core::str::FromStr for zstr<N> {
         if N > 0 && s.len() < N {
             Ok(zstr::from(s))
         } else {
-            Err("Parse zstr Error: capacity exceeded")
+            Err("Parse Error: capacity exceeded")
         }
     }
 } // don't know what's the point, given the from function already exists.

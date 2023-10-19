@@ -119,12 +119,12 @@
 //! - ***pub-tstr***: this feature will make the tstr type public. It is not
 //!   recommended: use instead the type aliases [str4] - [str256], which are
 //!   always available.
-//! - **NEW IN VERSION 0.5.1**: ***no-alloc***: this feature disables any features that requires the alloc (or std)
+//! - **no-alloc**: this *anti-feature* disables any features that requires the alloc (or std)
 //!   crate.  It will disable *entirely* the fstr, Flexstr and Sharedstr types: using
 //!   `no-alloc` together with `flex-str`, for example, will not enable the Flexstr type.
 //!   It also disables the features in [tstr], [zstr] and [cstr] that require the
 //!   alloc crate, in particular any use of alloc::string::String.  Using this feature
-//!   is *stronger than no_std*.
+//!   is *stronger than no_std*.  Note that when compiled with the `all-features` option, this feature will be included.
 //! - ***experimental***: the meaning of this feature may change.  Currently
 //!   it implements custom Indexing traits for the zstr type, including
 //!   `IndexMut<usize>`, which allows individual bytes to be changed
@@ -159,8 +159,10 @@
 //!   [dependencies]
 //!   fixedstr = {version="0.5", features=["std","flex-str","shared-str","serde","pub-tstr","experimental"]}
 //! ```
-//! Compared to previous, 0.4.x versions of the crate, these configurations
-//! are equivalent to those with the `default-features=false` additional flag.
+//!
+//! **Do not** install this crate with the `--all-features` option unless you
+//! understand that it would include `no-alloc`, which will disable several
+//! types and other features of the crate.
 //!
 //!  ## Examples
 //!

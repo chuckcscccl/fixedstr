@@ -764,7 +764,7 @@ impl<const N: usize> core::str::FromStr for tstr<N> {
         if N > 0 && N < 257 && s.len() < N {
             Ok(tstr::from(s))
         } else {
-            Err("Parse tstr Error: capacity exceeded")
+            Err("Parse Error: capacity exceeded")
         }
     }
 }

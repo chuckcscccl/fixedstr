@@ -588,7 +588,7 @@ impl<const N: usize> core::str::FromStr for fstr<N> {
         if N > 0 && s.len() <= N {
             Ok(fstr::from(s))
         } else {
-            Err("Parse fstr Error: capacity exceeded")
+            Err("Parse Error: capacity exceeded")
         }
     }
 }

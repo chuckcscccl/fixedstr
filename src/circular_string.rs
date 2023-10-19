@@ -1012,7 +1012,7 @@ impl<const N: usize> core::str::FromStr for cstr<N> {
         if N > 0 && s.len() <= N {
             Ok(cstr::from(s))
         } else {
-            Err("Parse cstr Error: capacity exceeded")
+            Err("Parse Error: capacity exceeded")
         }
     }
 }
