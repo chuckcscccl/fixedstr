@@ -756,6 +756,13 @@ impl<const N: usize> core::cmp::PartialEq for tstr<N> {
     }
 }
 
+impl<const N:usize> core::str::FromStr for tstr<N> {
+  type Err = &'static str;
+  fn from_str(s:&str) -> Result<Self,Self::Err> {
+    if N>0 && N<257 && s.len()<N {Ok(tstr::from(s))} else {Err("Parse tstr Error: capacity exceeded")}
+  }
+}
+
 /*   cannot adopt, because it affects type inference of s1 == s2.resize()
 impl<const N: usize, const M:usize> core::cmp::PartialEq<tstr<M>> for tstr<N> {
     fn eq(&self, other: &tstr<M>) -> bool {

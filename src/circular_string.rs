@@ -993,6 +993,13 @@ impl<const N: usize> Add for cstr<N> {
     }
 } //Add &str
 
+impl<const N:usize> core::str::FromStr for cstr<N> {
+  type Err = &'static str;
+  fn from_str(s:&str) -> Result<Self,Self::Err> {
+    if N>0 && s.len()<=N {Ok(cstr::from(s))} else {Err("Parse cstr Error: capacity exceeded")}
+  }
+}
+
 /*
 ////////// fast x % n for n that are powers of 2
 #[inline(always)]
