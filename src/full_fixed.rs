@@ -320,13 +320,15 @@ impl<const N: usize> fstr<N> {
         cp
     }
 
-    /// Tests for ascii case-insensitive equality with a string slice.
+    /// Tests for ascii case-insensitive equality with another string.
     /// This function does not check if either string is ascii.
-    pub fn case_insensitive_eq(&self, other: &str) -> bool {
-        if self.len() != other.len() {
+    pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
+      where TA : AsRef<str>
+      {
+        if self.len() != other.as_ref().len() {
             return false;
         }
-        let obytes = other.as_bytes();
+        let obytes = other.as_ref().as_bytes();
         for i in 0..self.len() {
             let mut c = self.chrs[i];
             if (c > 64 && c < 91) {
@@ -362,6 +364,15 @@ impl<T: AsMut<str> + ?Sized, const N: usize> std::convert::From<&mut T> for fstr
     }
 }
 
+/*  
+//generic, but "conflicts with crate 'core'
+impl<const N: usize, TA:AsRef<str>> std::convert::From<TA> for fstr<N> {
+    fn from(s: TA) -> fstr<N> {
+        fstr::<N>::make(s.as_ref())
+    }
+}
+*/
+
 impl<const N: usize> std::convert::From<String> for fstr<N> {
     fn from(s: String) -> fstr<N> {
         fstr::<N>::make(&s[..])
@@ -382,7 +393,6 @@ impl<const N: usize, const M: usize> std::convert::From<tstr<M>> for fstr<N> {
 
 impl<const N: usize> std::cmp::PartialOrd for fstr<N> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        //Some(self.chrs[0..self.len].cmp(other.chrs[0..other.len]))
         Some(self.cmp(other))
     }
 }
@@ -537,11 +547,11 @@ impl<const N: usize> core::fmt::Write for fstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-impl<const N: usize> Add<&str> for fstr<N> {
+impl<const N: usize, TA:AsRef<str>> Add<TA> for fstr<N> {
     type Output = fstr<N>;
-    fn add(self, other: &str) -> fstr<N> {
+    fn add(self, other: TA) -> fstr<N> {
         let mut a2 = self;
-        a2.push(other);
+        a2.push(other.as_ref());
         a2
     }
 } //Add &str

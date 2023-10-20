@@ -38,9 +38,6 @@ extern crate std;
 /// [utf8 encodings](https://www.ibm.com/docs/en/db2/11.5?topic=support-unicode-character-encoding)
 /// of unicode characters allow single null bytes to be distinguished as
 /// end-of-string.
-///
-/// This type supports `#![no_std]` by giving cargo the
-/// the `no-default-features` option.
 #[derive(Copy, Clone, Eq)]
 pub struct zstr<const N: usize> {
     chrs: [u8; N],
@@ -422,13 +419,15 @@ impl<const N: usize> zstr<N> {
         cp
     }
 
-    /// Tests for ascii case-insensitive equality with a string slice.  This
-    /// function does not check if either string is ascii.
-    pub fn case_insensitive_eq(&self, other: &str) -> bool {
-        if self.len() != other.len() {
+    /// Tests for ascii case-insensitive equality with another string.
+    /// This function does not check if either string is ascii.
+    pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
+      where TA : AsRef<str>
+      {
+        if self.len() != other.as_ref().len() {
             return false;
         }
-        let obytes = other.as_bytes();
+        let obytes = other.as_ref().as_bytes();
         for i in 0..self.len() {
             let mut c = self.chrs[i];
             if (c > 64 && c < 91) {
@@ -453,7 +452,10 @@ impl<const N: usize> zstr<N> {
         //ptr as *const char
     }
 
-    /// Converts zstr to a mutable pointer to the first byte.
+    /// Converts zstr to a mutable pointer to the first byte.  Although
+    /// technically not 'unsafe', this function can be used to alter
+    /// the underlying representation so that there are non-zero values
+    /// after the first zero.  Use with care.
     pub fn to_ptr_mut(&mut self) -> *mut u8 {
         &mut self.chrs[0] as *mut u8
     }
@@ -765,6 +767,15 @@ mod special_index {
     } //impl IndexMut
 } // special_index submodule (--features experimental)
 
+impl<const N: usize,TA:AsRef<str>> Add<TA> for zstr<N> {
+    type Output = zstr<N>;
+    fn add(self, other: TA) -> zstr<N> {
+        let mut a2 = self;
+        a2.push(other.as_ref());
+        a2
+    }
+} //Add &str
+/*
 impl<const N: usize> Add<&str> for zstr<N> {
     type Output = zstr<N>;
     fn add(self, other: &str) -> zstr<N> {
@@ -773,7 +784,7 @@ impl<const N: usize> Add<&str> for zstr<N> {
         a2
     }
 } //Add &str
-
+*/
 impl<const N: usize> Add<&zstr<N>> for &str {
     type Output = zstr<N>;
     fn add(self, other: &zstr<N>) -> zstr<N> {

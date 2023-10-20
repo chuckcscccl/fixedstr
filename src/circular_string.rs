@@ -619,12 +619,15 @@ impl<const N: usize> cstr<N> {
         }
     } //make_ascii_uppercase
 
-    /// tests for ascii case-insensitive equality with a string slice.
-    pub fn case_insensitive_eq(&self, other: &str) -> bool {
-        if self.len() != other.len() {
+    /// Tests for ascii case-insensitive equality with another string.
+    /// This function does not check if the argument is ascii.
+    pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
+      where TA:AsRef<str>
+      {
+        if self.len() != other.as_ref().len() {
             return false;
         }
-        let obytes = other.as_bytes();
+        let obytes = other.as_ref().as_bytes();
         for i in 0..self.len() {
             let mut c = self.chrs[(self.front as usize + i) % N];
             if (c > 64 && c < 91) {
@@ -954,14 +957,14 @@ impl<const N: usize> core::fmt::Write for cstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-impl<const N: usize> Add<&str> for cstr<N> {
+impl<const N: usize, TA:AsRef<str>> Add<TA> for cstr<N> {
     type Output = cstr<N>;
-    fn add(self, other: &str) -> cstr<N> {
+    fn add(self, other: TA) -> cstr<N> {
         let mut a2 = self;
-        a2.push_str(other);
+        a2.push_str(other.as_ref());
         a2
     }
-} //Add &str
+} //Add AsRef<str>
 
 impl<const N: usize> Add<&cstr<N>> for &str {
     type Output = cstr<N>;
@@ -1004,7 +1007,7 @@ impl<const N: usize> Add for cstr<N> {
         }
         a2
     }
-} //Add &str
+} //Add
 
 impl<const N: usize> core::str::FromStr for cstr<N> {
     type Err = &'static str;

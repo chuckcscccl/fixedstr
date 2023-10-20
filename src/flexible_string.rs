@@ -472,13 +472,15 @@ impl<const N: usize> Flexstr<N> {
         } //match
     }
 
-    /// Tests for ascii case-insensitive equality with a string slice.
+    /// Tests for ascii case-insensitive equality with another string.
     /// This function does not test if either string is ascii.
-    pub fn case_insensitive_eq(&self, other: &str) -> bool {
-        if self.len() != other.len() {
+    pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
+      where TA:AsRef<str>
+      {
+        if self.len() != other.as_ref().len() {
             return false;
         }
-        let obytes = other.as_bytes();
+        let obytes = other.as_ref().as_bytes();
         let sbytes = self.as_bytes();
         for i in 0..self.len() {
             let mut c = sbytes[i];
@@ -662,13 +664,13 @@ impl<const N:usize> Add for &Flexstr<N> {
 }//Add
 */
 
-impl<const N: usize> Add<&str> for &Flexstr<N> {
+impl<const N: usize, TA:AsRef<str>> Add<TA> for &Flexstr<N> {
     type Output = Flexstr<N>;
-    fn add(self, other: &str) -> Self::Output {
-        match (&self.inner, other) {
+    fn add(self, other: TA) -> Self::Output {
+        match (&self.inner, other.as_ref()) {
             (owned(a), b) => {
                 let mut a2 = a.clone();
-                a2.push_str(other);
+                a2.push_str(other.as_ref());
                 Flexstr { inner: owned(a2) }
             }
             (fixed(a), b) if a.len() + b.len() >= N => {

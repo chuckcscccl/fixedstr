@@ -42,7 +42,6 @@ use core::ops::{RangeInclusive, RangeToInclusive};
 /// 256 bytes for it uses the first byte of a u8 array to hold the length of
 /// the string.  The tstr type can be made directly public with the
 /// **`pub-tstr` option**.
-/// This type supports the `#![no_std]` and serde options.
 ///
 /// A feature unique to the tstr type aliases is the ability to concatenate
 /// strings by generating higher-capacity types. Concatenating two strN
@@ -360,13 +359,15 @@ impl<const N: usize> tstr<N> {
         cp
     }
 
-    /// Tests for ascii case-insensitive equality with a string slice.
+    /// Tests for ascii case-insensitive equality with another string.
     /// This function does not check if either string is ascii.
-    pub fn case_insensitive_eq(&self, other: &str) -> bool {
-        if self.len() != other.len() {
+    pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
+      where TA : AsRef<str>
+      {
+        if self.len() != other.as_ref().len() {
             return false;
         }
-        let obytes = other.as_bytes();
+        let obytes = other.as_ref().as_bytes();
         for i in 0..self.len() {
             let mut c = self.chrs[i + 1];
             if (c > 64 && c < 91) {
@@ -698,6 +699,17 @@ impl Add for str96 {
         cat
     }
 } //Add
+
+/* conflicting impl
+impl<const N: usize,TA:AsRef<str>> Add<TA> for tstr<N> {
+    type Output = tstr<N>;
+    fn add(self, other: TA) -> tstr<N> {
+        let mut a2 = self;
+        a2.push(other.as_ref());
+        a2
+    }
+} //Add &str
+*/
 
 impl<const N: usize> Add<&str> for tstr<N> {
     type Output = tstr<N>;

@@ -587,7 +587,9 @@ mod tests {
 
         let c1 = str8::from("abcd"); // string concatenation with + for strN types
         let c2 = str8::from("xyz");
-        assert!(c2.case_insensitive_eq("XYz"));
+        assert!(c2.case_insensitive_eq("XyZ"));
+        let c2b = str16::from("xYz");
+        assert!(c2.case_insensitive_eq(&c2b));        
         let mut c3 = c1 + c2;
         assert_eq!(c3, "abcdxyz");
         assert_eq!(c3.capacity(), 15); // type of c3 is str16
