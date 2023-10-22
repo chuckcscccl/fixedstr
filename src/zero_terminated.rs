@@ -832,4 +832,4 @@ impl<const N: usize> core::str::FromStr for zstr<N> {
             Err("capacity exceeded")
         }
     }
-} // don't know what's the point, given the from function already exists.
+}
