@@ -69,11 +69,6 @@ impl<const N: usize> tstr<N> {
         let mut chars = [0u8; N];
         let bytes = s.as_bytes(); // &[u8]
         let blen = bytes.len();
-        /*
-        if (blen >= N) {
-            eprintln!("!Fixedstr Warning in str::make: length of string literal \"{}\" exceeds the capacity of type str{}; string truncated",s,N);
-        }
-        */
         let limit = min(N - 1, blen);
         chars[1..limit + 1].copy_from_slice(&bytes[..limit]);
         chars[0] = limit as u8;

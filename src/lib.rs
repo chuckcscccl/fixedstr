@@ -48,7 +48,7 @@
 //! >  Starting in Version 0.4.0, warnings about
 //! capacity being exceeded are only sent to stderr when using the fstr type.
 //! For other types, truncation is done silently. Consider using the
-//! `try_make` function to avoid silent truncation.
+//! `try_make` function or the [core::str::FromStr] trait.
 //!
 //! <hr>
 //!

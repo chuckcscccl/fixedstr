@@ -154,7 +154,7 @@ impl<const N: usize> fstr<N> {
         for c in s.chars() {
             let clen = c.len_utf8();
             c.encode_utf8(&mut buf);
-            if i <= N - clen {
+            if i+clen <= N {
                 self.chrs[i..i + clen].clone_from_slice(&buf[..clen]);
                 /*
                 for k in 0..clen

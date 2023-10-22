@@ -46,26 +46,26 @@ impl<const N: usize> zstr<N> {
     /// creates a new `zstr<N>` with given &str.  If the length of s exceeds
     /// N, the extra characters are ignored.
     /// This function is also called by
-    /// several others including [zstr::from].  This function can now handle
-    /// utf8 strings properly.
+    /// several others including [zstr::from].
     pub fn make(s: &str) -> zstr<N> {
         let mut chars = [0u8; N];
         let bytes = s.as_bytes(); // &[u8]
         let mut i = 0;
-        let limit = min(N - 1, bytes.len());
+        let limit = if N == 0 { 0 } else { min(N - 1, bytes.len()) };
         chars[..limit].clone_from_slice(&bytes[..limit]);
         zstr { chrs: chars }
     } //make
 
     /// alias for [zstr::make]
+    #[inline]
     pub fn create(s: &str) -> zstr<N> {
         Self::make(s)
     }
 
-    /// version of make that returns the same string in an `Err(_)` if
+    /// version of make that returns the original string in an `Err(_)` if
     /// truncation is requried, or in an `Ok(_)` if no truncation is required
     pub fn try_make(s: &str) -> Result<zstr<N>, &str> {
-        if s.len() > N - 1 {
+        if s.len() + 1 > N {
             Err(s)
         } else {
             Ok(zstr::make(s))
@@ -86,7 +86,7 @@ impl<const N: usize> zstr<N> {
     pub fn from_raw(s: &[u8]) -> zstr<N> {
         let mut z = zstr { chrs: [0; N] };
         let mut i = 0;
-        while i < N - 1 && i < s.len() && s[i] != 0 {
+        while i + 1 < N && i < s.len() && s[i] != 0 {
             z.chrs[i] = s[i];
             i += 1;
         }
@@ -147,6 +147,9 @@ impl<const N: usize> zstr<N> {
     /// returns maximum capacity in bytes
     #[inline(always)]
     pub fn capacity(&self) -> usize {
+        if N == 0 {
+            return 0;
+        }
         N - 1
     }
 
@@ -578,10 +581,15 @@ impl<const M: usize> zstr<M> {
     ///```
     pub fn resize<const N: usize>(&self) -> zstr<N> {
         let slen = self.blen();
-        let length = if (slen < N - 1) { slen } else { N - 1 };
+        let length = if slen + 1 < N {
+            slen
+        } else if N == 0 {
+            0
+        } else {
+            N - 1
+        };
         let mut chars = [0u8; N];
         chars[..length].clone_from_slice(&self.chrs[..length]);
-        //for i in 0..length {chars[i] = self.chrs[i];}
         zstr { chrs: chars }
     } //resize
 
