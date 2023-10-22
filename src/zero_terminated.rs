@@ -422,8 +422,9 @@ impl<const N: usize> zstr<N> {
     /// Tests for ascii case-insensitive equality with another string.
     /// This function does not check if either string is ascii.
     pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
-      where TA : AsRef<str>
-      {
+    where
+        TA: AsRef<str>,
+    {
         if self.len() != other.as_ref().len() {
             return false;
         }
@@ -767,7 +768,7 @@ mod special_index {
     } //impl IndexMut
 } // special_index submodule (--features experimental)
 
-impl<const N: usize,TA:AsRef<str>> Add<TA> for zstr<N> {
+impl<const N: usize, TA: AsRef<str>> Add<TA> for zstr<N> {
     type Output = zstr<N>;
     fn add(self, other: TA) -> zstr<N> {
         let mut a2 = self;
@@ -775,16 +776,16 @@ impl<const N: usize,TA:AsRef<str>> Add<TA> for zstr<N> {
         a2
     }
 } //Add &str
-/*
-impl<const N: usize> Add<&str> for zstr<N> {
-    type Output = zstr<N>;
-    fn add(self, other: &str) -> zstr<N> {
-        let mut a2 = self;
-        a2.push(other);
-        a2
-    }
-} //Add &str
-*/
+  /*
+  impl<const N: usize> Add<&str> for zstr<N> {
+      type Output = zstr<N>;
+      fn add(self, other: &str) -> zstr<N> {
+          let mut a2 = self;
+          a2.push(other);
+          a2
+      }
+  } //Add &str
+  */
 impl<const N: usize> Add<&zstr<N>> for &str {
     type Output = zstr<N>;
     fn add(self, other: &zstr<N>) -> zstr<N> {

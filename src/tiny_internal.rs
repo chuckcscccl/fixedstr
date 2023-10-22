@@ -362,8 +362,9 @@ impl<const N: usize> tstr<N> {
     /// Tests for ascii case-insensitive equality with another string.
     /// This function does not check if either string is ascii.
     pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
-      where TA : AsRef<str>
-      {
+    where
+        TA: AsRef<str>,
+    {
         if self.len() != other.as_ref().len() {
             return false;
         }

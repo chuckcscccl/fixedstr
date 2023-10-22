@@ -522,8 +522,9 @@ impl<const N: usize> Sharedstr<N> {
     /// Tests for ascii case-insensitive equality with another string.
     /// This function does not test if either string is ascii.
     pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
-      where TA:AsRef<str>
-      {
+    where
+        TA: AsRef<str>,
+    {
         if self.len() != other.as_ref().len() {
             return false;
         }
@@ -706,7 +707,7 @@ impl<const M: usize> Sharedstr<M> {
     }
 }
 
-impl<const N: usize,TA:AsRef<str>> Add<TA> for &Sharedstr<N> {
+impl<const N: usize, TA: AsRef<str>> Add<TA> for &Sharedstr<N> {
     type Output = Sharedstr<N>;
     fn add(self, other: TA) -> Self::Output {
         match (&*self.inner.borrow(), other.as_ref()) {
@@ -768,7 +769,7 @@ impl<const N: usize> core::cmp::PartialEq for Sharedstr<N> {
 impl<const N: usize> core::str::FromStr for Sharedstr<N> {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-         Ok(Sharedstr::from(s))
+        Ok(Sharedstr::from(s))
     }
 }
 

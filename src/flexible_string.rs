@@ -475,8 +475,9 @@ impl<const N: usize> Flexstr<N> {
     /// Tests for ascii case-insensitive equality with another string.
     /// This function does not test if either string is ascii.
     pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
-      where TA:AsRef<str>
-      {
+    where
+        TA: AsRef<str>,
+    {
         if self.len() != other.as_ref().len() {
             return false;
         }
@@ -664,7 +665,7 @@ impl<const N:usize> Add for &Flexstr<N> {
 }//Add
 */
 
-impl<const N: usize, TA:AsRef<str>> Add<TA> for &Flexstr<N> {
+impl<const N: usize, TA: AsRef<str>> Add<TA> for &Flexstr<N> {
     type Output = Flexstr<N>;
     fn add(self, other: TA) -> Self::Output {
         match (&self.inner, other.as_ref()) {
@@ -720,7 +721,7 @@ impl<const N: usize> core::cmp::PartialEq for Flexstr<N> {
 impl<const N: usize> core::str::FromStr for Flexstr<N> {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-         Ok(Flexstr::from(s))
+        Ok(Flexstr::from(s))
     }
 }
 

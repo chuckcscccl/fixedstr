@@ -323,8 +323,9 @@ impl<const N: usize> fstr<N> {
     /// Tests for ascii case-insensitive equality with another string.
     /// This function does not check if either string is ascii.
     pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
-      where TA : AsRef<str>
-      {
+    where
+        TA: AsRef<str>,
+    {
         if self.len() != other.as_ref().len() {
             return false;
         }
@@ -364,7 +365,7 @@ impl<T: AsMut<str> + ?Sized, const N: usize> std::convert::From<&mut T> for fstr
     }
 }
 
-/*  
+/*
 //generic, but "conflicts with crate 'core'
 impl<const N: usize, TA:AsRef<str>> std::convert::From<TA> for fstr<N> {
     fn from(s: TA) -> fstr<N> {
@@ -547,7 +548,7 @@ impl<const N: usize> core::fmt::Write for fstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-impl<const N: usize, TA:AsRef<str>> Add<TA> for fstr<N> {
+impl<const N: usize, TA: AsRef<str>> Add<TA> for fstr<N> {
     type Output = fstr<N>;
     fn add(self, other: TA) -> fstr<N> {
         let mut a2 = self;

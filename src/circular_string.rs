@@ -622,8 +622,9 @@ impl<const N: usize> cstr<N> {
     /// Tests for ascii case-insensitive equality with another string.
     /// This function does not check if the argument is ascii.
     pub fn case_insensitive_eq<TA>(&self, other: TA) -> bool
-      where TA:AsRef<str>
-      {
+    where
+        TA: AsRef<str>,
+    {
         if self.len() != other.as_ref().len() {
             return false;
         }
@@ -957,7 +958,7 @@ impl<const N: usize> core::fmt::Write for cstr<N> {
     } //write_str
 } //core::fmt::Write trait
 
-impl<const N: usize, TA:AsRef<str>> Add<TA> for cstr<N> {
+impl<const N: usize, TA: AsRef<str>> Add<TA> for cstr<N> {
     type Output = cstr<N>;
     fn add(self, other: TA) -> cstr<N> {
         let mut a2 = self;
