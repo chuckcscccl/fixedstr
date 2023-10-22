@@ -765,6 +765,13 @@ impl<const N: usize> core::cmp::PartialEq for Sharedstr<N> {
     }
 } //eq
 
+impl<const N: usize> core::str::FromStr for Sharedstr<N> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+         Ok(Sharedstr::from(s))
+    }
+}
+
 /// convenient type aliases for [Sharedstr]
 pub type sharedstr8 = Sharedstr<8>;
 pub type sharedstr16 = Sharedstr<16>;

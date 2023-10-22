@@ -717,6 +717,13 @@ impl<const N: usize> core::cmp::PartialEq for Flexstr<N> {
     }
 } //eq
 
+impl<const N: usize> core::str::FromStr for Flexstr<N> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+         Ok(Flexstr::from(s))
+    }
+}
+
 /// convenient type aliases for [Flexstr]
 pub type flexstr8 = Flexstr<8>;
 pub type flexstr16 = Flexstr<16>;

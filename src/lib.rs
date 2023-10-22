@@ -124,7 +124,7 @@
 //!   `no-alloc` together with `flex-str`, for example, will not enable the Flexstr type.
 //!   It also disables the features in [tstr], [zstr] and [cstr] that require the
 //!   alloc crate, in particular any use of alloc::string::String.  Using this feature
-//!   is *stronger than no_std*.  Note that when compiled with the `all-features` option, this feature will be included.
+//!   is *stronger than no_std*.  Note that when compiled with the `all-features` option, this feature will be included, which will exclude other features.
 //! - ***experimental***: the meaning of this feature may change.  Currently
 //!   it implements custom Indexing traits for the zstr type, including
 //!   `IndexMut<usize>`, which allows individual bytes to be changed

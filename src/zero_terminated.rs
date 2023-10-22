@@ -825,10 +825,10 @@ impl<const N: usize> core::cmp::PartialEq for zstr<N> {
 impl<const N: usize> core::str::FromStr for zstr<N> {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if N > 0 && s.len() < N {
+        if s.len() < N {
             Ok(zstr::from(s))
         } else {
-            Err("Parse Error: capacity exceeded")
+            Err("capacity exceeded")
         }
     }
 } // don't know what's the point, given the from function already exists.

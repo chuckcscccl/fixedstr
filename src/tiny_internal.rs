@@ -773,7 +773,7 @@ impl<const N: usize> core::cmp::PartialEq for tstr<N> {
 impl<const N: usize> core::str::FromStr for tstr<N> {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if N > 0 && N < 257 && s.len() < N {
+        if N < 257 && s.len() < N {
             Ok(tstr::from(s))
         } else {
             Err("Parse Error: capacity exceeded")

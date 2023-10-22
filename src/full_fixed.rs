@@ -595,10 +595,10 @@ impl<const N: usize> PartialEq for fstr<N> {
 impl<const N: usize> core::str::FromStr for fstr<N> {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if N > 0 && s.len() <= N {
+        if s.len() <= N {
             Ok(fstr::from(s))
         } else {
-            Err("Parse Error: capacity exceeded")
+            Err("capacity exceeded")
         }
     }
 }

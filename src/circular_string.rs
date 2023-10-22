@@ -1012,10 +1012,10 @@ impl<const N: usize> Add for cstr<N> {
 impl<const N: usize> core::str::FromStr for cstr<N> {
     type Err = &'static str;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if N > 0 && s.len() <= N {
+        if s.len() <= N {
             Ok(cstr::from(s))
         } else {
-            Err("Parse Error: capacity exceeded")
+            Err("capacity exceeded")
         }
     }
 }
