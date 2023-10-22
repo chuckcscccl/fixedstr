@@ -345,6 +345,23 @@ impl<const N: usize> fstr<N> {
         } //for
         true
     } //case_insensitive_eq
+
+    /// Decodes a UTF-16 encodeded slice. If a decoding error is encountered
+    /// or capacity exceeded, an `Err(s)` is returned where s is the
+    /// the encoded string up to the point of the error.
+    pub fn from_utf16(v: &[u16]) -> Result<Self, Self> {
+        let mut s = Self::new();
+        for c in char::decode_utf16(v.iter().cloned()) {
+            if let Ok(c1) = c {
+                if !s.push_char(c1) {
+                    return Err(s);
+                }
+            } else {
+                return Err(s);
+            }
+        }
+        Ok(s)
+    } //from_utf16
 } //impl fstr<N>
 
 impl<const N: usize> std::ops::Deref for fstr<N> {

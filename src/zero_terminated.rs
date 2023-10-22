@@ -474,6 +474,33 @@ impl<const N: usize> zstr<N> {
         z.chrs[i] = 0;
         z
     } //unsafe from_raw
+
+    /// Decodes a UTF-16 encodeded slice. If a decoding error is encountered
+    /// or capacity exceeded, an `Err(s)` is returned where s is the
+    /// the encoded string up to the point of the error.
+    pub fn from_utf16(v: &[u16]) -> Result<Self, Self> {
+        let mut s = Self::new();
+        let mut len = 0; // track length without calling zstr::len
+        let mut buf = [0u8; 4];
+        for c in char::decode_utf16(v.iter().cloned()) {
+            if let Ok(c1) = c {
+                let cbytes = c1.encode_utf8(&mut buf);
+                let clen = c1.len_utf8();
+                len += clen;
+                if len + 1 > N {
+                    s.chrs[len - clen] = 0;
+                    return Err(s);
+                } else {
+                    s.chrs[len - clen..len].copy_from_slice(&buf[..clen]);
+                }
+            } else {
+                s.chrs[len] = 0;
+                return Err(s);
+            }
+        }
+        s.chrs[len] = 0;
+        Ok(s)
+    } //from_utf16
 } //impl zstr<N>
 
 impl<const N: usize> core::ops::Deref for zstr<N> {

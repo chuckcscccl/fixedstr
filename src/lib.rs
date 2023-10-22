@@ -6,8 +6,8 @@
 //!    providing more efficient ways of representing small strings.
 //!  -  Most types (except the optional [Flexstr] and [Sharedstr]) can be
 //!    copied and stack-allocated.
-//!  -  `#![no_std]` is supported by all but the optional [fstr] type.  Additionally,
-//!     features that use the alloc crate can also be optionally excluded.
+//!  -  `#![no_std]` is supported by all but the optional [fstr] type.
+//!     Features that use the alloc crate can also be optionally excluded.
 //!  -  Unicode is supported by all but the optional [cstr] type.
 //!  -  Serde serialization is supported by all but the optional [Sharedstr] type.
 //!

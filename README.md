@@ -6,7 +6,7 @@ systems.
 #### IMPORTANT CHANGES FOR [Version 0.5.1](https://docs.rs/fixedstr/0.5.1/fixedstr/)
 
 **The *no-alloc* build option has been added.**  In addition to no_std, this feature
-will disable compilation of any features the require the alloc crate, in particular
+will disable compilation of any features that require the alloc crate, in particular
 alloc::string::String.
 
 #### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/0.5.0/fixedstr/)
