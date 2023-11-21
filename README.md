@@ -3,13 +3,13 @@ Most types can be copied and stack-allocated.  Certain types such as
 `zstr<8>` and `str8` are smaller in size than a &str on typical
 systems.
 
-#### IMPORTANT CHANGES FOR [Version 0.5.1](https://docs.rs/fixedstr/0.5.1/fixedstr/)
+#### IMPORTANT CHANGES SINCE [Version 0.5.1](https://docs.rs/fixedstr/0.5.1/fixedstr/)
 
 **The *no-alloc* build option has been added.**  In addition to no_std, this feature
 will disable compilation of any features that require the alloc crate, in particular
 alloc::string::String.
 
-#### IMPORTANT CHANGES FOR [Version 0.5.0](https://docs.rs/fixedstr/0.5.0/fixedstr/)
+#### IMPORTANT CHANGES SINCE [Version 0.5.0](https://docs.rs/fixedstr/0.5.0/fixedstr/)
 
 **The default availability of some features have changed.** The crate
 is now `#![no_std]` by default.  The `std` option, which enables the

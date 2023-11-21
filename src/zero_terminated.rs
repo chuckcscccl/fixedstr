@@ -26,9 +26,12 @@ use crate::fstr;
 use crate::tstr;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
+
+#[cfg(not(feature = "no-alloc"))]
 extern crate alloc;
 
 #[cfg(feature = "std")]
+#[cfg(not(feature = "no-alloc"))]
 extern crate std;
 
 /// `zstr<N>`: utf-8 strings of size up to N bytes. The strings are
