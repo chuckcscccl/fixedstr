@@ -744,7 +744,9 @@ impl<const N: usize> core::fmt::Debug for cstr<N> {
 impl<const N: usize> core::fmt::Display for cstr<N> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let (a, b) = self.to_strs();
-        write!(f, "{}{}", a, b)
+        //write!(f, "{}{}", a, b)
+        f.pad(a)?;
+        f.pad(b)
     }
 }
 

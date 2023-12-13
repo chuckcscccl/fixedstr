@@ -275,12 +275,12 @@ impl<const N: usize> zstr<N> {
     /// character class.  For strings with only single-byte chars,
     /// call [Self::len] instead.
     pub fn charlen(&self) -> usize {
-        self.as_str().chars().count()
+        self.to_str().chars().count()
     }
 
     /// returns the nth character of the zstr
     pub fn nth(&self, n: usize) -> Option<char> {
-        self.as_str().chars().nth(n)
+        self.to_str().chars().nth(n)
         //if n<self.len() {Some(self.chrs[n] as char)} else {None}
     }
 
@@ -299,7 +299,7 @@ impl<const N: usize> zstr<N> {
 
     /// determines if string is an ascii string
     pub fn is_ascii(&self) -> bool {
-        self.as_str().is_ascii()
+        self.to_str().is_ascii()
     }
 
     /// shortens the zstr in-place. Note that n indicates
@@ -518,7 +518,7 @@ impl<const N: usize> core::ops::Deref for zstr<N> {
 
 impl<const N: usize> core::convert::AsRef<str> for zstr<N> {
     fn as_ref(&self) -> &str {
-        self.as_str()
+        self.to_str()
     }
 }
 impl<const N: usize> core::convert::AsMut<str> for zstr<N> {
@@ -608,18 +608,19 @@ impl<const M: usize> zstr<M> {
 
 impl<const N: usize> core::fmt::Display for zstr<N> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.as_str())
+        //write!(f, "{}", self.as_str())
+        f.pad(self.to_str())
     }
 }
 
 impl<const N: usize> PartialEq<&str> for zstr<N> {
     fn eq(&self, other: &&str) -> bool {
-        self.as_str() == *other // see below
+        self.to_str() == *other // see below
     } //eq
 }
 impl<const N: usize> PartialEq<&str> for &zstr<N> {
     fn eq(&self, other: &&str) -> bool {
-        &self.as_str() == other
+        &self.to_str() == other
         /*
           let obytes = other.as_bytes();
           let olen = obytes.len();
@@ -635,12 +636,12 @@ impl<const N: usize> PartialEq<&str> for &zstr<N> {
 }
 impl<'t, const N: usize> PartialEq<zstr<N>> for &'t str {
     fn eq(&self, other: &zstr<N>) -> bool {
-        &other.as_str() == self
+        &other.to_str() == self
     }
 }
 impl<'t, const N: usize> PartialEq<&zstr<N>> for &'t str {
     fn eq(&self, other: &&zstr<N>) -> bool {
-        &other.as_str() == self
+        &other.to_str() == self
     }
 }
 
@@ -654,7 +655,7 @@ impl<const N: usize> Default for zstr<N> {
 #[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
     fn eq(&self, other: &zstr<N>) -> bool {
-        other.as_str() == self.to_str()
+        other.to_str() == self.to_str()
     }
 }
 
@@ -662,7 +663,7 @@ impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
 #[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
     fn eq(&self, other: &fstr<N>) -> bool {
-        other.to_str() == self.as_str()
+        other.to_str() == self.to_str()
     }
 }
 
@@ -670,7 +671,7 @@ impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
 #[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for zstr<M> {
     fn eq(&self, other: &&fstr<N>) -> bool {
-        other.to_str() == self.as_str()
+        other.to_str() == self.to_str()
     }
 }
 

@@ -781,7 +781,7 @@ mod tests {
     #[cfg(not(feature = "no-alloc"))]
     fn ftests() {
         extern crate std;
-        use std::{println, string::String};
+        use std::{println, string::String, format};
         let a: fstr<8> = fstr::from("abcdefg"); //creates fstr from &str
         let a1: fstr<8> = a; // copied, not moved
         let a2: &str = a.to_str();
@@ -813,6 +813,12 @@ mod tests {
         let ac2: fstr<16> = fstr::make("abcd");
         ac.truncate(4);
         assert_eq!(ac, ac2);
+
+        let mut z8 = zstr::<16>::from("abc12");
+        let z8o = str_format!(zstr<16>,"xxx {}3",z8);
+        assert_eq!(z8o, "xxx abc123");
+        let zoo = format!("xx{}yy",z8o);
+        assert_eq!(zoo,"xxxxx abc123yy");
     } //ftr tests
 
     #[cfg(all(feature = "std", feature = "flex-str"))]

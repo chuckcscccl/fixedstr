@@ -680,7 +680,8 @@ impl<const N: usize> core::fmt::Debug for Sharedstr<N> {
 
 impl<const N: usize> core::fmt::Display for Sharedstr<N> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.to_str())
+        //write!(f, "{}", self.to_str())
+        f.pad(self.to_str())
     }
 }
 

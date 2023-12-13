@@ -616,7 +616,8 @@ impl<const N: usize> core::fmt::Debug for Flexstr<N> {
 
 impl<const N: usize> core::fmt::Display for Flexstr<N> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.to_str())
+        //write!(f, "{}", self.to_str())
+        f.pad(self.to_str())
     }
 }
 

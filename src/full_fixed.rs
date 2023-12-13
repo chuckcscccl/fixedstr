@@ -465,7 +465,8 @@ impl<const N: usize> std::convert::AsMut<str> for fstr<N> {
 
 impl<const N: usize> std::fmt::Display for fstr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_str())
+        //write!(f, "{}", self.to_str())
+        f.pad(self.to_str())
     }
 }
 
