@@ -52,6 +52,7 @@ impl<const N:usize> compactstr<N>
       else if ci+2 >= N {break;}    
       else {
         compact.chrs[ci+1] = bytes[bi];
+        compact.chrs[ci+2] = 1;
         ci += 2;
       }
     } //for
