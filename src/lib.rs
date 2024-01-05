@@ -278,6 +278,15 @@ mod circular_string;
 #[cfg(feature = "circular-str")]
 pub use circular_string::*;
 
+
+#[cfg(feature = "compressed-str")]
+#[cfg(not(feature = "no-alloc"))]
+mod compressed;
+#[cfg(feature = "compressed-str")]
+#[cfg(not(feature = "no-alloc"))]
+pub use compressed::*;
+
+
 #[cfg(feature = "serde")]
 mod serde_support {
     use super::*;
