@@ -58,7 +58,20 @@ impl<const N:usize> compactstr<N>
     } //for
     compact
   }//rle compression, character followed by instances
-  
+
+  fn inverse_rle<const M:usize>(&self) -> [u8;M] { // truncates
+    let mut ax = [0u8;M];
+    let mut i = 0; // indexes self.chrs
+    let mut k = 0; // indexes ax
+    while i+1<self.clen && k<M {
+      for _ in 0..self.chrs[i+1] {
+        if k<M {ax[k] = self.chrs[i];} else {break;}
+        k += 1;
+      }// for j
+      i += 2;
+    }//while
+    ax
+  }//inverse_rle to another array
 
 } // impl compactstr
 
@@ -82,6 +95,36 @@ pub fn compression_ratio(s:&str) -> f32 {
   let reps = count_repeats(s) as f32;
   if s.len()==0 {0.0} else { reps / (s.len() as f32) }
 }
+
+///// SA-IS algorithm (Nong), false for S, true for L
+///// Also identifies locations of LMS substrings
+fn construct_type_vector<const M:usize>(t:&[u8;M], len:usize)
+   -> ([bool;M], [(usize,usize);M], usize) {
+  let mut types = [false;M];
+  // assume length of array includes the sentinel 0.
+  let mut LMS = [(0,0);M];
+  let mut i = len-1;
+  types[i] = false;  // type of sentinel
+  LMS[0] = (i,len);  
+  let mut k = 1; // indexes LMS, gives number of LMS substrings found
+  let mut lmsend = len;
+  while i>0 {
+    types[i-1] = t[i-1..len] < t[i..len];
+    if !types[i-1] && !types[i] {   // if SS
+      lmsend = i;  // one past i-1
+    }
+    else if !types[i-1] && types[i] { // if SL, found new LMS substring
+      LMS[k] = (i,lmsend);
+      lmsend = i;
+    }
+    //else if types[i-1] (L) do nothing
+    i -= 1;  
+  }//while i>0
+  (types,LMS,k)
+}//construct_type_vector
+
+
+
 
 /*
 SACA-K(T, SA, K, n, level)
