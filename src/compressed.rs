@@ -96,67 +96,211 @@ pub fn compression_ratio(s:&str) -> f32 {
   if s.len()==0 {0.0} else { reps / (s.len() as f32) }
 }
 
+/*
+// first attempt, uses type vector plus direct recursion
 ///// SA-IS algorithm (Nong), false for S, true for L
-///// Also identifies locations of LMS substrings
-fn construct_type_vector<const M:usize>(t:&[u8;M], len:usize)
+///// Also identifies locations of LMS substrings as (usize:usize)
+///// where the second index is the last position in SA of the bucket for
+///// the char, and the first index allows us to fill the bucket from
+///// left to right.
+fn construct_vector<const M:usize>(t:&[u8], len:usize)
    -> ([bool;M], [(usize,usize);M], usize) {
-  let mut types = [false;M];
+  assert!(len<M);
+  let mut types = [false;M];   // false means S-type
   // assume length of array includes the sentinel 0.
   let mut LMS = [(0,0);M];
   let mut i = len-1;
-  types[i] = false;  // type of sentinel
+  //types[i] = false;  // type of sentinel is S (default)
   LMS[0] = (i,len);  
   let mut k = 1; // indexes LMS, gives number of LMS substrings found
   let mut lmsend = len;
+  let mut counts = [0usize;256];
+  counts[0] = 1; // unique sentinel
+  let mut sa = [0usize;M];
+  sa[0] = len-1; // smallest suffix is always sentinel by itself
   while i>0 {
-    types[i-1] = t[i-1..len] < t[i..len];
+    counts[t[i-1] as usize] +=1; 
+    // determine types[i-1]
+    if t[i-1] > t[i] || (t[i-1]==t[i] && types[i]) { types[i-1] = true; }
+    // else stays false by default (S)
     if !types[i-1] && !types[i] {   // if SS
       lmsend = i;  // one past i-1
     }
     else if !types[i-1] && types[i] { // if SL, found new LMS substring
       LMS[k] = (i,lmsend);
-      lmsend = i;
+      k += 1;
+      lmsend = i; // LMS substring starts with the L suffix
     }
-    //else if types[i-1] (L) do nothing
+    else if types[i-1] && !types[i]  {// LS, found LMS char
+      // bucket sort the LMS chars - store where? - chars could be same??
+    }
+    //else if (LL) do nothing
     i -= 1;  
   }//while i>0
   (types,LMS,k)
 }//construct_type_vector
-
-
-
-
-/*
-SACA-K(T, SA, K, n, level)
- T : input string;
- SA: suffix array of T ;
- K: alphabet size of T ;
- n: size of T ;
- level: recursion level;
- Stage 1: induced sort the LMS-substrings of T .
-1 if level = 0
-then
-2 Allocate an array of K integers for bkt;
-3 Induced sort all the LMS-substrings of T , using bkt for bucket counters;
-else
-4 Induced sort all the LMS-substrings of T , reusing the start or
-the end of each bucket as the bucket’s counter;
- SA is reused for storing T1 and SA1.
- Stage 2: name the sorted LMS-substrings of T .
-5 Compute the lexicographic names for the sorted LMS-substrings to produce T1;
- Stage 3: sort recursively.
-6 if K1 = n1  each character in T1 is unique.
-then
-7 Directly compute SA(T1) from T1;
-else
-8 SACA-K(T1, SA1, K1, n1, level + 1);
- Stage 4: induced sort SA(T ) from SA(T1).
-9 if level = 0
-then
-10 Induced sort SA(T ) from SA(T1), using bkt for bucket counters;
-11 Free the space allocated for bkt;
-else
-12 Induced sort SA(T ) from SA(T1), reusing the start or the end of
-each bucket as the bucket’s counter;
-13 return ;
+// this runs in O(n) by memoization of types vector
 */
+
+// Section 3.2
+// K is always 256
+fn rename<const M:usize>(t:&mut [u8;M], sa:&mut [usize;M],n:usize,) -> [usize;M]
+{
+  assert!(M>=256 && n<M);
+  let mut tp = [0usize;M];  // T' - output
+  let mut counts = [0usize;256];
+  for bi in 0..n { // iterates through t[bi]
+    counts[t[bi] as usize] += 1;
+  }//for index bi in t
+  // prefix sum loop
+  let mut sum = 0;
+  for k in 0..256 {  // reusing sa
+    if counts[k]>0 {
+      sa[k] = sum;
+      sum += counts[k];
+      if sum>=n {break;}
+    }
+  }//prefix sum loop, meaning of counts[k] changed
+  // First loop will assume that all chars are type L, will change later
+  for bi in 0..n {
+     //set tp[bi] to be start index of tp[bi] char's bucket
+     tp[bi] = sa[t[bi] as usize];
+  }
+  // each char is also first char of a unique suffix
+  // can inferr the "buckets" array from counts
+  // Second loop will change S type chars to be index of end of buckets
+  
+  let mut chartype = false; // previous type of sentinel, false=S, true=L
+  let mut i = n-1;
+  tp[n-1] = 0; //sa[t[n-1] as usize]; // + counts[t[i] as usize] - 1;
+  while i>0 {
+    chartype = t[i-1]>t[i] || (t[i-1]==t[i] && chartype);
+    if !chartype { // t[i-1] is of S type
+      tp[i-1] = sa[t[i-1] as usize] + counts[t[i-1] as usize] - 1;
+    }
+    i -= 1;
+  }// while bi>0
+
+  // next step : sort all LMS characters. left-most S type chars
+  // Goal is to place the correct, sorted index of each LMS char
+  // at the end of the corresponding bucket in SA.
+  //Right now, sa stores the starting location of buckets by byte value
+  // We'll do it using more memory at first.
+
+  // 3.3 2, (1)
+  use SAEntry::*;
+  let mut SA = [Counter(0);M];
+  let mut prevtype = false; // type of sentinel
+  chartype = false;
+  i = n-1;
+  while i>0 {
+    prevtype = t[i-1]>t[i] || (t[i-1]==t[i] && chartype);
+    if !chartype && prevtype { //found LMS char at position i (tp[i] is LMS)
+      match SA[tp[i]] {
+        Counter(n) => { SA[tp[i]] = Counter(n+1); },
+        _ => {},
+      }//match
+    }//found LMS char
+    chartype = prevtype;
+    i -= 1;
+  }//while i>0
+  // (2)
+  chartype = false; // type of sentinel
+  i = n-1;
+  while i>0 {
+    prevtype = t[i-1]>t[i] || (t[i-1]==t[i] && chartype);
+    if !chartype && prevtype { //found LMS char at position i (tp[i] is LMS)
+      match SA[tp[i]] {
+        Counter(1) => {
+          SA[tp[i]] = Index(i);
+        }
+        Counter(count) if count>1 => {
+          SA[tp[i]-count+1] = Index(i);
+          SA[tp[i]] = Counter(count-1);
+        },
+        _ => {},
+      }//match
+    }//found LMS char
+    chartype = prevtype;
+    i -= 1;
+  }//while i>0  
+  
+  tp
+}//rename
+// uses more memory than paper specifies.  - reuse t?
+
+
+
+
+fn main() {
+  let t0 = "2113311331210".as_bytes();
+  let n= t0.len();
+  let mut t = [0u8;256];
+  t[0..n].copy_from_slice(&t0);
+  let mut sa = [0usize;256];
+  let tp = rename(&mut t, &mut sa, 13);
+  println!("{:?}",&tp[..n]);
+}//main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////
+// bkt (buckets) entry are (start of LMS in T, end of LMS in T)), index is
+// the first byte of the LMS char at the end of LMS.
+
+
+#[derive(PartialEq,Eq,Copy,Clone)]
+enum SAEntry
+{
+   Index(usize),
+   Counter(usize), // Counter(0) is empty, Counter(1) is unique
+}//SAEntry
+impl Default for SAEntry {
+  fn default() -> Self { SAEntry::Counter(0) }
+}//default for SAEntry
+
+
+
+
+
+        /*
+        Counter(1) => { SA[tp[i]] = Index(i); },
+        Counter(count) if count>1 && tp[i]>0 && SA[tp[i]-1]==Counter(0) => {
+          if tp[i]>1 && SA[tp[i]-2].empty() {
+            SA[tp[i]-2] = Index(i);
+          }
+          else {
+            SA[tp[i]] = Index(i);
+            SA[tp[i]-1] = Counter(0);
+          }
+        },
+        Counter(count) if count>1 && tp[i]>0 => {  //(3)  SA[tp[i]-1] is counter
+          match SA[tp[i]-1] {
+            Counter(c) if c>0 && tp[i]>=c+2 => {
+              if let Counter(0) = SA[tp[i]-c-2] {
+                SA[tp[i]-c-2] = Index(i);
+                SA[tp[i]-1] = Counter(c+1);
+              }
+              else {  // reaching another bucket
+               // shift?? 
+              }
+            },
+            
+          }//match
+          
+        }
+        */
+        // if multi, just insert one by one
+
