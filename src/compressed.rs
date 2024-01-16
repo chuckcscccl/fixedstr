@@ -190,9 +190,11 @@ fn rename<const M:usize>(t:&mut [u8;M], sa:&mut [usize;M],n:usize,) -> [usize;M]
   // 3.3 2, (1)
   use SAEntry::*;
   let mut SA = [Counter(0);M];
+  SA[0] = Index(n-1);
   let mut prevtype = false; // type of sentinel
   chartype = false;
   i = n-1;
+  let mut lmschars = 0; // counter
   while i>0 {
     prevtype = t[i-1]>t[i] || (t[i-1]==t[i] && chartype);
     if !chartype && prevtype { //found LMS char at position i (tp[i] is LMS)
@@ -200,6 +202,7 @@ fn rename<const M:usize>(t:&mut [u8;M], sa:&mut [usize;M],n:usize,) -> [usize;M]
         Counter(n) => { SA[tp[i]] = Counter(n+1); },
         _ => {},
       }//match
+      lmschars += 1;
     }//found LMS char
     chartype = prevtype;
     i -= 1;
@@ -223,13 +226,52 @@ fn rename<const M:usize>(t:&mut [u8;M], sa:&mut [usize;M],n:usize,) -> [usize;M]
     }//found LMS char
     chartype = prevtype;
     i -= 1;
-  }//while i>0  
-  
+  }//while i>0
+
+  println!("SA: {:?}",&SA[..n]);
+
+  // 3.4 induce sort all LMS-substrings (prefixes) from sorted LMS chars
+  i = n-1; // this is S type
+  chartype = false;
+  while i>0 {
+    chartype = t[i-1]>t[i] || (t[i-1]==t[i] && chartype);
+    if chartype {  // t[i-1] is L-type
+      if let Counter(c) = SA[tp[i]] {
+        SA[tp[i]] = Counter(c+1);
+      }
+    }
+    i -= 1;
+  }//while i
+  SA[0] = Index(n-1);
+  for i in 1..n {  // scan SA left to right, SA[0] already correct
+    match SA[i] {
+      Index(ind) => {
+        let j = ind-1;
+        //determine if suf(j) is L-type
+        if j+1<n && t[j]>t[j+1] || (t[j]==t[j+1] && !SA[j].is_index()) { //L
+          let mut lfentry = tp[j];
+          while let Index(_) = SA[lfentry] {lfentry += 1;} // expensive!
+          SA[lfentry] = Index(j);
+        }
+      },
+      Counter(1) => {  // unique
+         SA[tp[i]] = Index(i);
+      },
+      Counter(c) if c>1 => {
+        SA[tp[i] + c-1] = Index(i);
+        SA[i] = Counter(c-1);
+      },
+      _ => {}, // ignore empty entries
+    }//match
+  } // for first n entries in SA
+ 
+
   tp
 }//rename
 // uses more memory than paper specifies.  - reuse t?
 
 
+// brute force, use separate type array
 
 
 fn main() {
@@ -239,7 +281,7 @@ fn main() {
   t[0..n].copy_from_slice(&t0);
   let mut sa = [0usize;256];
   let tp = rename(&mut t, &mut sa, 13);
-  println!("{:?}",&tp[..n]);
+  println!("Tprime: {:?}",&tp[..n]);
 }//main
 
 
@@ -261,7 +303,7 @@ fn main() {
 // the first byte of the LMS char at the end of LMS.
 
 
-#[derive(PartialEq,Eq,Copy,Clone)]
+#[derive(PartialEq,Eq,Copy,Clone,Debug)]
 enum SAEntry
 {
    Index(usize),
@@ -270,7 +312,14 @@ enum SAEntry
 impl Default for SAEntry {
   fn default() -> Self { SAEntry::Counter(0) }
 }//default for SAEntry
-
+impl SAEntry {
+  fn is_index(&self) -> bool {
+    if let &SAEntry::Index(_) = self {true} else {false}
+  }
+  fn is_empty(&self) -> bool {
+    if let &SAEntry::Counter(0) = self {true} else {false}
+  }
+}
 
 
 
