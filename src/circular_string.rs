@@ -169,7 +169,7 @@ impl<const N: usize> cstr<N> {
 
     /// version of `const_make` that does not truncate.
     pub const fn const_try_make(s:&str) ->  Result<cstr<N>, &str> {
-      if s.len()>N {Err(s)}
+      if s.len()>N || N<1 || N>65535 {Err(s)}
       else { Ok(cstr::const_make(s)) }
     }
 
