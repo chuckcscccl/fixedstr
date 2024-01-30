@@ -78,16 +78,45 @@ impl<const N: usize> fstr<N> {
         }
     }
 
-    /// creates an empty string, equivalent to fstr::default()
-    pub fn new() -> fstr<N> {
-        fstr::make("")
+/// const constructor, to be called from const contexts.  However, as
+/// const constructors are restricted from using iterators, it's slightly
+/// better to call the non-const constructors in non-const contexts.
+/// Truncates automatically.
+    pub const fn const_create(s:&str) -> fstr<N> {
+      let mut t = fstr::<N>::new();
+      let mut len = s.len();
+      if len>N { len = N; } // fix max length
+      t.len = len;
+      let bytes = s.as_bytes();
+      let mut i = 0;
+      while i<len {
+        t.chrs[i] = bytes[i];
+        i += 1;
+      }
+      t
+    }//const_make
+
+    /// version of `const_create` that does not truncate.
+    pub const fn const_try_create(s:&str) -> Result<fstr<N>, &str> {
+      if s.len()+1>N { Err(s) }
+      else { Ok(fstr::const_create(s)) }
     }
+    
+    /// creates an empty string, equivalent to fstr::default() but can also be
+    /// called from a const context
+    #[inline]
+    pub const fn new() -> fstr<N> {
+        fstr {
+          chrs:[0;N],
+          len: 0,
+        }
+    }//new
 
     /// length of the string in bytes, which will be up to the maximum size N.
-    /// This is a constant-time operation. Note that this value is consistent
-    /// with [str::len]
+    /// This is a constant-time operation and can be called from a const
+    /// context
     #[inline]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len
     }
 

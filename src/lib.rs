@@ -278,14 +278,14 @@ mod circular_string;
 #[cfg(feature = "circular-str")]
 pub use circular_string::*;
 
-
+/*
 #[cfg(feature = "compressed-str")]
 #[cfg(not(feature = "no-alloc"))]
 mod compressed;
 #[cfg(feature = "compressed-str")]
 #[cfg(not(feature = "no-alloc"))]
 pub use compressed::*;
-
+*/
 
 #[cfg(feature = "serde")]
 mod serde_support {
@@ -613,6 +613,13 @@ mod tests {
 
         let fs = to_fixedstr!(str8, -0132);
         assert_eq!(&fs, "-132");
+
+        // testing for constants
+        const C:str16 = str16::const_make("abcd");
+        //const C:zstr<8> = zstr::const_make("abcd");
+        let xarray = [0u8;C.len()];
+        assert_eq!(C,"abcd");
+        assert_eq!(xarray.len(),4);
 
         //cstr tests
         #[cfg(feature = "circular-str")]

@@ -23,7 +23,7 @@ configure your build.
 
 <br>
 
-Recent enhancements also include additional, optional string types and bug fixes.
+Recent enhancements also include const constructors and other functions.
 
 #### Examples
 ```
@@ -67,6 +67,9 @@ Recent enhancements also include additional, optional string types and bug fixes
   assert_eq!(c4,"abc 123");  //str_format! truncates if capacity exceeded
   let c5 = try_format!(str8,"abcdef{}","ghijklmn");
   assert!(c5.is_none());  // try_format! returns None if capacity exceeded
+
+  const C:str8 = str8::const_make("abcd");    // const constructor
+  let xarray = [0u8;C.len()];                 // const length function
 ```
 
 Consult the [documentation](https://docs.rs/fixedstr/latest/fixedstr/) for details.

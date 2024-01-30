@@ -75,9 +75,36 @@ impl<const N: usize> zstr<N> {
         }
     }
 
-    /// creates an empty string, equivalent to zstr::default()
-    pub fn new() -> zstr<N> {
-        zstr::make("")
+    /// creates an empty string, equivalent to zstr::default() but can also
+    /// be called in a const context
+    pub const fn new() -> zstr<N> {
+        zstr {
+          chrs: [0;N]
+        }
+    }
+
+/// const constructor, to be called from const contexts.  However, as
+/// const constructors are restricted from using iterators, it's slightly
+/// better to call the non-const constructors in non-const contexts.
+/// Truncates automatically.
+    pub const fn const_make(s:&str) -> zstr<N> {
+      let mut t = zstr::<N>::new();
+      let mut len = s.len();
+      if len>N-1 { len = N-1; } // fix max length
+      //t.chrs[1..len+1].copy_from_slice(&s.as_bytes()[..]);
+      let bytes = s.as_bytes();
+      let mut i = 0;
+      while i<len {
+        t.chrs[i] = bytes[i];
+        i += 1;
+      }
+      t
+    }//const_make
+
+    /// version of `const_make` that does not truncate.
+    pub const fn const_try_make(s:&str) -> Option<zstr<N>> {
+      if s.len()+1>N {None}
+      else { Some(zstr::const_make(s)) }
     }
 
     /// creates a new `zstr<N>` with given `&[u8]` slice.  If the length of the
@@ -100,7 +127,7 @@ impl<const N: usize> zstr<N> {
     /// This function uses binary search to find the first zero-byte
     /// and runs in O(log N) time for each `zstr<N>`.
     #[inline(always)]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.blen()
     }
 
@@ -157,7 +184,7 @@ impl<const N: usize> zstr<N> {
     }
 
     // new blen function uses binary search to find first 0 byte.
-    fn blen(&self) -> usize {
+    const fn blen(&self) -> usize {
         let (mut min, mut max) = (0, N);
         let mut mid = 0;
         while min < max {

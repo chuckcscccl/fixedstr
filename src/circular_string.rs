@@ -145,6 +145,34 @@ impl<const N: usize> cstr<N> {
         Some(m)
     } //from_pair
 
+/// const constructor, to be called from const contexts.  However, as
+/// const constructors are restricted from using iterators, it's slightly
+/// better to call the non-const constructors in non-const contexts.
+/// Truncates automatically.
+    pub const fn const_make(src: &str) -> cstr<N> {
+       //if N < 1 || N > 65535 {
+       //     panic!("cstr strings are limited to a capacity between 1 and 65535");
+       // }
+        let mut m = cstr::<N>::new();
+        let mut len = src.len();
+        if len>N {len=N;}
+        //m.chrs[..length].copy_from_slice(&src.as_bytes()[..length]);
+        let bytes = src.as_bytes();
+        let mut i = 0;
+        while i<len {
+          m.chrs[i] = bytes[i];
+          i += 1;
+        }
+        m.len = len as u16;
+        m
+    }// const_make
+
+    /// version of `const_make` that does not truncate.
+    pub const fn const_try_make(s:&str) ->  Result<cstr<N>, &str> {
+      if s.len()>N {Err(s)}
+      else { Ok(cstr::const_make(s)) }
+    }
+
     /// checks if the underlying representation of the string is contiguous
     /// (without wraparound).
     #[inline(always)]
@@ -499,14 +527,18 @@ impl<const N: usize> cstr<N> {
 
     /// length of string in bytes
     #[inline(always)]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len as usize
     }
 
     /// construct new, empty string (same as `cstr::default`)
     #[inline(always)]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        cstr {
+            chrs: [0; N],
+            front: 0,
+            len: 0,
+        }
     } //new
 
     /// returns a pair of string slices `(left,right)` which, when concatenated,

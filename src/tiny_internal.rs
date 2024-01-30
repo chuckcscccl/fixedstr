@@ -109,16 +109,43 @@ impl<const N: usize> tstr<N> {
         }
     }
 
-    /// creates an empty string, equivalent to tstr::default()
+/// const constructor, to be called from const contexts.  However, as
+/// const constructors are restricted from using iterators, it's slightly
+/// better to call the non-const constructors in non-const contexts.
+/// Truncates automatically.
+    pub const fn const_make(s:&str) -> tstr<N> {
+      let mut t = tstr::<N>::new();
+      let mut len = s.len();
+      if len>N-1 { len = N-1; } // fix max length
+      t.chrs[0] = len as u8;
+      let bytes = s.as_bytes();
+      let mut i = 0;
+      while i<len {
+        t.chrs[i+1] = bytes[i];
+        i += 1;
+      }
+      t
+    }//const_make
+
+    /// version of `const_make` that does not truncate.
+    pub const fn const_try_make(s:&str) -> Option<tstr<N>> {
+      if s.len()+1>N {None}
+      else { Some(tstr::const_make(s)) }
+    }
+    
+    /// creates an empty string; equivalent to tstr::default() but can
+    /// also be called from a const context.
     #[inline]
-    pub fn new() -> tstr<N> {
-        tstr::make("")
+    pub const fn new() -> tstr<N> {
+        tstr {
+          chrs : [0;N]
+        }
     }
 
     /// length of the string in bytes (consistent with [str::len]). This
     /// is a constant-time operation.
     #[inline]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.chrs[0] as usize
     }
 
@@ -521,7 +548,7 @@ impl<'t, const N: usize> PartialEq<&tstr<N>> for &'t str {
 /// defaults to empty string
 impl<const N: usize> Default for tstr<N> {
     fn default() -> Self {
-        tstr::<N>::make("")
+        tstr::<N>::new()
     }
 }
 #[cfg(feature = "std")]
