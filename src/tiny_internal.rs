@@ -56,8 +56,26 @@ use core::ops::{RangeInclusive, RangeToInclusive};
 /// ```
 /// In contrast, concatenating other string types such as zstr will always
 /// produce strings of the same type and capacity.
+
+
+/// const function to limit usize value to between 1 and 256.
+/// Can be called when tstr is created (under `pub-tstr` feature):
+/// ```
+///   #[cfg(feature = "pub-tstr")]
+///   # use fixedstr::*;
+///   let ls = tstr::<{tstr_limit(258)}>::from("abcd");
+///   assert_eq!(ls.capacity(),255);
+/// ```
+#[cfg(feature = "pub-tstr")]
+pub const fn tstr_limit(n:usize) -> usize {
+  if n==0 {1}
+  else if n>256 {256}
+  else {n}
+}//const limit_size
+
+
 #[derive(Copy, Clone, Eq)]
-pub struct tstr<const N: usize = 256> {
+pub struct tstr<const N:usize = 256> {
     chrs: [u8; N],
 } //tstr
 impl<const N: usize> tstr<N> {
@@ -72,16 +90,9 @@ impl<const N: usize> tstr<N> {
         let limit = min(N - 1, blen);
         chars[1..limit + 1].copy_from_slice(&bytes[..limit]);
         chars[0] = limit as u8;
-        /*
-        for i in 0..blen
-        {
-          if i<N-1 {chars[i+1] = bytes[i];}
-          else { chars[0] = i as u8; break; }
-        }
-        */
-        if chars[0] == 0 {
-            chars[0] = blen as u8;
-        }
+        //if chars[0] == 0 {
+        //    chars[0] = blen as u8;
+        //}
         tstr { chrs: chars }
     } //make
 
@@ -93,16 +104,16 @@ impl<const N: usize> tstr<N> {
         let limit = min(N - 1, blen);
         chars[1..limit + 1].copy_from_slice(&bytes[..limit]);
         chars[0] = limit as u8;
-        if chars[0] == 0 {
-            chars[0] = blen as u8;
-        }
+        //if chars[0] == 0 {
+        //    chars[0] = blen as u8;
+        //}
         tstr { chrs: chars }
     } //create
 
-    /// version of make that returns the string in an `Err(_)` if
+    /// version of make that returns the original string slice in an `Err(_)` if
     /// truncation is requried, or in an `Ok(_)` if no truncation is required
     pub fn try_make(s: &str) -> Result<tstr<N>, &str> {
-        if s.len() > N - 1 {
+        if s.len()+1 > N {
             Err(s)
         } else {
             Ok(tstr::make(s))
@@ -110,7 +121,7 @@ impl<const N: usize> tstr<N> {
     }
 
 /// const constructor, to be called from const contexts.  However, as
-/// const constructors are restricted from using iterators, it's slightly
+/// const functions are restricted from using iterators, it's slightly
 /// better to call the non-const constructors in non-const contexts.
 /// Truncates automatically.
     pub const fn const_make(s:&str) -> tstr<N> {
@@ -150,7 +161,7 @@ impl<const N: usize> tstr<N> {
     }
 
     /// returns the number of characters in the string regardless of
-    /// character class
+    /// character class.  This is not necessarily a constant-time operation.
     pub fn charlen(&self) -> usize {
         self.to_str().chars().count()
     }

@@ -413,6 +413,7 @@ pub type str48 = tstr<48>;
 pub type str96 = tstr<96>;
 pub type str192 = tstr<192>;
 
+
 #[macro_export]
 /// creates a formated string of given type (by implementing [core::fmt::Write]):
 /// ```
@@ -519,6 +520,8 @@ mod tests {
         #[cfg(all(feature = "std", feature = "shared-str"))]
         #[cfg(not(feature = "no-alloc"))]
         strptrtests();
+        #[cfg(feature = "pub-tstr")]
+        consttests();
     } //testmain
 
     #[cfg(feature = "std")]
@@ -1006,4 +1009,10 @@ mod tests {
         zc.truncate(3);
         assert_eq!(zb, zc);
     } //tiny tests
+
+    #[cfg(feature = "pub-tstr")]
+    fn consttests() {
+       let ls = tstr::<{tstr_limit(258)}>::from("abcd");
+       assert_eq!(ls.capacity(),255);
+    }//consttests
 } //tests mod
