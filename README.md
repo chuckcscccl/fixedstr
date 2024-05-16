@@ -21,9 +21,7 @@ should most likely work as before.  If you already use
 before.  See the documentation for details and examples of how to
 configure your build.
 
-<br>
-
-Recent enhancements also include const constructors and other functions.
+Recent enhancements also include const constructors and other const functions.
 
 #### Examples
 ```

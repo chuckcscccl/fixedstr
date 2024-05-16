@@ -91,7 +91,6 @@ impl<const N: usize> zstr<N> {
       let mut t = zstr::<N>::new();
       let mut len = s.len();
       if len>N-1 { len = N-1; } // fix max length
-      //t.chrs[1..len+1].copy_from_slice(&s.as_bytes()[..]);
       let bytes = s.as_bytes();
       let mut i = 0;
       while i<len {
@@ -107,13 +106,14 @@ impl<const N: usize> zstr<N> {
       else { Some(zstr::const_make(s)) }
     }
 
+    /// const function that
     /// creates a new `zstr<N>` with given `&[u8]` slice.  If the length of the
     /// slice exceeds N-1, the extra bytes are ignored.  All bytes of the slice
     /// following the first zero-byte are also ignored.
     /// **This operation does not check if the u8 slice is an utf8 source.**
     /// This function is unique to zstr and not available for the
     /// other string types in this crate.
-    pub fn from_raw(s: &[u8]) -> zstr<N> {
+    pub const fn from_raw(s: &[u8]) -> zstr<N> {
         let mut z = zstr { chrs: [0; N] };
         let mut i = 0;
         while i + 1 < N && i < s.len() && s[i] != 0 {
@@ -125,7 +125,8 @@ impl<const N: usize> zstr<N> {
 
     /// Length of the string in bytes (consistent with [str::len]).
     /// This function uses binary search to find the first zero-byte
-    /// and runs in O(log N) time for each `zstr<N>`.
+    /// and runs in O(log N) time for each `zstr<N>`.  This function
+    /// can be called from a const context.
     #[inline(always)]
     pub const fn len(&self) -> usize {
         self.blen()
@@ -134,9 +135,9 @@ impl<const N: usize> zstr<N> {
     /// Length of a `zstr<N>` string in bytes using O(n) linear search,
     /// may be useful when the string is of length n but n is known to be
     /// much smaller than N, or when the underlying array is corrupted.
-    /// This function is unique to the zstr type and
+    /// This function is const, and is unique to the zstr type and
     /// not available for other string types in this crate.
-    pub fn linear_len(&self) -> usize {
+    pub const fn linear_len(&self) -> usize {
         let mut i = 0;
         while self.chrs[i] != 0 {
             i += 1;
@@ -144,10 +145,10 @@ impl<const N: usize> zstr<N> {
         return i;
     } //linear_len
 
-    /// Checks that the underlying array of the zstr is
+    /// const function that checks that the underlying array of the zstr is
     /// properly zero-terminated, with no non-zero bytes after the first
     /// zero.  Returns false if there's a problem.
-    pub fn check_integrity(&self) -> bool {
+    pub const fn check_integrity(&self) -> bool {
         let mut n = self.linear_len();
         if n == N {
             return false;
@@ -176,7 +177,7 @@ impl<const N: usize> zstr<N> {
 
     /// returns maximum capacity in bytes
     #[inline(always)]
-    pub fn capacity(&self) -> usize {
+    pub const fn capacity(&self) -> usize {
         if N == 0 {
             return 0;
         }
@@ -204,13 +205,19 @@ impl<const N: usize> zstr<N> {
     // #[cfg(feature = "std")]
     #[cfg(not(feature = "no-alloc"))]
     pub fn to_string(&self) -> alloc::string::String {
-        alloc::string::String::from(self.as_str())
+        alloc::string::String::from(self.to_str())
     }
 
-    /// returns slice of u8 array underneath the zstr, including terminating 0
+    /// returns slice of u8 array underneath the zstr, **including the terminating 0**
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         &self.chrs[..self.blen() + 1]
+    }
+
+    /// returns slice of u8 array underneath the zstr without the terminating zero
+    #[inline]
+    pub fn as_bytes_non_terminated(&self) -> &[u8] {
+        &self.chrs[..self.blen()]
     }
 
     /// converts zstr to &str using [core::str::from_utf8_unchecked].
@@ -230,7 +237,7 @@ impl<const N: usize> zstr<N> {
         let ref mut cbuf = [0u8; 4];
         c.encode_utf8(cbuf);
         let clen = c.len_utf8();
-        if let Some((bi, rc)) = self.as_str().char_indices().nth(i) {
+        if let Some((bi, rc)) = self.to_str().char_indices().nth(i) {
             if clen == rc.len_utf8() {
                 self.chrs[bi..bi + clen].clone_from_slice(&cbuf[..clen]);
                 return true;
@@ -316,11 +323,11 @@ impl<const N: usize> zstr<N> {
     /// is designed to be quicker than [zstr::nth], and does not check array bounds or
     /// check n against the length of the string. Nor does it check
     /// if the value returned is a valid character.
-    pub fn nth_bytechar(&self, n: usize) -> char {
+    pub const fn nth_bytechar(&self, n: usize) -> char {
         self.chrs[n] as char
     }
     /// alias for nth_bytechar (for backwards compatibility)
-    pub fn nth_ascii(&self, n: usize) -> char {
+    pub const fn nth_ascii(&self, n: usize) -> char {
         self.chrs[n] as char
     }
 
@@ -336,7 +343,7 @@ impl<const N: usize> zstr<N> {
     /// This is not an O(1) operation.
     pub fn truncate(&mut self, n: usize) // n is char position, not binary position
     {
-        if let Some((bi, c)) = self.as_str().char_indices().nth(n) {
+        if let Some((bi, c)) = self.to_str().char_indices().nth(n) {
             let mut bm = bi;
             while bm < N && self.chrs[bm] != 0 {
                 self.chrs[bm] = 0;
@@ -480,7 +487,7 @@ impl<const N: usize> zstr<N> {
 
     // new for 0.5.0
     /// converts zstr to a raw pointer to the first byte
-    pub fn to_ptr(&self) -> *const u8 {
+    pub const fn to_ptr(&self) -> *const u8 {
         let ptr = &self.chrs[0] as *const u8;
         ptr
         //ptr as *const char
@@ -635,7 +642,7 @@ impl<const M: usize> zstr<M> {
 
 impl<const N: usize> core::fmt::Display for zstr<N> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        //write!(f, "{}", self.as_str())
+        //write!(f, "{}", self.to_str())
         f.pad(self.to_str())
     }
 }
@@ -770,37 +777,37 @@ mod special_index {
     impl<const N: usize> core::ops::Index<Range<usize>> for zstr<N> {
         type Output = str;
         fn index(&self, index: Range<usize>) -> &Self::Output {
-            &self.as_str()[index]
+            &self.to_str()[index]
         }
     } //impl Index
     impl<const N: usize> core::ops::Index<RangeTo<usize>> for zstr<N> {
         type Output = str;
         fn index(&self, index: RangeTo<usize>) -> &Self::Output {
-            &self.as_str()[index]
+            &self.to_str()[index]
         }
     } //impl Index
     impl<const N: usize> core::ops::Index<RangeFrom<usize>> for zstr<N> {
         type Output = str;
         fn index(&self, index: RangeFrom<usize>) -> &Self::Output {
-            &self.as_str()[index]
+            &self.to_str()[index]
         }
     } //impl Index
     impl<const N: usize> core::ops::Index<RangeInclusive<usize>> for zstr<N> {
         type Output = str;
         fn index(&self, index: RangeInclusive<usize>) -> &Self::Output {
-            &self.as_str()[index]
+            &self.to_str()[index]
         }
     } //impl Index
     impl<const N: usize> core::ops::Index<RangeToInclusive<usize>> for zstr<N> {
         type Output = str;
         fn index(&self, index: RangeToInclusive<usize>) -> &Self::Output {
-            &self.as_str()[index]
+            &self.to_str()[index]
         }
     } //impl Index
     impl<const N: usize> core::ops::Index<RangeFull> for zstr<N> {
         type Output = str;
         fn index(&self, index: RangeFull) -> &Self::Output {
-            &self.as_str()[index]
+            &self.to_str()[index]
         }
     } //impl Index
 

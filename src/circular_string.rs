@@ -150,9 +150,6 @@ impl<const N: usize> cstr<N> {
 /// better to call the non-const constructors in non-const contexts.
 /// Truncates automatically.
     pub const fn const_make(src: &str) -> cstr<N> {
-       //if N < 1 || N > 65535 {
-       //     panic!("cstr strings are limited to a capacity between 1 and 65535");
-       // }
         let mut m = cstr::<N>::new();
         let mut len = src.len();
         if len>N {len=N;}
@@ -210,7 +207,7 @@ impl<const N: usize> cstr<N> {
     }
 
     /// guarantees a contiguous underlying representation of the string.
-    /// This is an O(n) operation.
+    /// This is a worst-case O(n) operation.
     pub fn make_contiguous(&mut self) {
         if !self.is_contiguous() {
             self.reset();
@@ -232,7 +229,7 @@ impl<const N: usize> cstr<N> {
     /// returns the nth byte of the string as a char, does not check n
     /// against length of array
     #[inline]
-    pub fn nth_bytechar(&self, n: usize) -> char {
+    pub const fn nth_bytechar(&self, n: usize) -> char {
         self.chrs[self.index(n)] as char
     }
 
@@ -514,14 +511,14 @@ impl<const N: usize> cstr<N> {
 
     // convenience
     #[inline(always)]
-    fn endi(&self) -> usize {
+    const fn endi(&self) -> usize {
         // index of last value plus 1
         //fastmod(self.front as usize + self.len as usize,N)
         (self.front as usize + self.len as usize) % N
     } // last
 
     #[inline(always)]
-    fn index(&self, i: usize) -> usize {
+    const fn index(&self, i: usize) -> usize {
         (self.front as usize + i) % N
     } // index of ith vale
 

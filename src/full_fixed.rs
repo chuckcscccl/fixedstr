@@ -121,7 +121,7 @@ impl<const N: usize> fstr<N> {
     }
 
     /// returns maximum capacity in bytes
-    pub fn capacity(&self) -> usize {
+    pub const fn capacity(&self) -> usize {
         N
     }
 
@@ -133,7 +133,7 @@ impl<const N: usize> fstr<N> {
     }
 
     /// allows returns copy of u8 array underneath the fstr
-    pub fn as_u8(&self) -> [u8; N] {
+    pub const fn as_u8(&self) -> [u8; N] {
         self.chrs
     }
 
@@ -262,11 +262,11 @@ impl<const N: usize> fstr<N> {
     /// is designed to be quicker than [fstr::nth], and does not check array bounds or
     /// check n against the length of the string. Nor does it check
     /// if the value returned is a valid character.
-    pub fn nth_bytechar(&self, n: usize) -> char {
+    pub const fn nth_bytechar(&self, n: usize) -> char {
         self.chrs[n] as char
     }
     /// alias for [Self::nth_bytechar] (for backwards compatibility)
-    pub fn nth_ascii(&self, n: usize) -> char {
+    pub const fn nth_ascii(&self, n: usize) -> char {
         self.chrs[n] as char
     }
 

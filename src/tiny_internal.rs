@@ -168,14 +168,14 @@ impl<const N: usize> tstr<N> {
 
     /// returns maximum capacity in bytes
     #[inline]
-    pub fn capacity(&self) -> usize {
+    pub const fn capacity(&self) -> usize {
         N - 1
     }
 
     /// converts tstr to an alloc::string::string
     #[cfg(not(feature = "no-alloc"))]
     pub fn to_string(&self) -> alloc::string::String {
-        alloc::string::String::from(self.as_str())
+        alloc::string::String::from(self.to_str())
     }
 
     /// returns slice of u8 array underneath the tstr
@@ -299,12 +299,12 @@ impl<const N: usize> tstr<N> {
     /// is designed to be quicker than [tstr::nth], and does not check array bounds or
     /// check n against the length of the string. Nor does it check
     /// if the value returned is a valid character.
-    pub fn nth_bytechar(&self, n: usize) -> char {
+    pub const fn nth_bytechar(&self, n: usize) -> char {
         self.chrs[n + 1] as char
     }
 
     /// alias for [Self::nth_bytechar] (for backwards compatibility)
-    pub fn nth_ascii(&self, n: usize) -> char {
+    pub const fn nth_ascii(&self, n: usize) -> char {
         self.chrs[n + 1] as char
     }
 

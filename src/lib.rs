@@ -10,6 +10,7 @@
 //!     Features that use the alloc crate can also be optionally excluded.
 //!  -  Unicode is supported by all but the optional [cstr] type.
 //!  -  Serde serialization is supported by all but the optional [Sharedstr] type.
+//!  -  Select functions are `const`, including const constructors.
 //!
 //!
 //! **COMPATIBILITY NOTICES**:
