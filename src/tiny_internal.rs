@@ -56,24 +56,6 @@ use core::ops::{RangeInclusive, RangeToInclusive};
 /// ```
 /// In contrast, concatenating other string types such as zstr will always
 /// produce strings of the same type and capacity.
-
-
-/// const function to limit usize value to between 1 and 256.
-/// Can be called when tstr is created (under `pub-tstr` feature):
-/// ```
-///   #[cfg(feature = "pub-tstr")]
-///   # use fixedstr::*;
-///   let ls = tstr::<{tstr_limit(258)}>::from("abcd");
-///   assert_eq!(ls.capacity(),255);
-/// ```
-#[cfg(feature = "pub-tstr")]
-pub const fn tstr_limit(n:usize) -> usize {
-  if n==0 {1}
-  else if n>256 {256}
-  else {n}
-}//const limit_size
-
-
 #[derive(Copy, Clone, Eq)]
 pub struct tstr<const N:usize = 256> {
     chrs: [u8; N],
@@ -833,6 +815,23 @@ impl<const N: usize> core::str::FromStr for tstr<N> {
         }
     }
 }
+
+/// const function to limit usize value to between 1 and 256.
+/// Can be called when tstr is created (under `pub-tstr` feature):
+/// ```
+///   #[cfg(feature = "pub-tstr")]
+///   # use fixedstr::*;
+///   let ls = tstr::<{tstr_limit(258)}>::from("abcd");
+///   assert_eq!(ls.capacity(),255);
+/// ```
+#[cfg(feature = "pub-tstr")]
+pub const fn tstr_limit(n:usize) -> usize {
+  if n==0 {1}
+  else if n>256 {256}
+  else {n}
+}//const limit_size
+
+
 
 /*   cannot adopt, because it affects type inference of s1 == s2.resize()
 impl<const N: usize, const M:usize> core::cmp::PartialEq<tstr<M>> for tstr<N> {
