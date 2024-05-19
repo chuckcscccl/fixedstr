@@ -35,6 +35,7 @@ use core::cmp::{min, Ordering};
 use core::ops::{Add, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 use core::ops::{RangeInclusive, RangeToInclusive};
 
+
 /// **This structure is normally only accessible through the
 /// public types [str4] through [str256].**  These types alias internal
 /// types [tstr]\<4\> through [tstr]\<256\> respectively.  The purpose here
@@ -120,9 +121,12 @@ impl<const N: usize> tstr<N> {
       t
     }//const_make
 
-    /// version of `const_make` that does not truncate.
+    /// Version of `const_make` that does not truncate.
+    /// Additionally, because this operation is meant to be evaluated at
+    /// compile time, N is checked to be at least 1 and at most 256: `None`
+    /// is returned if conditions are violated.
     pub const fn const_try_make(s:&str) -> Option<tstr<N>> {
-      if s.len()+1>N {None}
+      if N==0 || N>256 || s.len()+1>N {None}
       else { Some(tstr::const_make(s)) }
     }
     
