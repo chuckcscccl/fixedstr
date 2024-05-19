@@ -906,3 +906,33 @@ impl<const N: usize> core::str::FromStr for zstr<N> {
         }
     }
 }
+
+
+/// Iterator over a [zstr]`<N>` in `CS`-size `&[u8]` slices,
+/// except for possibly the last slice.  The last slice may also be
+/// zero-terminated.
+pub struct ChunkyIter<'t, const N:usize, const CS:usize> {
+  bur : &'t [u8;N],
+  index : usize,
+}
+impl<'t, const N:usize, const CS:usize> Iterator for ChunkyIter<'t,N,CS> {
+  type Item = &'t [u8];
+  fn next(&mut self) -> Option<Self::Item> {
+    if CS==0 || self.index + 1 > N || self.bur[self.index]==0 { None }
+    else {
+       self.index += CS;
+       Some(&self.bur[self.index-CS .. min(N,self.index)])
+    }
+  }//next
+} // impl Iterator for ChunkyIter
+
+impl<const N:usize> zstr<N> {
+  /// Creates a [ChunkyIter] iterator over `&[u8]` slices of fixed size `CS`,
+  /// except for the final slice, which may also be zero-terminated.
+  pub fn chunky_iter<'t,const CS:usize>(&'t self) -> ChunkyIter<'t,N,CS> {
+    ChunkyIter {
+      bur : &self.chrs,
+      index : 0,
+    }
+  }//chunk_iter
+}
