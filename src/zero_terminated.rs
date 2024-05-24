@@ -760,7 +760,7 @@ pub type ztr128 = zstr<128>;
 impl<const N: usize> core::fmt::Write for zstr<N> {
     fn write_str(&mut self, s: &str) -> core::fmt::Result //Result<(),core::fmt::Error>
     {
-        if s.len() + self.len() > N - 1 {
+        if s.len() + self.len() + 1 > N {
             return Err(core::fmt::Error::default());
         }
         self.push(s);

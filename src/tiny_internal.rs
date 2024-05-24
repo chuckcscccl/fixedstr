@@ -789,7 +789,7 @@ impl<const N: usize> Add<tstr<N>> for &str {
 /// ```
 impl<const N: usize> core::fmt::Write for tstr<N> {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        if s.len() + self.len() > N - 1 {
+        if s.len() + self.len() + 1 > N {
             return Err(core::fmt::Error::default());
         }
         self.push(s);

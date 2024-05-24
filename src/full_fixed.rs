@@ -585,8 +585,6 @@ impl<const N: usize> fstr<N> {
 impl<const N: usize> core::fmt::Write for fstr<N> {
     fn write_str(&mut self, s: &str) -> std::fmt::Result //Result<(),std::fmt::Error>
     {
-        //if s.len() + self.len() > N {return Err(core::fmt::Error::default());}
-        //self.push(s);
         let rest = self.push(s);
         if rest.len() > 0 {
             return Err(core::fmt::Error::default());
