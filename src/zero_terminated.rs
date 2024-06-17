@@ -202,7 +202,6 @@ impl<const N: usize> zstr<N> {
     } //blen, O(log N)
 
     /// converts zstr to an owned string
-    // #[cfg(feature = "std")]
     #[cfg(not(feature = "no-alloc"))]
     pub fn to_string(&self) -> alloc::string::String {
         alloc::string::String::from(self.to_str())
@@ -910,11 +909,13 @@ impl<const N: usize> core::str::FromStr for zstr<N> {
 
 /// Iterator over a [zstr]`<N>` in `CS`-size `&[u8]` slices,
 /// except for possibly the last slice.  The last slice may also be
-/// zero-terminated.
+/// zero-terminated. 'CS' must be non-zero.
+#[cfg(feature = "experimental")]
 pub struct ChunkyIter<'t, const N:usize, const CS:usize> {
   bur : &'t [u8;N],
   index : usize,
 }
+#[cfg(feature = "experimental")]
 impl<'t, const N:usize, const CS:usize> Iterator for ChunkyIter<'t,N,CS> {
   type Item = &'t [u8];
   fn next(&mut self) -> Option<Self::Item> {
@@ -926,6 +927,7 @@ impl<'t, const N:usize, const CS:usize> Iterator for ChunkyIter<'t,N,CS> {
   }//next
 } // impl Iterator for ChunkyIter
 
+#[cfg(feature = "experimental")]
 impl<const N:usize> zstr<N> {
   /// Creates a [ChunkyIter] iterator over `&[u8]` slices of fixed size `CS`,
   /// except for the final slice, which may also be zero-terminated.
