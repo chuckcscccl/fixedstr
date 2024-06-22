@@ -279,6 +279,9 @@ mod circular_string;
 #[cfg(feature = "circular-str")]
 pub use circular_string::*;
 
+#[cfg(not(feature = "no-alloc"))]
+extern crate alloc;
+
 /*
 #[cfg(feature = "compressed-str")]
 #[cfg(not(feature = "no-alloc"))]
@@ -287,6 +290,70 @@ mod compressed;
 #[cfg(not(feature = "no-alloc"))]
 pub use compressed::*;
 */
+
+
+//////// Unifying Trait Approach
+#[cfg(feature = "experimental")]
+pub trait Fixedstr<const N:usize> {
+  type Target;
+  
+  fn make<TA : AsRef<str>>(s:TA) -> Self::Target;
+  
+  fn create<TA : AsRef<str>>(s:TA) -> Self::Target {
+    Self::make(s)
+  } // won't compile
+  fn try_make<TA:AsRef<str>>(s:TA) -> Option<Self::Target> {
+    if s.as_ref().len()+1<N {Some(Self::make(s))} else {None}
+  }
+
+  fn const_make(s:&str) -> Self::Target;
+  fn const_try_make(s:&str) -> Option<Self::Target>;
+
+  fn new() -> Self::Target {
+    Self::make("")
+  }
+
+  fn /*const*/ len(&self) -> usize;
+  fn charlen(&self) -> usize;
+  fn /*const*/ capacity(&self) -> usize { N-1 }
+
+  fn to_str(&self) -> &str;
+  fn as_str(&self) -> &str;
+  
+  #[cfg(not(feature = "no-alloc"))]
+  fn to_string(&self) -> alloc::string::String {
+        alloc::string::String::from(self.to_str())
+  }
+
+  fn set(&mut self, i: usize, c: char) -> bool;
+
+  fn push_str<'t>(&mut self, src: &'t str) -> &'t str;
+  
+  fn push_char(&mut self, c: char) -> bool;
+
+  fn pop_char(&mut self) -> Option<char>;
+  
+  fn nth(&self, n: usize) -> Option<char>;
+  
+  fn nth_bytechar(&self, n: usize) -> char;
+  
+  fn truncate(&mut self, n: usize);
+  
+  fn truncate_bytes(&mut self, n: usize);
+  
+  fn clear(&mut self);
+  
+  fn right_ascii_trim(&mut self);
+  
+  fn make_ascii_lowercase(&mut self);
+
+  fn make_ascii_uppercase(&mut self);
+
+  fn case_insensitive_eq<TA:AsRef<str>>(&self, other: TA) -> bool;
+  
+}//trait Fixedstr
+
+
 
 
 //#[macro_use]
