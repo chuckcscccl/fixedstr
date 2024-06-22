@@ -302,8 +302,8 @@ pub trait Fixedstr<const N:usize> {
   fn create<TA : AsRef<str>>(s:TA) -> Self::Target {
     Self::make(s)
   } // won't compile
-  fn try_make<TA:AsRef<str>>(s:TA) -> Option<Self::Target> {
-    if s.as_ref().len()+1<N {Some(Self::make(s))} else {None}
+  fn try_make<TA:AsRef<str>>(s:TA) -> Result<Self::Target,TA> {
+    if s.as_ref().len()<N {Ok(Self::make(s))} else {Err(s)}
   }
 
   fn const_make(s:&str) -> Self::Target;
@@ -340,6 +340,8 @@ pub trait Fixedstr<const N:usize> {
   fn truncate(&mut self, n: usize);
   
   fn truncate_bytes(&mut self, n: usize);
+
+  fn truncate_unchecked(&mut self, n: usize);
   
   fn clear(&mut self);
   
@@ -350,7 +352,10 @@ pub trait Fixedstr<const N:usize> {
   fn make_ascii_uppercase(&mut self);
 
   fn case_insensitive_eq<TA:AsRef<str>>(&self, other: TA) -> bool;
-  
+
+  fn is_ascii(&self) -> bool {
+        self.to_str().is_ascii()
+  }
 }//trait Fixedstr
 
 
