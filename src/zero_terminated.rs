@@ -213,6 +213,12 @@ impl<const N: usize> zstr<N> {
         &self.chrs[..self.blen() + 1]
     }
 
+    /// returns mutable slice of the u8 array underneath, including the terminating zero.  **WARNING:** changing a byte to zero in the middle of the string is not enough to zero-terminate the string: the length calculation via binary search will become invalid. All bytes following the first zero must also be zeroed.  Use with care.
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        let n = self.blen()+1;
+        &mut self.chrs[0..n]
+    }
+
     /// returns slice of u8 array underneath the zstr without the terminating zero
     #[inline]
     pub fn as_bytes_non_terminated(&self) -> &[u8] {

@@ -226,6 +226,15 @@ impl<const N: usize> Flexstr<N> {
         } //match
     }
 
+   /// returns mutable u8-slice of string underneath.  Function requires
+   /// call to [String::as_mut_str] and is therefore marked unsafe.
+    pub unsafe fn as_bytes_mut(&mut self) -> &mut [u8] {
+        match &mut self.inner {
+            fixed(f) => f.as_bytes_mut(),
+            owned(s) => s.as_mut_str().as_bytes_mut(),
+        } //match
+    }
+
     /// changes a character at character position i to c.  This function
     /// requires that c is in the same character class (ascii or unicode)
     /// as the char being replaced.  It never shuffles the bytes underneath.

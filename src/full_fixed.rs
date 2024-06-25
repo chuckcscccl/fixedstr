@@ -137,6 +137,17 @@ impl<const N: usize> fstr<N> {
         self.chrs
     }
 
+    /// returns slice of the u8 array underneath
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.chrs[0..self.len]
+    }
+
+    /// returns mutable slice of the u8 array underneath (use with care)
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        let n = self.len;
+        &mut self.chrs[0..n]
+    }
+
     /// converts fstr to &str using [std::str::from_utf8_unchecked].  Since
     /// fstr can only be built from valid utf8 sources, this function
     /// is safe.

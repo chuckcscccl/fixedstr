@@ -306,16 +306,16 @@ pub trait Fixedstr<const N:usize> {
     if s.as_ref().len()<N {Ok(Self::make(s))} else {Err(s)}
   }
 
-  fn const_make(s:&str) -> Self::Target;
-  fn const_try_make(s:&str) -> Option<Self::Target>;
+  /*const*/ fn const_make(s:&str) -> Self::Target;
+  /*const*/ fn const_try_make(s:&str) -> Option<Self::Target>;
 
   fn new() -> Self::Target {
     Self::make("")
   }
 
-  fn /*const*/ len(&self) -> usize;
+  /*const*/ fn len(&self) -> usize;
   fn charlen(&self) -> usize;
-  fn /*const*/ capacity(&self) -> usize { N-1 }
+  /*const*/ fn capacity(&self) -> usize { N-1 }
 
   fn to_str(&self) -> &str;
   fn as_str(&self) -> &str;

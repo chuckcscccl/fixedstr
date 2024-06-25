@@ -164,9 +164,15 @@ impl<const N: usize> tstr<N> {
         alloc::string::String::from(self.to_str())
     }
 
-    /// returns slice of u8 array underneath the tstr
+    /// returns slice of u8 the array underneath the tstr
     pub fn as_bytes(&self) -> &[u8] {
-        &self.chrs[1..self.len() + 1]
+        &self.chrs[1..self.len()+1]
+    }
+   
+    /// returns mutable slice of the u8 array underneath (use with care)
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        let n = self.len() + 1;
+        &mut self.chrs[1..n]
     }
 
     /// converts tstr to &str using [core::str::from_utf8_unchecked]
@@ -195,35 +201,12 @@ impl<const N: usize> tstr<N> {
         }
         return false;
     } //set
+
     /// adds chars to end of current string up to maximum size N of `tstr<N>`,
     /// returns the portion of the push string that was NOT pushed due to
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
     pub fn push<'t>(&mut self, s: &'t str) -> &'t str {
-        /*
-            if s.len() < 1 {
-                return s;
-            }
-            let mut buf = [0u8; 4];
-            let mut i = self.len();
-        let mut sci = 0; // length in bytes
-            for c in s.chars() {
-                let clen = c.len_utf8();
-                c.encode_utf8(&mut buf);
-                if i+clen+1 <= N {
-                    self.chrs[i+1 .. i+clen+1].copy_from_slice(&buf[..clen]);
-                    i += clen;
-                } else {
-                    self.chrs[0] = i as u8;
-                    return &s[sci..];
-                }
-            sci += clen;
-            }
-            if i < N {
-                self.chrs[0] = i as u8;
-            } // set length
-            &s[sci..]
-            */
         self.push_str(s)
     } //push
 
