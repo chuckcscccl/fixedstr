@@ -356,6 +356,8 @@ pub trait Fixedstr<const N:usize> {
   fn is_ascii(&self) -> bool {
         self.to_str().is_ascii()
   }
+
+  
 }//trait Fixedstr
 
 

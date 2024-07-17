@@ -116,6 +116,17 @@ impl<const N: usize> Sharedstr<N> {
         } //unsafe
     }
 
+    /// version of [Flexstr::as_str] that does not call `unwrap`
+    pub fn as_str_utf8(&self) -> Result<&str,core::str::Utf8Error>
+    {
+        unsafe {
+            match self.inner.as_ptr().as_ref().unwrap() {
+                fixed(s) => s.as_str_safe(),
+                owned(s) => Ok(s.as_str()),
+            } //match
+        } //unsafe
+    }
+ 
     /// creates an empty string, equivalent to [Sharedstr::default]
     pub fn new() -> Self {
         Self::default()

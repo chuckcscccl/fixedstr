@@ -179,12 +179,16 @@ impl<const N: usize> tstr<N> {
     pub fn to_str(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.chrs[1..self.len() + 1]) }
     }
-    /// checked version of [tstr::to_str], may panic
+    /// checked version of [tstr::to_str], but may panic
     pub fn as_str(&self) -> &str {
         core::str::from_utf8(&self.chrs[1..self.len() + 1]).unwrap()
     }
+    /// version of [tstr::as_str] that does not call `unwrap`
+    pub fn as_str_safe(&self) -> Result<&str,core::str::Utf8Error> {
+        core::str::from_utf8(&self.chrs[1..self.len() + 1])    
+    }
 
-    /// changes a character at character position i to c.  This function
+    /// changes a character at *character position* i to c.  This function
     /// requires that c is in the same character class (ascii or unicode)
     /// as the char being replaced.  It never shuffles the bytes underneath.
     /// The function returns true if the change was successful.
@@ -403,6 +407,23 @@ impl<const N: usize> tstr<N> {
         }
         Ok(s)
     } //from_utf16
+
+
+/*
+   // These functions will replace calls to to_str (internal)
+   // ... but both are unsafe because of unwrap
+   #[cfg(not(feature = "prioritize-safety"))]
+   #[inline(always)]
+   fn makestr(&self) -> &str {
+     unsafe { core::str::from_utf8_unchecked(&self.chrs[1..self.len() + 1]) }
+  }
+   #[cfg(feature = "prioritize-safety")]
+   #[inline(always)]
+   fn makestr(&self) -> &str {
+     core::str::from_utf8(&self.chrs[1..self.len() + 1]).unwrap()
+   }
+*/
+ 
 } //impl tstr<N>
   ///////////////////////
 

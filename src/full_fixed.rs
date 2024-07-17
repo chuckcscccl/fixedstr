@@ -161,6 +161,13 @@ impl<const N: usize> fstr<N> {
         std::str::from_utf8(&self.chrs[0..self.len]).unwrap()
     }
 
+
+    /// version of [fstr::as_str] that does not call `unwrap`
+    pub fn as_str_safe(&self) -> Result<&str,core::str::Utf8Error> {
+        core::str::from_utf8(&self.chrs[0..self.len])
+    }
+ 
+
     /// changes a character at character position i to c.  This function
     /// requires that c is in the same character class (ascii or unicode)
     /// as the char being replaced.  It never shuffles the bytes underneath.

@@ -156,6 +156,16 @@ impl<const N: usize> Flexstr<N> {
         } //match
     }
 
+    /// version of [Flexstr::as_str] that does not call `unwrap`
+    pub fn as_str_safe(&self) -> Result<&str,core::str::Utf8Error>
+    {
+        match &self.inner {
+            fixed(s) => s.as_str_safe(),
+            owned(s) => Ok(&s[..]),
+        } //match
+    }
+    
+
     /// retrieves a copy of the underlying fixed string, if it is a fixed string.
     /// Note that since the `tstr` type is not exported, this function should
     /// be used in conjunction with one of the public aliases [str4]-[str256].

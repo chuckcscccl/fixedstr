@@ -1,6 +1,6 @@
 [package]
 name = "fixedstr"
-version = "0.5.7"
+version = "0.5.8"
 authors = ["Chuck Liang"]
 edition = "2021"
 license = "MIT"
@@ -22,12 +22,13 @@ circular-str=[]
 experimental=[]
 no-alloc=[]
 compressed-str=[]
+#prioritize-safety=[]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#serde={version="1", optional=true}
 serde={version="1", optional=true, default-features=false}
+#static_assertions = "1.1.0"
 
 [package.metadata.docs.rs]
 features = ["serde","pub-tstr","circular-str","flex-str","shared-str","std"]

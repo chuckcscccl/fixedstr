@@ -229,12 +229,17 @@ impl<const N: usize> zstr<N> {
     pub fn to_str(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(&self.chrs[0..self.blen()]) }
     }
-    /// checked version of [zstr::to_str], may panic
+    /// checked version of [zstr::to_str], but may panic (calls `unwrap`)
     pub fn as_str(&self) -> &str {
         core::str::from_utf8(&self.chrs[0..self.blen()]).unwrap()
     }
+    /// version of [zstr::as_str] that does not call `unwrap`
+    pub fn as_str_safe(&self) -> Result<&str,core::str::Utf8Error> {
+        core::str::from_utf8(&self.chrs[0..self.blen()])
+    }
+    
 
-    /// changes a character at character position i to c.  This function
+    /// changes a character at *character position* i to c.  This function
     /// requires that c is in the same character class (ascii or unicode)
     /// as the char being replaced.  It never shuffles the bytes underneath.
     /// The function returns true if the change was successful.
