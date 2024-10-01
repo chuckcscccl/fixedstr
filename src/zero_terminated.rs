@@ -189,7 +189,8 @@ impl<const N: usize> zstr<N> {
         let (mut min, mut max) = (0, N);
         let mut mid = 0;
         while min < max {
-            mid = (min + max) / 2;
+            //mid = (min + max) / 2;
+            mid = min + (max-min)/2;   // no overflow, just in case
             if self.chrs[mid] == 0 {
                 // go left
                 max = mid;
