@@ -90,7 +90,7 @@ impl<const N: usize> zstr<N> {
     pub const fn const_make(s:&str) -> zstr<N> {
       let mut t = zstr::<N>::new();
       let mut len = s.len();
-      if len>N-1 { len = N-1; } // fix max length
+      if len+1>N { len = N-1; } // fix max length
       let bytes = s.as_bytes();
       let mut i = 0;
       while i<len {
