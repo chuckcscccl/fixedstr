@@ -526,6 +526,16 @@ impl<const N: usize> zstr<N> {
         z
     } //unsafe from_raw
 
+    /// Creates a [core::ffi::CStr] 
+    pub fn to_cstr(&self) -> &core::ffi::CStr {
+      &core::ffi::CStr::from_bytes_until_nul(self.chrs.as_slice()).unwrap()
+    }
+
+    /// Converts from a [core::ffi::CStr]
+    pub fn from_cstr(cstr:&core::ffi::CStr) -> Self {
+      Self::from_raw(cstr.to_bytes_with_nul())
+    }
+
     /// Decodes a UTF-16 encodeded slice. If a decoding error is encountered
     /// or capacity exceeded, an `Err(s)` is returned where s is the
     /// the encoded string up to the point of the error.
