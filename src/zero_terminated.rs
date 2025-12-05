@@ -259,10 +259,10 @@ impl<const N: usize> zstr<N> {
 
     /// version of [zstr::set] that assumes that the char is a single byte.
     /// Sets the char at the given *byte* index.
-    /// Also does not check for index bounds.  This function is designed
-    /// to be fast.
+    /// Does not check for index bounds, but does check that the byte set is
+    /// not zero. This function is designed to be fast.
     pub const fn set_byte_char(&mut self, i:usize, c:char) {
-      self.chrs[i] = c as u8;
+      if self.chrs[i]!=0 {self.chrs[i] = c as u8;}
     }
 
     /// adds chars to end of current string up to maximum size N-1 of `zstr<N>`,
