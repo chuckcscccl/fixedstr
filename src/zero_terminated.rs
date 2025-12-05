@@ -256,7 +256,16 @@ impl<const N: usize> zstr<N> {
         }
         return false;
     } //set
-    /// adds chars to end of current string up to maximum size N of `zstr<N>`,
+
+    /// version of [zstr::set] that assumes that the char is a single byte.
+    /// Sets the char at the given *byte* index.
+    /// Also does not check for index bounds.  This function is designed
+    /// to be fast.
+    pub const fn set_byte_char(&mut self, i:usize, c:char) {
+      self.chrs[i] = c as u8;
+    }
+
+    /// adds chars to end of current string up to maximum size N-1 of `zstr<N>`,
     /// returns the portion of the push string that was NOT pushed due to
     /// capacity, so
     /// if "" is returned then all characters were pushed successfully.
@@ -526,12 +535,12 @@ impl<const N: usize> zstr<N> {
         z
     } //unsafe from_raw
 
-    /// Creates a [core::ffi::CStr] 
+    /// Creates a [core::ffi::CStr]
     pub fn to_cstr(&self) -> &core::ffi::CStr {
       &core::ffi::CStr::from_bytes_until_nul(self.chrs.as_slice()).unwrap()
     }
 
-    /// Converts from a [core::ffi::CStr]
+    /// Converts from a [core::ffi::CStr], truncates as needed
     pub fn from_cstr(cstr:&core::ffi::CStr) -> Self {
       Self::from_raw(cstr.to_bytes_with_nul())
     }

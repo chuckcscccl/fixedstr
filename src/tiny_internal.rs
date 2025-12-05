@@ -206,6 +206,14 @@ impl<const N: usize> tstr<N> {
         return false;
     } //set
 
+    /// version of [tstr::set] that assumes that the char is a single byte.
+    /// Sets the char at the given *byte* index.    
+    /// Also does not check for index bounds.  This function is designed
+    /// to be fast.
+    pub const fn set_byte_char(&mut self, i:usize, c:char) {
+      self.chrs[i+1] = c as u8;
+    }
+
     /// adds chars to end of current string up to maximum size N of `tstr<N>`,
     /// returns the portion of the push string that was NOT pushed due to
     /// capacity, so
