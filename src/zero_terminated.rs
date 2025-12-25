@@ -19,20 +19,22 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(all(feature = "alloc",not(feature = "std")))]
+use alloc::string::String;
+
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
+extern crate std;
+#[cfg(feature = "std")]
+use std::string::String;
+
+#[cfg(feature = "std")]
 use crate::fstr;
 
 use crate::tstr;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
-
-#[cfg(not(feature = "no-alloc"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
-extern crate std;
 
 /// `zstr<N>`: utf-8 strings of size up to N bytes. The strings are
 /// zero-terminated with a single byte, with the additional requirement that
@@ -203,9 +205,9 @@ impl<const N: usize> zstr<N> {
     } //blen, O(log N)
 
     /// converts zstr to an owned string
-    #[cfg(not(feature = "no-alloc"))]
-    pub fn to_string(&self) -> alloc::string::String {
-        alloc::string::String::from(self.to_str())
+    #[cfg(any(feature = "alloc", feature = "std"))]
+    pub fn to_string(&self) -> String {
+        String::from(self.to_str())
     }
 
     /// returns slice of u8 array underneath the zstr, **including the terminating 0**
@@ -604,14 +606,12 @@ impl<T: AsMut<str> + ?Sized, const N: usize> core::convert::From<&mut T> for zst
 }
 
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize> std::convert::From<std::string::String> for zstr<N> {
     fn from(s: std::string::String) -> zstr<N> {
         zstr::<N>::make(&s[..])
     }
 }
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> std::convert::From<fstr<M>> for zstr<N> {
     fn from(s: fstr<M>) -> zstr<N> {
         zstr::<N>::make(s.to_str())
@@ -716,7 +716,6 @@ impl<const N: usize> Default for zstr<N> {
     }
 }
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
     fn eq(&self, other: &zstr<N>) -> bool {
         other.to_str() == self.to_str()
@@ -724,7 +723,6 @@ impl<const N: usize, const M: usize> PartialEq<zstr<N>> for fstr<M> {
 }
 
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
     fn eq(&self, other: &fstr<N>) -> bool {
         other.to_str() == self.to_str()
@@ -732,7 +730,6 @@ impl<const N: usize, const M: usize> PartialEq<fstr<N>> for zstr<M> {
 }
 
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 impl<const N: usize, const M: usize> PartialEq<&fstr<N>> for zstr<M> {
     fn eq(&self, other: &&fstr<N>) -> bool {
         other.to_str() == self.to_str()

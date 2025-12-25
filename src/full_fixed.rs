@@ -7,13 +7,20 @@
 #![allow(unused_mut)]
 #![allow(dead_code)]
 
-#[cfg(feature = "std")]
-extern crate std;
 use crate::tiny_internal::*;
 use crate::zero_terminated::*;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
 use std::eprintln;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(all(feature = "alloc",not(feature = "std")))]
+use alloc::string::String;
+
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
 use std::string::String;
 
 /// **This type is only available with the `std` (or `fstr`) feature.**

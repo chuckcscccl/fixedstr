@@ -208,7 +208,7 @@
 //! assert!(c5.is_none());  // try_format! returns None if capacity exceeded
 //!
 //! #[cfg(feature = "shared-str")]
-//! #[cfg(not(feature = "no-alloc"))]
+//! #[cfg(feature = "alloc")]
 //! {
 //!   let mut s:Sharedstr<8> = Sharedstr::from("abcd");
 //!   let mut s2 = s.clone(); // O(1) cost
@@ -238,32 +238,32 @@
 #![allow(dead_code)]
 #![no_std]
 
+#[cfg(feature = "flex-str")]
+#[cfg(not(any(feature = "alloc", feature = "std")))]
+compile_error!("flex-str requires either alloc or std");
+
+#[cfg(feature = "shared-str")]
+#[cfg(not(any(feature = "alloc", feature = "std")))]
+compile_error!("shared-str requires either alloc or std");
+
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 mod full_fixed;
+
 #[cfg(feature = "std")]
-#[cfg(not(feature = "no-alloc"))]
 pub use full_fixed::*;
 
-//#[cfg(feature = "flex-str")]
-//mod shared_structs;
-
-#[cfg(not(feature = "no-alloc"))]
 #[cfg(any(feature = "shared-str", feature = "flex-str"))]
+#[cfg(any(feature = "alloc", feature = "std"))]
 mod shared_structs;
 
 #[cfg(feature = "flex-str")]
-#[cfg(not(feature = "no-alloc"))]
 mod flexible_string;
 #[cfg(feature = "flex-str")]
-#[cfg(not(feature = "no-alloc"))]
 pub use flexible_string::*;
 
 #[cfg(feature = "shared-str")]
-#[cfg(not(feature = "no-alloc"))]
 mod shared_string;
 #[cfg(feature = "shared-str")]
-#[cfg(not(feature = "no-alloc"))]
 pub use shared_string::*;
 
 mod zero_terminated;
@@ -279,17 +279,14 @@ mod circular_string;
 #[cfg(feature = "circular-str")]
 pub use circular_string::*;
 
-#[cfg(not(feature = "no-alloc"))]
+#[cfg(feature = "alloc")]
 extern crate alloc;
-
-/*
-#[cfg(feature = "compressed-str")]
-#[cfg(not(feature = "no-alloc"))]
-mod compressed;
-#[cfg(feature = "compressed-str")]
-#[cfg(not(feature = "no-alloc"))]
-pub use compressed::*;
-*/
+#[cfg(all(feature = "alloc",not(feature = "std")))]
+use alloc::string;
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
+use std::string;
 
 
 //////// Unifying Trait Approach
@@ -320,9 +317,9 @@ pub trait Fixedstr<const N:usize> {
   fn to_str(&self) -> &str;
   fn as_str(&self) -> &str;
   
-  #[cfg(not(feature = "no-alloc"))]
-  fn to_string(&self) -> alloc::string::String {
-        alloc::string::String::from(self.to_str())
+  #[cfg(any(feature = "alloc", feature = "std"))]
+  fn to_string(&self) -> string::String {
+        string::String::from(self.to_str())
   }
 
   fn set(&mut self, i: usize, c: char) -> bool;
@@ -401,10 +398,8 @@ mod serde_support {
     generate_impl!(zstr, ZstrVisitor);
     generate_impl!(tstr, TstrVisitor);
     #[cfg(feature = "std")]
-    #[cfg(not(feature = "no-alloc"))]
     generate_impl!(fstr, FstrVisitor);
     #[cfg(feature = "flex-str")]
-    #[cfg(not(feature = "no-alloc"))]
     generate_impl!(Flexstr, FlexstrVisitor);
 
     #[cfg(feature = "circular-str")]
@@ -589,19 +584,14 @@ mod tests {
         ztests();
 
         #[cfg(feature = "std")]
-        #[cfg(not(feature = "no-alloc"))]
         maintest();
         #[cfg(all(feature = "flex-str", feature = "std"))]
-        #[cfg(not(feature = "no-alloc"))]
         flextest();
         #[cfg(feature = "std")]
-        #[cfg(not(feature = "no-alloc"))]
         tinytests();
         #[cfg(all(feature = "std", feature = "flex-str"))]
-        #[cfg(not(feature = "no-alloc"))]
         poppingtest();
         #[cfg(all(feature = "std", feature = "shared-str"))]
-        #[cfg(not(feature = "no-alloc"))]
         strptrtests();
         #[cfg(feature = "pub-tstr")]
         consttests();
@@ -609,7 +599,6 @@ mod tests {
 
     #[cfg(feature = "std")]
     #[cfg(feature = "shared-str")]
-    #[cfg(not(feature = "no-alloc"))]
     fn strptrtests() {
         extern crate std;
         use std::fmt::Write;
@@ -634,7 +623,6 @@ mod tests {
     }
 
     #[cfg(all(feature = "std", feature = "flex-str"))]
-    #[cfg(not(feature = "no-alloc"))]
     fn poppingtest() {
         extern crate std;
         use std::println;
@@ -814,7 +802,6 @@ mod tests {
     } //ztr tests
 
     #[cfg(feature = "std")]
-    #[cfg(not(feature = "no-alloc"))]
     fn maintest() {
         extern crate std;
         use std::fmt::Write;
@@ -880,7 +867,6 @@ mod tests {
     } //maintest
 
     #[cfg(feature = "std")]
-    #[cfg(not(feature = "no-alloc"))]
     fn ftests() {
         extern crate std;
         use std::{println, string::String, format};
@@ -923,8 +909,8 @@ mod tests {
         assert_eq!(zoo,"xxxxx abc123yy");
     } //ftr tests
 
-    #[cfg(all(feature = "std", feature = "flex-str"))]
-    #[cfg(not(feature = "no-alloc"))]
+    #[cfg(feature = "flex-str")]
+    #[cfg(feature = "std")]
     fn flextest() {
         extern crate std;
         use std::fmt::Write;
@@ -989,7 +975,6 @@ mod tests {
     } //flextest
 
     #[cfg(feature = "std")]
-    #[cfg(not(feature = "no-alloc"))]
     fn tinytests() {
         extern crate std;
         use std::fmt::Write;
