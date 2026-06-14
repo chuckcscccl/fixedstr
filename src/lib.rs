@@ -876,6 +876,16 @@ mod tests {
         let rem = a.push("g");
         assert!(rem == "" && &a == "abcdefg");
 
+        use std::collections::BTreeMap;
+        let mut map:BTreeMap<str8,i32> = BTreeMap::new();
+        map.insert(str8::from("abc"), 1);
+        map.insert(str8::from("abd"), 2);
+        map.insert(str8::from("abe"), 3);
+        map.insert(str8::from("bbe"), 4);
+        let (a,b) = (str8::from("a"), str8::from("b"));
+        let sum:i32 = map.range(a..b).map(|(k,v)|v).sum();
+        assert_eq!(sum, 6);
+
         ftests();
     } //maintest
 

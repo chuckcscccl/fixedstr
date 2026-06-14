@@ -241,7 +241,7 @@ impl<const N: usize> Flexstr<N> {
     pub unsafe fn as_bytes_mut(&mut self) -> &mut [u8] {
         match &mut self.inner {
             fixed(f) => f.as_bytes_mut(),
-            owned(s) => s.as_mut_str().as_bytes_mut(),
+            owned(s) => unsafe {s.as_mut_str().as_bytes_mut() },
         } //match
     }
 
@@ -268,6 +268,14 @@ impl<const N: usize> Flexstr<N> {
             },
         } //match
     } //set
+
+    /// version of [Flexstr::set] that assumes that the char is a single byte. Sets the char at the given byte index. Does not check for index bounds. This function is designed to be fast.
+    pub unsafe fn set_byte_char(&mut self, i:usize, c:char) {
+       match &mut self.inner {
+         fixed(s) => s.set_byte_char(i,c),
+         owned(s) => unsafe { s.as_mut_vec()[i] = c as u8 },
+       }
+    }
 
     /// returns whether the internal representation is a fixed string (tstr)
     pub fn is_fixed(&self) -> bool {
