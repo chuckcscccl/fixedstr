@@ -526,11 +526,13 @@ impl<const N: usize> zstr<N> {
     pub unsafe fn from_ptr(mut ptr: *const u8) -> Self {
         let mut z = zstr::new();
         let mut i = 0;
-        while *ptr != 0 && i + 1 < N {
-            z.chrs[i] = *ptr;
+        unsafe {
+          while *ptr != 0 && i + 1 < N {
+            z.chrs[i] = *ptr; 
             ptr = (ptr as usize + 1) as *const u8;
             i += 1;
-        } //while
+          } //while
+        }
         z.chrs[i] = 0;
         z
     } //unsafe from_raw
