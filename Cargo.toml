@@ -10,7 +10,7 @@ keywords = ["string","no-std"]
 
 
 [features]
-default = []
+default = ["alloc"]
 serde=["dep:serde"]
 std=[]
 fstr = ["std"]
@@ -20,7 +20,7 @@ shared-str=[]
 flex-str=[]
 circular-str=[]
 experimental=[]
-no-alloc=[]
+alloc=[]
 compressed-str=[]
 #prioritize-safety=[]
 

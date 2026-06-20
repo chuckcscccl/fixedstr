@@ -6,10 +6,18 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-extern crate alloc;
 use crate::tstr;
-use alloc::string::String;
 use Strunion::*;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(all(feature = "alloc",not(feature = "std")))]
+use alloc::string::String;
+
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
+use std::string::String;
 
 #[derive(Eq, PartialEq, Hash)]
 pub enum Strunion<const N: usize> {

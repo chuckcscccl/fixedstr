@@ -6,12 +6,20 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-//extern crate std;
-//use std::string::String;
 use crate::shared_structs::Strunion;
 use crate::shared_structs::Strunion::*;
 use crate::tstr;
 use crate::zstr;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(all(feature = "alloc",not(feature = "std")))]
+use alloc::string::String;
+
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
+use std::string::String;
 
 #[cfg(feature = "std")]
 use crate::fstr;
@@ -22,9 +30,12 @@ use core::ops::Add;
 
 ////////////////////////////////////////////////////////////////////////
 ///////////// RC experiments
-extern crate alloc;
+#[cfg(all(feature = "alloc",not(feature = "std")))]
 use alloc::rc::Rc;
-use alloc::string::String;
+
+#[cfg(feature = "std")]
+use std::rc::Rc;
+
 use core::cell::RefCell;
 
 /// **This type is only available with the 'shared-str' option.**

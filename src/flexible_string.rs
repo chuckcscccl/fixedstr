@@ -9,9 +9,18 @@
 #![allow(unused_mut)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-extern crate alloc;
 use crate::tstr;
 use crate::zstr;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(all(feature = "alloc",not(feature = "std")))]
+use alloc::string::String;
+
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
+use std::string::String;
 
 #[cfg(feature = "std")]
 use crate::fstr;
@@ -19,8 +28,6 @@ use crate::fstr;
 use crate::shared_structs::Strunion;
 use crate::shared_structs::Strunion::*;
 use crate::{str12, str128, str16, str192, str24, str256, str32, str4, str48, str64, str8, str96};
-use alloc::string::String;
-use alloc::vec::Vec;
 use core::cmp::{min, Ordering};
 use core::ops::Add;
 
@@ -130,8 +137,6 @@ impl<const N: usize> Flexstr<N> {
             fixed(s) => s.charlen(),
             owned(s) => {
                 s.chars().count()
-                //let v: Vec<_> = s.chars().collect();
-                //v.len()
             }
         } //match
     } //charlen
